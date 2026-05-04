@@ -1,0 +1,1 @@
+POST http://localhost:8080/api/collect/nongnet/price?year=2025&month=3

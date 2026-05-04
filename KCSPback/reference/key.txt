@@ -1,0 +1,20 @@
+kamis API
+반입량, 가격 데이터
+인증키 : 1332dc1b-de39-484d-9568-10d6c86bf59f
+
+기상청 API
+지상관측 > 종관기상관측(ASOS) > 지상 관측자료 조회 > /url/kma_sfcdd.php
+인증키 : R7OuJuGxRaWzribhsTWlTQ
+
+오피넷 API
+인증키 : F260325575
+
+kosis API
+소비자 물가지수, 생산자 물가지수
+인증키 : M2YwYjdkMTc5ZGY1YWYwYTExM2Y2MjRjNTI1ZTJjYjE
+
+네이버랩 이미 반영됨
+
+한국수출입은행
+현재환율 API
+인증키: MQYSy7sOTVB76RkvczAcMmPyefDqXLNl

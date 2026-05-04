@@ -1,0 +1,48 @@
+spring.application.name=agriforecast-backend
+
+# Database Configuration
+spring.datasource.url=jdbc:mysql://localhost:3306/agriforecast?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+spring.datasource.username=root
+spring.datasource.password=YOUR_DB_PASSWORD
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# JPA Configuration
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
+
+# Jackson Configuration
+spring.jackson.time-zone=Asia/Seoul
+
+# Naver DataLab API
+naver.datalab.client-id=YOUR_NAVER_CLIENT_ID
+naver.datalab.client-secret=YOUR_NAVER_CLIENT_SECRET
+
+# KAMIS API
+kamis.cert-key=YOUR_KAMIS_CERT_KEY
+kamis.cert-id=YOUR_KAMIS_CERT_ID
+
+# 기상청 ASOS API
+weather.auth-key=YOUR_WEATHER_AUTH_KEY
+
+# 오피넷 API
+opinet.api-key=YOUR_OPINET_API_KEY
+
+# KOSIS API
+kosis.api-key=YOUR_KOSIS_API_KEY
+kosis.cpi.org-id=101
+kosis.cpi.tbl-id=DT_1J22112
+kosis.cpi.itm-id=T+
+kosis.cpi.obj-l1=T10
+kosis.ppi.org-id=301
+kosis.ppi.tbl-id=DT_404Y016
+kosis.ppi.itm-id=13103134764999+
+kosis.ppi.obj-l1=13102134764ACC_CD.*
+
+# 한국수출입은행 환율 API
+koreaexim.auth-key=YOUR_KOREAEXIM_AUTH_KEY
+
+# 가락시장 공공데이터 API (반입량)
+garak.public-data.id=YOUR_GARAK_PUBLIC_DATA_ID
+garak.public-data.password=YOUR_GARAK_PUBLIC_DATA_PASSWORD

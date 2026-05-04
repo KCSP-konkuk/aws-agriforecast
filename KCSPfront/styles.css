@@ -1,0 +1,234 @@
+/* ============================================
+   공통 스타일 파일
+   ============================================ */
+
+/* Material Symbols Outlined 아이콘 설정 */
+.material-symbols-outlined {
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+}
+
+/* 기본 폰트 설정 */
+body {
+  font-family: "Work Sans", "Noto Sans KR", sans-serif;
+}
+
+/* 공통 레이아웃 클래스 */
+.layout-container {
+  display: flex;
+  height: 100%;
+  flex-grow: 1;
+  flex-direction: column;
+}
+
+.layout-content-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* 커스텀 유틸리티 클래스 */
+.tracking-light {
+  letter-spacing: 0.01em;
+}
+
+/* 반응형 이미지 */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 폼 요소 공통 스타일 */
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: currentColor;
+}
+
+/* 애니메이션 */
+.transition-colors {
+  transition-property: color, background-color, border-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+/* 스크롤바 스타일링 (선택사항) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* ============================================
+   로그인/회원가입 페이지 스타일
+   ============================================ */
+
+/* 공통 폼 컨테이너 스타일 */
+.signup-container,
+.findid-container,
+.reset-container {
+  background: #fff;
+  padding: 40px 50px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 360px;
+}
+
+.findid-container,
+.reset-container {
+  text-align: center;
+}
+
+/* 폼 페이지 공통 레이아웃 */
+body.form-page {
+  font-family: 'Inter', sans-serif;
+  background-color: #f8f9fc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+/* 제목 스타일 */
+.signup-container h2,
+.findid-container h2,
+.reset-container h2 {
+  color: #222;
+  font-size: 24px;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+/* 부제목 */
+.subtitle {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 25px;
+}
+
+/* 폼 그룹 */
+.form-group {
+  margin-bottom: 18px;
+  position: relative;
+}
+
+.findid-container .form-group,
+.reset-container .form-group {
+  text-align: left;
+}
+
+/* 라벨 */
+.form-group label {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: #333;
+}
+
+/* 입력 필드 */
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  border-color: #86d957;
+}
+
+.form-group input.error {
+  border-color: #e74c3c;
+}
+
+/* 에러 메시지 */
+.error-message {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 4px;
+  text-align: left;
+}
+
+/* 비밀번호 보기 아이콘 */
+.show-password {
+  position: absolute;
+  right: 12px;
+  top: 38px;
+  cursor: pointer;
+  color: #999;
+}
+
+/* 버튼 */
+.signup-container button,
+.findid-container button,
+.reset-container button {
+  width: 100%;
+  background-color: #1A535C;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 5px;
+  transition: background-color 0.2s ease;
+}
+
+.signup-container button:hover,
+.findid-container button:hover,
+.reset-container button:hover {
+  background-color: #2E7C88;
+}
+
+/* 결과 박스 (아이디 찾기) */
+.result-box {
+  margin-top: 20px;
+  background-color: #f0f8ff;
+  border: 1px solid #b3daff;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #86d957;
+  display: none;
+}
+
+/* 링크 */
+.back-login,
+.forgot {
+  display: block;
+  margin-top: 18px;
+  font-size: 13px;
+  color: #007bff;
+  text-decoration: none;
+}
+
+.forgot {
+  color: #86d957;
+}
+
+.back-login:hover,
+.forgot:hover {
+  text-decoration: underline;
+}
+
