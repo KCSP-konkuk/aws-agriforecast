@@ -232,7 +232,16 @@ export const api = {
   },
 
   // ========== 가격 API ==========
-  
+
+  // KAMIS 주요 농산물 일일 가격 조회
+  getDailyPrices: async () => {
+    const response = await fetch(`${API_BASE_URL}/price/daily`);
+    if (!response.ok) {
+      throw new Error('일일 가격 데이터를 불러오는데 실패했습니다.');
+    }
+    return await response.json();
+  },
+
   // 모든 품목 목록 조회
   getItems: async () => {
     const response = await fetch(`${API_BASE_URL}/price/items`);

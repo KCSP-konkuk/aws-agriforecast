@@ -11,6 +11,12 @@ const formatDate = (dateString) => {
   return `${year}.${month}.${day}`;
 };
 
+const DIRECTION_CONFIG = {
+  '1': { symbol: '▲', colorClass: 'text-price-up' },
+  '0': { symbol: '▼', colorClass: 'text-price-down' },
+  '2': { symbol: '―', colorClass: 'text-text-main dark:text-gray-200' },
+};
+
 export default function Home() {
   const [items, setItems] = useState([]);
   const [selectedItemCode, setSelectedItemCode] = useState(null);
@@ -21,12 +27,18 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const [itemName, setItemName] = useState('');
-  const [hoveredPoint, setHoveredPoint] = useState(null);  // 호버된 포인트 정보
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });  // 툴팁 위치
+  const [hoveredPoint, setHoveredPoint] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+
+  // 주요 농산물 가격 carousel
+  const [dailyPrices, setDailyPrices] = useState([]);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // 품목 목록 로드
   useEffect(() => {
     loadItems();
+    loadDailyPrices();
   }, []);
 
   // 등급 목록 로드 (품목 선택 시에만)
@@ -44,6 +56,28 @@ export default function Home() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedItemCode, selectedDate, selectedGrade]);
+
+  const loadDailyPrices = async () => {
+    try {
+      const data = await api.getDailyPrices();
+      setDailyPrices(data);
+    } catch (err) {
+      console.error('일일 가격 로드 실패:', err);
+    }
+  };
+
+  // carousel 자동 회전
+  useEffect(() => {
+    if (dailyPrices.length < 2) return;
+    const interval = setInterval(() => {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCarouselIndex(prev => (prev + 1) % dailyPrices.length);
+        setIsTransitioning(false);
+      }, 420);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [dailyPrices.length]);
 
   const loadItems = async () => {
     try {
@@ -344,29 +378,68 @@ export default function Home() {
         </div>
 
         <section>
-          <h2 className="text-text-main dark:text-gray-100 text-lg font-bold mb-4">오늘의 주요 농산물 가격</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="flex flex-col gap-2 rounded-xl p-6 bg-primary-light dark:bg-primary/10 border border-primary/20 dark:border-primary/30">
-              <p className="text-text-main dark:text-gray-200 text-base font-medium">배추 (1포기)</p>
-              <p className="text-text-main dark:text-gray-100 tracking-light text-2xl font-bold leading-tight">3,500원</p>
-              <p className="text-price-up text-base font-medium leading-normal">▲ 5.2%</p>
-            </div>
-            <div className="flex flex-col gap-2 rounded-xl p-6 bg-primary-light dark:bg-primary/10 border border-primary/20 dark:border-primary/30">
-              <p className="text-text-main dark:text-gray-200 text-base font-medium">쌀 (20kg)</p>
-              <p className="text-text-main dark:text-gray-100 tracking-light text-2xl font-bold leading-tight">48,000원</p>
-              <p className="text-price-down text-base font-medium leading-normal">▼ 1.5%</p>
-            </div>
-            <div className="flex flex-col gap-2 rounded-xl p-6 bg-primary-light dark:bg-primary/10 border border-primary/20 dark:border-primary/30">
-              <p className="text-text-main dark:text-gray-200 text-base font-medium">사과 (1개)</p>
-              <p className="text-text-main dark:text-gray-100 tracking-light text-2xl font-bold leading-tight">2,100원</p>
-              <p className="text-price-up text-base font-medium leading-normal">▲ 3.8%</p>
-            </div>
-            <div className="flex flex-col gap-2 rounded-xl p-6 bg-primary-light dark:bg-primary/10 border border-primary/20 dark:border-primary/30">
-              <p className="text-text-main dark:text-gray-200 text-base font-medium">돼지고기 (600g)</p>
-              <p className="text-text-main dark:text-gray-100 tracking-light text-2xl font-bold leading-tight">12,500원</p>
-              <p className="text-text-main dark:text-gray-200 text-base font-medium leading-normal">― 0.0%</p>
-            </div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-text-main dark:text-gray-100 text-lg font-bold">주요 농산물 가격</h2>
+            {dailyPrices.length > 0 && (
+              <div className="flex gap-1.5">
+                {dailyPrices.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setIsTransitioning(true);
+                      setTimeout(() => { setCarouselIndex(i); setIsTransitioning(false); }, 300);
+                    }}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      i === carouselIndex ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
+
+          {dailyPrices.length === 0 ? (
+            <p className="text-center text-gray-400 py-8">가격 데이터를 불러오는 중...</p>
+          ) : (
+            <div className="overflow-hidden w-full">
+              <div
+                className="flex"
+                style={{
+                  width: '125%',
+                  transform: isTransitioning ? 'translateX(-20%)' : 'translateX(0)',
+                  transition: isTransitioning ? 'transform 0.4s ease-in-out' : 'none',
+                }}
+              >
+                {Array.from({ length: 5 }, (_, offset) => {
+                  const item = dailyPrices[(carouselIndex + offset) % dailyPrices.length];
+                  const dir = DIRECTION_CONFIG[item.direction] ?? DIRECTION_CONFIG['2'];
+                  const priceNum = item.price ? item.price.replace(/,/g, '') : '';
+                  const displayPrice = priceNum ? Number(priceNum).toLocaleString() + '원' : '-';
+                  const changeText = item.changeRate && item.changeRate !== '-' && item.changeRate !== '0'
+                    ? `${dir.symbol} ${item.changeRate}%`
+                    : `${dir.symbol} 0.0%`;
+                  return (
+                    <div key={`${carouselIndex}-${offset}`} style={{ width: '20%' }} className="px-2">
+                      <div className="flex flex-col gap-2 rounded-xl p-5 bg-primary-light dark:bg-primary/10 border border-primary/20 dark:border-primary/30 h-full">
+                        <p className="text-text-main dark:text-gray-200 text-base font-medium truncate">
+                          {item.itemName}{item.unit ? ` (${item.unit})` : ''}
+                        </p>
+                        <p className="text-text-main dark:text-gray-100 text-2xl font-bold leading-tight">
+                          {displayPrice}
+                        </p>
+                        <p className={`text-base font-medium leading-normal ${dir.colorClass}`}>
+                          {changeText}
+                        </p>
+                        {item.lastDate && (
+                          <p className="text-xs text-text-main/50 dark:text-gray-500">{item.lastDate} 기준</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
