@@ -20,8 +20,8 @@ public class KamisService {
 
     private static final Logger logger = LoggerFactory.getLogger(KamisService.class);
 
-    // 쌀(111), 콩(141), 고구마(151), 감자(152), 배추(211), 양배추(212), 상추(214)
-    private static final Set<String> TARGET_PRODUCTS = Set.of("111", "141", "151", "152", "211", "212", "214");
+    // 쌀/20kg(272), 콩(275), 고구마(281), 감자/수미(285), 배추(295), 양배추(297), 상추/적(301)
+    private static final Set<String> TARGET_PRODUCTS = Set.of("272", "275", "281", "285", "295", "297", "301");
 
     private static final String KAMIS_URL =
             "http://www.kamis.or.kr/service/price/xml.do?action=dailySalesList" +
@@ -73,7 +73,7 @@ public class KamisService {
                 dto.setPrice(getText(item, "dpr1"));
                 dto.setDirection(getText(item, "direction"));
                 dto.setChangeRate(getText(item, "value"));
-                dto.setLastDate(getText(item, "day1"));
+                dto.setLastDate(getText(item, "lastest_day"));
                 result.add(dto);
             }
 
