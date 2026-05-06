@@ -29,9 +29,11 @@ export default function Home() {
   const [dailyPrices, setDailyPrices] = useState([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [news, setNews] = useState([]);
 
   useEffect(() => {
     loadDailyPrices();
+    loadNews();
   }, []);
 
   const loadDailyPrices = async () => {
@@ -40,6 +42,24 @@ export default function Home() {
       setDailyPrices(data);
     } catch (err) {
       console.error('일일 가격 로드 실패:', err);
+    }
+  };
+
+  const loadNews = async () => {
+    try {
+      const data = await api.getAgriNews();
+      setNews(data);
+    } catch (err) {
+      console.error('뉴스 로드 실패:', err);
+    }
+  };
+
+  const formatNewsDate = (pubDate) => {
+    try {
+      const date = new Date(pubDate);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    } catch {
+      return pubDate;
     }
   };
 
@@ -271,31 +291,23 @@ export default function Home() {
             <section>
               <h2 className="text-text-main dark:text-gray-100 text-[22px] font-bold leading-tight pb-3 pt-5">최신 시장 동향 및 뉴스</h2>
               <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-primary-light dark:bg-primary/10 border border-primary/20 dark:border-primary/30 space-y-2">
-                  <p className="font-bold text-text-main dark:text-gray-100">"역대급 폭염 예고, 채소 가격 급등 우려"</p>
-                  <p className="text-sm text-text-main/80 dark:text-gray-300">기상청 발표에 따르면 올 여름 기록적인 폭염이 예상되어 노지 채소 수급에 비상이 걸릴 것으로 보입니다.</p>
-                  <div className="text-xs text-text-main/60 dark:text-gray-400">농업 신문 · 2024-05-21</div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-primary-light dark:bg-primary/10 border border-primary/20 dark:border-primary/30 space-y-2">
-                  <p className="font-bold text-text-main dark:text-gray-100">"정부, 농산물 가격 안정을 위한 비축 물량 방출 결정"</p>
-                  <p className="text-sm text-text-main/80 dark:text-gray-300">농림축산식품부는 주요 농산물 가격 안정을 위해 비축된 물량을 시장에 공급할 것이라고 밝혔습니다.</p>
-                  <div className="text-xs text-text-main/60 dark:text-gray-400">연합뉴스 · 2024-05-20</div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-primary-light dark:bg-primary/10 border border-primary/20 dark:border-primary/30 space-y-2">
-                  <p className="font-bold text-text-main dark:text-gray-100">"수입 과일 관세 인하, 국내 과일 시장에 미칠 영향은?"</p>
-                  <p className="text-sm text-text-main/80 dark:text-gray-300">정부의 수입 과일 관세 인하 조치가 장바구니 물가 안정에 기여할지, 국내 과수 농가에 타격을 줄지 주목됩니다.</p>
-                  <div className="text-xs text-text-main/60 dark:text-gray-400">경제 일보 · 2024-05-19</div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-accent/20 dark:bg-accent/10 border border-accent/30 dark:border-accent/30 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-accent text-xl">warning</span>
-                    <p className="font-bold text-text-main dark:text-accent">[긴급] 강원도 지역 냉해 피해 발생, 배추 생산량 감소 전망</p>
-                  </div>
-                  <div className="text-xs text-text-main/60 dark:text-gray-400 pl-8">AgriForecast 분석팀 · 2024-05-22</div>
-                </div>
+                {news.length === 0 ? (
+                  <p className="text-center text-gray-400 py-8">뉴스를 불러오는 중...</p>
+                ) : (
+                  news.map((item, i) => (
+                    <a
+                      key={i}
+                      href={item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block p-4 rounded-xl bg-primary-light dark:bg-primary/10 border border-primary/20 dark:border-primary/30 space-y-2 hover:border-primary/50 transition-colors"
+                    >
+                      <p className="font-bold text-text-main dark:text-gray-100 line-clamp-2">{item.title}</p>
+                      <p className="text-sm text-text-main/80 dark:text-gray-300 line-clamp-2">{item.description}</p>
+                      <div className="text-xs text-text-main/60 dark:text-gray-400">{formatNewsDate(item.pubDate)}</div>
+                    </a>
+                  ))
+                )}
               </div>
             </section>
           </aside>

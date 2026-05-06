@@ -233,6 +233,15 @@ export const api = {
 
   // ========== 가격 API ==========
 
+  // 네이버 농산물 뉴스 조회
+  getAgriNews: async () => {
+    const response = await fetch(`${API_BASE_URL}/news/agri`);
+    if (!response.ok) {
+      throw new Error('뉴스를 불러오는데 실패했습니다.');
+    }
+    return await response.json();
+  },
+
   // KAMIS 주요 농산물 일일 가격 조회
   getDailyPrices: async () => {
     const response = await fetch(`${API_BASE_URL}/price/daily`);
