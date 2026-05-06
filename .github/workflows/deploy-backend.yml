@@ -49,7 +49,8 @@ jobs:
               kill $PIDS
               sleep 3
             fi
-            cd /opt/agri-forecast
-            nohup java -jar backend-0.0.1-SNAPSHOT.jar --spring.config.additional-location=file:./application-secret.properties > app.log 2>&1 &
+            sudo touch /opt/agri-forecast/app.log
+            sudo chown ubuntu:ubuntu /opt/agri-forecast/app.log
+            nohup java -jar /opt/agri-forecast/backend-0.0.1-SNAPSHOT.jar --spring.config.additional-location=file:/opt/agri-forecast/application-secret.properties >> /opt/agri-forecast/app.log 2>&1 &
             sleep 5
             ps -eo pid=,comm=,args= | awk '$2 == "java" && $0 ~ /backend-0.0.1-SNAPSHOT.jar/ {print}'
