@@ -1,0 +1,53 @@
+name: Deploy Frontend to EC2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "KCSPfront/**"
+      - ".github/workflows/deploy-frontend.yml"
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: KCSPfront/package-lock.json
+
+      - name: Build frontend
+        working-directory: KCSPfront
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload frontend build to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: KCSPfront/dist/*
+          target: /home/ubuntu/deploy/frontend
+          strip_components: 2
+          rm: true
+
+      - name: Publish frontend on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo mkdir -p /var/www/react-app
+            sudo rsync -a --delete /home/ubuntu/deploy/frontend/ /var/www/react-app/
+            sudo nginx -t
+            sudo systemctl reload nginx
