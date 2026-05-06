@@ -24,25 +24,19 @@ public class DataCollectController {
     private final SupplyCollectService supplyCollectService;
     private final KosisService kosisService;
     private final ExchangeRateCollectService exchangeRateCollectService;
-    private final CsvImportService csvImportService;
     private final StationWeatherCollectService stationWeatherCollectService;
-    private final OilPriceCsvImportService oilPriceCsvImportService;
 
     public DataCollectController(NongnetService nongnetService,
                                   SupplyCollectService supplyCollectService,
                                   OilPriceCollectService oilPriceCollectService,
-                                  OilPriceCsvImportService oilPriceCsvImportService,
                                   KosisService kosisService,
                                   ExchangeRateCollectService exchangeRateCollectService,
-                                  CsvImportService csvImportService,
                                   StationWeatherCollectService stationWeatherCollectService) {
         this.nongnetService = nongnetService;
         this.supplyCollectService = supplyCollectService;
         this.oilPriceCollectService = oilPriceCollectService;
-        this.oilPriceCsvImportService = oilPriceCsvImportService;
         this.kosisService = kosisService;
         this.exchangeRateCollectService = exchangeRateCollectService;
-        this.csvImportService = csvImportService;
         this.stationWeatherCollectService = stationWeatherCollectService;
     }
 
@@ -116,16 +110,6 @@ public class DataCollectController {
     @PostMapping("/oil")
     public ResponseEntity<Map<String, Object>> collectOil() {
         int saved = oilPriceCollectService.collectCurrent();
-        return ResponseEntity.ok(Map.of("saved", saved));
-    }
-
-    /**
-     * 유가 CSV 과거 데이터 적재
-     * POST /api/collect/oil/csv
-     */
-    @PostMapping("/oil/csv")
-    public ResponseEntity<Map<String, Object>> importOilCsv() {
-        int saved = oilPriceCsvImportService.importFromCsv();
         return ResponseEntity.ok(Map.of("saved", saved));
     }
 
@@ -231,18 +215,4 @@ public class DataCollectController {
         return ResponseEntity.ok(Map.of("saved", saved, "startYear", startYear, "endYear", endYear));
     }
 
-    /**
-     * 로컬 CSV 데이터 일괄 삽입 (과거 기록 채우기용)
-     * POST /api/collect/csv?filePath=c:\Users\shm87\OneDrive\바탕 화면\졸업프로젝트\agri-forecast-backend\src\test\java\양파3_22.csv
-     */
-    @PostMapping("/csv")
-    public ResponseEntity<Map<String, Object>> importCsv(
-            @RequestParam String filePath) {
-        try {
-            int saved = csvImportService.importAgriPriceCsv(filePath);
-            return ResponseEntity.ok(Map.of("status", "success", "savedCount", saved, "filePath", filePath));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("status", "error", "message", e.getMessage()));
-        }
-    }
 }
