@@ -2,60 +2,37 @@ import Layout from '../components/Layout';
 import { useState, useEffect } from 'react';
 import { api } from '../api/api';
 
-// 날짜 포맷 함수
-const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}.${month}.${day}`;
-};
-
 const DIRECTION_CONFIG = {
   '1': { symbol: '▲', colorClass: 'text-price-up' },
   '0': { symbol: '▼', colorClass: 'text-price-down' },
   '2': { symbol: '―', colorClass: 'text-text-main dark:text-gray-200' },
 };
 
-export default function Home() {
-  const [items, setItems] = useState([]);
-  const [selectedItemCode, setSelectedItemCode] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedGrade, setSelectedGrade] = useState('전체');
-  const [grades, setGrades] = useState([]);
-  const [priceData, setPriceData] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [loading, setLoading] = useState(false);
-  const [itemName, setItemName] = useState('');
-  const [hoveredPoint, setHoveredPoint] = useState(null);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+const DATA_SOURCES = [
+  { icon: 'price_change',            label: '가격 이력',       desc: '순별 도매 평균가' },
+  { icon: 'wb_sunny',                label: '기상 데이터',     desc: '기온·강수·습도·일사량' },
+  { icon: 'local_shipping',          label: '시장 반입량',     desc: '도매시장 공급량' },
+  { icon: 'currency_exchange',       label: '환율',            desc: 'USD/KRW · CNY/KRW' },
+  { icon: 'shopping_cart',           label: '소비자물가지수',  desc: 'CPI' },
+  { icon: 'precision_manufacturing', label: '생산자물가지수',  desc: 'PPI' },
+  { icon: 'local_gas_station',       label: '국제 유가',       desc: '원유 종가 · 등락률' },
+];
 
-  // 주요 농산물 가격 carousel
+const PIPELINE_STEPS = [
+  { step: '01', icon: 'database',       title: '데이터 수집',      desc: '7종 외부 데이터 통합 및 순별 정렬' },
+  { step: '02', icon: 'auto_awesome',   title: '피처 엔지니어링',  desc: '시계열 래그·이동평균·계절성·교차변수' },
+  { step: '03', icon: 'model_training', title: 'XGBoost 학습',     desc: '5-Fold 시계열 교차검증 + 하이퍼파라미터 탐색' },
+  { step: '04', icon: 'trending_up',    title: '순별 가격 예측',   desc: '상순·중순·하순 10일 단위 도매가 예측' },
+];
+
+export default function Home() {
   const [dailyPrices, setDailyPrices] = useState([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // 품목 목록 로드
   useEffect(() => {
-    loadItems();
     loadDailyPrices();
   }, []);
-
-  // 등급 목록 로드 (품목 선택 시에만)
-  useEffect(() => {
-    if (selectedItemCode) {
-      loadGrades(selectedItemCode);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedItemCode]);
-
-  // 가격 그래프 로드 (품목, 날짜, 등급 변경 시)
-  useEffect(() => {
-    if (selectedItemCode) {
-      loadPriceGraph();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedItemCode, selectedDate, selectedGrade]);
 
   const loadDailyPrices = async () => {
     try {
@@ -66,7 +43,6 @@ export default function Home() {
     }
   };
 
-  // carousel 자동 회전
   useEffect(() => {
     if (dailyPrices.length < 2) return;
     const interval = setInterval(() => {
@@ -79,295 +55,6 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [dailyPrices.length]);
 
-  const loadItems = async () => {
-    try {
-      const data = await api.getItems();
-      setItems(data);
-      if (data.length > 0) {
-        setSelectedItemCode(data[0].itemCode);
-        setSelectedCategory(data[0].category);
-        setItemName(data[0].itemName);
-      }
-    } catch (err) {
-      console.error('품목 목록 로드 실패:', err);
-    }
-  };
-
-  const loadGrades = async (itemCode) => {
-    try {
-      const data = await api.getGradesByItemCode(itemCode);
-      console.log('등급 목록:', data);
-      setGrades(['전체', ...data]);
-      // 품목이 변경될 때만 '전체'로 초기화
-      setSelectedGrade('전체');
-    } catch (err) {
-      console.error('등급 목록 로드 실패:', err);
-      setGrades(['전체']);
-    }
-  };
-
-  const loadPriceGraph = async () => {
-    if (!selectedItemCode) return;
-    
-    setLoading(true);
-    try {
-      const endDate = new Date(selectedDate);
-      const data = await api.getPriceGraph(selectedItemCode, endDate, selectedGrade);
-      setPriceData(data.priceData || []);
-      setItemName(data.itemName || '');
-    } catch (err) {
-      console.error('가격 그래프 데이터 로드 실패:', err);
-      setPriceData([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleItemChange = (e) => {
-    const itemCode = parseInt(e.target.value);
-    const item = items.find(i => i.itemCode === itemCode);
-    if (item) {
-      setSelectedItemCode(itemCode);
-      setSelectedCategory(item.category);
-      setItemName(item.itemName);
-    }
-  };
-
-  const handleCategoryChange = (e) => {
-    const category = parseInt(e.target.value);
-    setSelectedCategory(category);
-    // 카테고리별 품목 필터링
-    if (category) {
-      loadItemsByCategory(category);
-    } else {
-      loadItems();
-    }
-  };
-
-  const loadItemsByCategory = async (category) => {
-    try {
-      const data = await api.getItemsByCategory(category);
-      setItems(data);
-      if (data.length > 0) {
-        setSelectedItemCode(data[0].itemCode);
-        setSelectedCategory(data[0].category);
-        setItemName(data[0].itemName);
-      }
-    } catch (err) {
-      console.error('카테고리별 품목 로드 실패:', err);
-    }
-  };
-
-  const handleGradeChange = (e) => {
-    const newGrade = e.target.value;
-    console.log('등급 변경:', newGrade);
-    setSelectedGrade(newGrade);
-  };
-
-  const handleDateChange = (e) => {
-    setSelectedDate(e.target.value);
-  };
-
-  // 그래프 데이터 가공
-  const chartData = priceData
-    .filter(d => d.price !== null)
-    .map(d => ({
-      date: formatDate(d.date),  // YYYY.MM.DD 형식
-      price: d.price,
-      rawDate: d.date
-    }));
-
-  const maxPrice = chartData.length > 0 ? Math.max(...chartData.map(d => d.price)) : 0;
-  const minPrice = chartData.length > 0 ? Math.min(...chartData.map(d => d.price)) : 0;
-  const priceRange = maxPrice - minPrice || 1;
-
-  // 간단한 SVG 그래프 그리기
-  const renderGraph = () => {
-    if (chartData.length === 0) {
-      return (
-        <div className="w-full h-80 flex items-center justify-center text-gray-400">
-          데이터가 없습니다.
-        </div>
-      );
-    }
-
-    const height = 400;
-    const leftPadding = 70;  // Y축 레이블을 위한 여유 공간
-    const rightPadding = 40;
-    const topPadding = 40;
-    const bottomPadding = 50;  // X축 레이블을 위한 여유 공간
-    
-    // 데이터 포인트 간 최소 간격을 유지하기 위해 동적 너비 계산
-    const minPointSpacing = 80;  // 각 포인트 간 최소 간격 (px)
-    const minWidth = 600;  // 최소 그래프 너비
-    const calculatedWidth = Math.max(minWidth, leftPadding + rightPadding + (chartData.length - 1) * minPointSpacing);
-    const width = calculatedWidth;
-    const chartWidth = width - leftPadding - rightPadding;
-    const chartHeight = height - topPadding - bottomPadding;
-
-    // Y축 범위에 여유를 주기 위해 약간의 여백 추가 (10% 여백)
-    const pricePadding = priceRange * 0.1;
-    const adjustedMinPrice = minPrice - pricePadding;
-    const adjustedMaxPrice = maxPrice + pricePadding;
-    const adjustedPriceRange = adjustedMaxPrice - adjustedMinPrice || 1;
-
-    const points = chartData.map((d, index) => {
-      const x = leftPadding + (index / (chartData.length - 1 || 1)) * chartWidth;
-      const y = topPadding + chartHeight - ((d.price - adjustedMinPrice) / adjustedPriceRange) * chartHeight;
-      return `${x},${y}`;
-    }).join(' ');
-
-    // Y축 그리드 라인 (5개 구간)
-    const gridLines = [0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-      const y = topPadding + chartHeight * (1 - ratio);
-      const price = Math.round(adjustedMinPrice + adjustedPriceRange * ratio);
-      return { y, price };
-    });
-
-    const handlePointMouseEnter = (e, index, data) => {
-      const svgElement = e.currentTarget.ownerSVGElement;
-      const svgRect = svgElement.getBoundingClientRect();
-      const point = svgElement.createSVGPoint();
-      point.x = e.clientX - svgRect.left;
-      point.y = e.clientY - svgRect.top;
-      
-      // SVG 좌표로 변환 (viewBox 고려)
-      const ctm = svgElement.getScreenCTM();
-      const svgPoint = point.matrixTransform(ctm.inverse());
-      
-      setHoveredPoint({ index, data });
-      setTooltipPosition({ x: e.clientX, y: e.clientY });
-    };
-
-    return (
-      <div 
-        className="relative w-full overflow-x-auto"
-        onMouseLeave={() => setHoveredPoint(null)}
-      >
-        <svg width={width} height={height}>
-          {/* 그리드 라인 */}
-          {gridLines.map((grid, i) => (
-            <g key={i}>
-              <line
-                x1={leftPadding}
-                y1={grid.y}
-                x2={width - rightPadding}
-                y2={grid.y}
-                stroke="#e5e7eb"
-                strokeWidth="1"
-                strokeDasharray="4 4"
-              />
-              <text
-                x={leftPadding - 10}
-                y={grid.y + 4}
-                textAnchor="end"
-                fontSize="12"
-                fill="#6b7280"
-                className="dark:fill-gray-400"
-              >
-                {grid.price.toLocaleString()}
-              </text>
-            </g>
-          ))}
-
-          {/* 데이터 라인 */}
-          <polyline
-            fill="none"
-            stroke="#64cf17"
-            strokeWidth="3"
-            points={points}
-          />
-
-          {/* 데이터 포인트와 호버 영역 */}
-          {chartData.map((d, index) => {
-            const x = leftPadding + (index / (chartData.length - 1 || 1)) * chartWidth;
-            const y = topPadding + chartHeight - ((d.price - adjustedMinPrice) / adjustedPriceRange) * chartHeight;
-            const isHovered = hoveredPoint?.index === index;
-            
-            // 호버 영역의 너비 계산 (인접 포인트와의 중간 지점까지)
-            let hoverWidth = 60;
-            if (chartData.length > 1) {
-              if (index === 0) {
-                // 첫 번째 포인트
-                const nextX = leftPadding + (1 / (chartData.length - 1)) * chartWidth;
-                hoverWidth = (nextX - x) / 2;
-              } else if (index === chartData.length - 1) {
-                // 마지막 포인트
-                const prevX = leftPadding + ((index - 1) / (chartData.length - 1)) * chartWidth;
-                hoverWidth = (x - prevX) / 2;
-              } else {
-                // 중간 포인트
-                const prevX = leftPadding + ((index - 1) / (chartData.length - 1)) * chartWidth;
-                const nextX = leftPadding + ((index + 1) / (chartData.length - 1)) * chartWidth;
-                hoverWidth = Math.min((x - prevX) / 2, (nextX - x) / 2);
-              }
-            }
-            hoverWidth = Math.max(30, Math.min(hoverWidth, 50)); // 최소 30px, 최대 50px
-
-            return (
-              <g key={index}>
-                {/* 호버 가능한 영역 (넓은 사각형 영역) */}
-                <rect
-                  x={x - hoverWidth / 2}
-                  y={topPadding}
-                  width={hoverWidth}
-                  height={chartHeight + bottomPadding}
-                  fill="transparent"
-                  cursor="pointer"
-                  onMouseEnter={(e) => handlePointMouseEnter(e, index, d)}
-                  onMouseMove={(e) => handlePointMouseEnter(e, index, d)}
-                />
-                
-                {/* 데이터 포인트 */}
-                <circle
-                  cx={x}
-                  cy={y}
-                  r={isHovered ? "7" : "5"}
-                  fill={isHovered ? "#4a9c0f" : "#64cf17"}
-                  stroke="white"
-                  strokeWidth="2"
-                  style={{ transition: 'r 0.2s, fill 0.2s' }}
-                  pointerEvents="none"
-                />
-
-                {/* X축 레이블 (날짜) */}
-                <text
-                  x={x}
-                  y={height - bottomPadding + 20}
-                  textAnchor="middle"
-                  fontSize="11"
-                  fill="#6b7280"
-                  className="dark:fill-gray-400"
-                  pointerEvents="none"
-                >
-                  {d.date}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
-
-        {/* 툴팁 */}
-        {hoveredPoint && (
-          <div
-            className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 pointer-events-none z-50 whitespace-nowrap"
-            style={{
-              left: `${tooltipPosition.x + 15}px`,
-              top: `${tooltipPosition.y - 50}px`,
-            }}
-          >
-            <div className="text-xs text-gray-600 dark:text-gray-300 mb-1">
-              {hoveredPoint.data.date}
-            </div>
-            <div className="text-base font-bold text-gray-900 dark:text-gray-100">
-              {hoveredPoint.data.price.toLocaleString()}원
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <Layout>
       <main className="p-10 space-y-8">
@@ -377,6 +64,7 @@ export default function Home() {
           </p>
         </div>
 
+        {/* 주요 농산물 가격 캐러셀 */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-text-main dark:text-gray-100 text-lg font-bold">주요 농산물 가격</h2>
@@ -443,99 +131,138 @@ export default function Home() {
         </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-6">
             <section>
-              <h2 className="text-text-main dark:text-gray-100 text-[22px] font-bold leading-tight pb-3 pt-5">농산물 가격 추이</h2>
-              
-              {/* 필터 섹션 */}
-              <div className="mb-6 space-y-4">
-                <div className="flex flex-wrap gap-4 items-end">
-                  {/* 품목 선택 */}
-                  <div className="flex-1 min-w-[200px]">
-                    <label className="block text-sm font-medium text-text-main dark:text-gray-300 mb-2">
-                      품목
-                    </label>
-                    <select
-                      value={selectedItemCode || ''}
-                      onChange={handleItemChange}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-background-dark text-text-main dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      {items.map(item => (
-                        <option key={item.itemCode} value={item.itemCode}>
-                          {item.itemName}
-                        </option>
+              <h2 className="text-text-main dark:text-gray-100 text-[22px] font-bold leading-tight pb-3 pt-5">
+                AI 농산물 가격 예측 모델
+              </h2>
+
+              {/* 개요 카드 */}
+              <div className="rounded-xl bg-primary-light dark:bg-primary/10 border border-primary/20 dark:border-primary/30 p-5 mb-4">
+                <div className="flex items-start gap-4">
+                  <span className="material-symbols-outlined text-primary text-4xl mt-0.5">model_training</span>
+                  <div>
+                    <h3 className="font-bold text-lg text-text-main dark:text-gray-100 mb-1">
+                      XGBoost 기반 순별(10일) 도매가격 예측
+                    </h3>
+                    <p className="text-sm text-text-main/75 dark:text-gray-300 leading-relaxed">
+                      2018~2024년 실측 데이터를 학습한 AI 모델이 가격·기상·공급량·환율·물가지수·유가 등
+                      <strong className="text-text-main dark:text-gray-100"> 7종의 외부 데이터</strong>를 복합 분석하여
+                      <strong className="text-text-main dark:text-gray-100"> 상순·중순·하순 단위</strong>로 농산물 도매가격을 예측합니다.
+                    </p>
+                    <div className="flex gap-4 mt-3">
+                      {[
+                        { label: '학습 기간', value: '2018 – 2024' },
+                        { label: '예측 단위', value: '순별 (10일)' },
+                        { label: '알고리즘',  value: 'XGBoost' },
+                        { label: '검증 방법', value: '5-Fold CV' },
+                      ].map(({ label, value }) => (
+                        <div key={label} className="text-center">
+                          <p className="text-xs text-text-main/50 dark:text-gray-500">{label}</p>
+                          <p className="text-sm font-bold text-primary">{value}</p>
+                        </div>
                       ))}
-                    </select>
-                  </div>
-
-                  {/* 품종(카테고리) 선택 */}
-                  <div className="flex-1 min-w-[150px]">
-                    <label className="block text-sm font-medium text-text-main dark:text-gray-300 mb-2">
-                      품종
-                    </label>
-                    <select
-                      value={selectedCategory || ''}
-                      onChange={handleCategoryChange}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-background-dark text-text-main dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      <option value="">전체</option>
-                      <option value="1">카테고리 1</option>
-                      <option value="2">카테고리 2</option>
-                      <option value="3">카테고리 3</option>
-                      {/* 실제 카테고리 데이터로 대체 필요 */}
-                    </select>
-                  </div>
-
-                  {/* 등급 선택 */}
-                  <div className="flex-1 min-w-[150px]">
-                    <label className="block text-sm font-medium text-text-main dark:text-gray-300 mb-2">
-                      등급
-                    </label>
-                    <select
-                      value={selectedGrade}
-                      onChange={handleGradeChange}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-background-dark text-text-main dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      {grades.map(grade => (
-                        <option key={grade} value={grade}>
-                          {grade}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* 시점 선택 */}
-                  <div className="flex-1 min-w-[150px]">
-                    <label className="block text-sm font-medium text-text-main dark:text-gray-300 mb-2">
-                      시점
-                    </label>
-                    <input
-                      type="date"
-                      value={selectedDate}
-                      onChange={handleDateChange}
-                      max={new Date().toISOString().split('T')[0]}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-background-dark text-text-main dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* 그래프 */}
-              <div className="rounded-xl bg-primary-light dark:bg-primary/10 p-6 border border-primary/20 dark:border-primary/30">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-text-main dark:text-gray-100">
-                    {itemName} 가격 추이 (1주일)
-                  </h3>
+              {/* 예측 파이프라인 */}
+              <div className="mb-4">
+                <p className="text-xs font-bold text-text-main/50 dark:text-gray-500 uppercase tracking-wider mb-3">
+                  예측 파이프라인
+                </p>
+                <div className="flex items-stretch gap-2">
+                  {PIPELINE_STEPS.map((s, i) => (
+                    <div key={s.step} className="flex items-center gap-2 flex-1">
+                      <div className="flex-1 rounded-xl p-4 bg-white dark:bg-background-dark border border-gray-200 dark:border-gray-700 text-center">
+                        <p className="text-xs font-bold text-primary mb-1">STEP {s.step}</p>
+                        <span className="material-symbols-outlined text-primary text-2xl block">{s.icon}</span>
+                        <p className="text-xs font-bold text-text-main dark:text-gray-100 mt-1.5">{s.title}</p>
+                        <p className="text-xs text-text-main/55 dark:text-gray-400 mt-0.5 leading-tight">{s.desc}</p>
+                      </div>
+                      {i < PIPELINE_STEPS.length - 1 && (
+                        <span className="material-symbols-outlined text-gray-300 dark:text-gray-600 text-xl flex-shrink-0">
+                          arrow_forward
+                        </span>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                {loading ? (
-                  <div className="w-full h-80 flex items-center justify-center">
-                    <p className="text-text-main dark:text-gray-300">로딩 중...</p>
-                  </div>
-                ) : (
-                  <div className="w-full bg-white dark:bg-background-dark rounded-lg p-4 overflow-x-auto">
-                    {renderGraph()}
-                  </div>
-                )}
+              </div>
+
+              {/* 학습 데이터 소스 */}
+              <div className="mb-4">
+                <p className="text-xs font-bold text-text-main/50 dark:text-gray-500 uppercase tracking-wider mb-3">
+                  학습 데이터 소스 (7종)
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {DATA_SOURCES.map((src) => (
+                    <div
+                      key={src.label}
+                      className="flex items-center gap-2.5 rounded-xl p-3 bg-white dark:bg-background-dark border border-gray-200 dark:border-gray-700"
+                    >
+                      <span className="material-symbols-outlined text-primary text-xl flex-shrink-0">{src.icon}</span>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-text-main dark:text-gray-100 truncate">{src.label}</p>
+                        <p className="text-xs text-text-main/55 dark:text-gray-400 truncate">{src.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 모델 특징 & 주요 예측 변수 */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl p-4 bg-primary-light dark:bg-primary/10 border border-primary/20 dark:border-primary/30">
+                  <h4 className="font-bold text-text-main dark:text-gray-100 mb-3 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-primary text-lg">psychology</span>
+                    모델 특징
+                  </h4>
+                  <ul className="space-y-1.5 text-sm text-text-main/80 dark:text-gray-300">
+                    <li className="flex items-start gap-2">
+                      <span className="material-symbols-outlined text-primary text-base mt-0.5">check_circle</span>
+                      XGBoost 그래디언트 부스팅
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="material-symbols-outlined text-primary text-base mt-0.5">check_circle</span>
+                      시계열 5-Fold 교차검증
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="material-symbols-outlined text-primary text-base mt-0.5">check_circle</span>
+                      보릿고개(1~4월) 구간 가중 학습
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="material-symbols-outlined text-primary text-base mt-0.5">check_circle</span>
+                      그리드 탐색 기반 하이퍼파라미터 최적화
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="rounded-xl p-4 bg-primary-light dark:bg-primary/10 border border-primary/20 dark:border-primary/30">
+                  <h4 className="font-bold text-text-main dark:text-gray-100 mb-3 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-primary text-lg">insights</span>
+                    주요 예측 변수
+                  </h4>
+                  <ul className="space-y-1.5 text-sm text-text-main/80 dark:text-gray-300">
+                    <li className="flex items-start gap-2">
+                      <span className="material-symbols-outlined text-primary text-base mt-0.5">bar_chart</span>
+                      과거 가격 추이 (최대 36순 래그)
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="material-symbols-outlined text-primary text-base mt-0.5">bar_chart</span>
+                      반입량 변화율 · 전년 대비 공급량
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="material-symbols-outlined text-primary text-base mt-0.5">bar_chart</span>
+                      기상 이상 지표 (폭염·냉해·가뭄)
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="material-symbols-outlined text-primary text-base mt-0.5">bar_chart</span>
+                      환율·유가 복합 시차 영향
+                    </li>
+                  </ul>
+                </div>
               </div>
             </section>
           </div>
