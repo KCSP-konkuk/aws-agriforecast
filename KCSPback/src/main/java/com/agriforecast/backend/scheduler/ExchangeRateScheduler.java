@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+
 @Component
 public class ExchangeRateScheduler {
 
@@ -18,12 +20,13 @@ public class ExchangeRateScheduler {
     }
 
     /**
-     * 매일 오전 11시 수집 (한국수출입은행 API는 11시 이후 당일 데이터 제공)
+     * 매일 오전 11시 20분: 전날 환율 수집
      */
     @Scheduled(cron = "0 20 11 * * *", zone = "Asia/Seoul")
     public void collectDailyExchangeRate() {
-        logger.info("환율 일별 자동 수집 시작");
-        boolean saved = exchangeRateCollectService.collectToday();
-        logger.info("환율 일별 자동 수집 완료 - saved={}", saved);
+        LocalDate yesterday = LocalDate.now().minusDays(1);
+        logger.info("환율 일별 자동 수집 시작: {}", yesterday);
+        boolean saved = exchangeRateCollectService.collectByDate(yesterday);
+        logger.info("환율 일별 자동 수집 완료 - date={}, saved={}", yesterday, saved);
     }
 }

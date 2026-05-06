@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/trend")
@@ -19,26 +18,6 @@ public class SearchTrendController {
 
     public SearchTrendController(NaverDataLabService naverDataLabService) {
         this.naverDataLabService = naverDataLabService;
-    }
-
-    // 네이버 API 호출 후 DB 저장
-    // POST /api/trend/collect?keyword=양배추&startDate=2024-01-01&endDate=2024-12-31
-    @PostMapping("/collect")
-    public ResponseEntity<Map<String, Object>> collect(
-            @RequestParam String keyword,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        try {
-            int count = naverDataLabService.collectAndSave(keyword, startDate, endDate);
-            return ResponseEntity.ok(Map.of(
-                    "keyword", keyword,
-                    "savedCount", count,
-                    "message", count + "건 저장 완료"
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("error", e.getMessage()));
-        }
     }
 
     // 저장된 검색 트렌드 조회
