@@ -110,8 +110,9 @@ export default function Detail() {
                 </div>
               </div>
             </div>
-            <div>
-              <img className="w-full h-auto rounded-lg" alt="A line graph showing the price trend of cabbage over the last month, with one line for actual price and another dotted line for AI predicted price." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9nzxAT98Ew2Y1V5w7ojx4I47zfCdu19K1oLzqrjcaN55PFq31S3DPYCPlonU7Sku-F6kI2ET2eSfviWRconfDFOiwv6-M_9PcrmCeYruQMMNALfAFSaiwIPBR30XEc2J048dgpRHa1MJt0R4JSVwIegT33CXSC09fMos7ymlx_g5Eiq5JhdqO8UeTxcXV9X5TcN1QR0vaYP5ebLBct7csuHUUYhdZngfAzoEefVqLopaDx1yNtHSL4fGcyCGn2s97j5HKAJ9RQPY" />
+            <div className="flex flex-col items-center justify-center h-64 bg-background-light dark:bg-background-dark rounded-lg border border-dashed border-border-light dark:border-border-dark">
+              <span className="material-symbols-outlined text-5xl text-subtext-light dark:text-subtext-dark mb-3">construction</span>
+              <p className="text-lg font-semibold text-subtext-light dark:text-subtext-dark">서비스 개발중...</p>
             </div>
           </div>
           
