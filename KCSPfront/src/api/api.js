@@ -279,10 +279,11 @@ export const api = {
   },
   
   // 가격 그래프 데이터 조회
-  getPriceGraph: async (itemCode, endDate, grade = '전체') => {
-    const dateStr = endDate.toISOString().split('T')[0];  // YYYY-MM-DD 형식
+  getPriceGraph: async (itemCode, startDate, endDate, grade = '전체') => {
+    const startStr = startDate.toISOString().split('T')[0];
+    const endStr = endDate.toISOString().split('T')[0];
     const response = await fetch(
-      `${API_BASE_URL}/price/graph?itemCode=${itemCode}&endDate=${dateStr}&grade=${encodeURIComponent(grade)}`
+      `${API_BASE_URL}/price/graph?itemCode=${itemCode}&startDate=${startStr}&endDate=${endStr}&grade=${encodeURIComponent(grade)}`
     );
     if (!response.ok) {
       throw new Error('가격 그래프 데이터를 불러오는데 실패했습니다.');

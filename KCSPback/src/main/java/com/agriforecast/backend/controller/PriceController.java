@@ -78,9 +78,10 @@ public class PriceController {
     public ResponseEntity<PriceGraphResponse> getPriceGraph(
             @RequestParam Integer itemCode,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false, defaultValue = "전체") String grade) {
         try {
-            PriceGraphResponse response = priceService.getPriceGraph(itemCode, endDate, grade);
+            PriceGraphResponse response = priceService.getPriceGraph(itemCode, startDate, endDate, grade);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

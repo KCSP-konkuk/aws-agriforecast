@@ -59,29 +59,29 @@ public class PriceService {
         return grades;
     }
     
-    // 1주일 가격 그래프 데이터 조회
-    public PriceGraphResponse getPriceGraph(Integer itemCode, LocalDate endDate, String grade) {
+    // 가격 그래프 데이터 조회 (startDate 미지정 시 최근 7일)
+    public PriceGraphResponse getPriceGraph(Integer itemCode, LocalDate startDate, LocalDate endDate, String grade) {
         Optional<ItemCode> itemOpt = itemCodeRepository.findById(itemCode);
         if (itemOpt.isEmpty()) {
             throw new RuntimeException("품목을 찾을 수 없습니다.");
         }
-        
+
         ItemCode item = itemOpt.get();
-        LocalDate startDate = endDate.minusDays(6);  // 7일 데이터 (endDate 포함)
+        LocalDate actualStartDate = (startDate != null) ? startDate : endDate.minusDays(6);
         
         // grade가 "전체"면 null로 변환 (모든 등급 조회)
         String gradeFilter = ("전체".equals(grade) || grade == null || grade.isEmpty()) ? null : grade;
         
         // 가격 데이터 조회
         List<RealItemPrice> prices = realItemPriceRepository.findByItemCodeAndDateRange(
-                itemCode, startDate, endDate, gradeFilter
+                itemCode, actualStartDate, endDate, gradeFilter
         );
-        
+
         List<PriceDataResponse> priceDataList;
-        
+
         if (gradeFilter == null) {
             // 전체 등급: 날짜별 평균 가격 계산
-            priceDataList = calculateAveragePricesByDate(prices, startDate, endDate);
+            priceDataList = calculateAveragePricesByDate(prices, actualStartDate, endDate);
         } else {
             // 특정 등급: 해당 등급만 필터링
             priceDataList = prices.stream()
@@ -104,7 +104,7 @@ public class PriceService {
         response.setPriceData(priceDataList);
         
         logger.info("가격 그래프 데이터 조회 완료 - 품목: {}, 기간: {} ~ {}, 등급: {}, 데이터 수: {}",
-                item.getItemName(), startDate, endDate, grade, priceDataList.size());
+                item.getItemName(), actualStartDate, endDate, grade, priceDataList.size());
         
         return response;
     }
