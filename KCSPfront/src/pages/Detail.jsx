@@ -9,6 +9,14 @@ import { api } from '../api/api';
 // agri_price 테이블에서 받아온 품목명 순서 고정
 const ITEM_ORDER = ['배추', '양파', '양배추', '당근'];
 
+// 품목별 거래 단위
+const ITEM_UNIT = {
+  배추:   '10키로망대',
+  양파:   '1키로',
+  양배추: '8키로망대',
+  당근:   '20키로상자',
+};
+
 function aggregateWeekly(data) {
   const map = new Map();
   data.forEach(({ date, price }) => {
@@ -47,12 +55,14 @@ function formatXTick(dateStr, unit) {
   return dateStr;
 }
 
-function CustomTooltip({ active, payload, label }) {
+function CustomTooltip({ active, payload, label, unit }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="p-3 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg shadow-lg text-sm">
       <p className="font-semibold text-text-light dark:text-text-dark mb-1">{label}</p>
-      <p style={{ color: '#4A90E2' }}>가격: {payload[0].value?.toLocaleString()}원</p>
+      <p style={{ color: '#4A90E2' }}>
+        {payload[0].value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
+      </p>
     </div>
   );
 }
@@ -187,6 +197,7 @@ export default function Detail() {
   }, [period, customStart, customEnd, validPrices]);
 
   const selectedItem = selectedItemName;
+  const currentUnit = ITEM_UNIT[selectedItemName] ?? 'kg';
 
   const xAxisInterval = useMemo(() => {
     if (chartData.length <= 30) return 4;
@@ -319,7 +330,7 @@ export default function Detail() {
             <KpiCard
               label="현재 평균 도매가"
               value={kpi ? `${kpi.current.toLocaleString()}원` : '-'}
-              sub="/kg"
+              sub={`/ ${currentUnit}`}
               loading={loading}
             />
             <KpiCard
@@ -344,13 +355,13 @@ export default function Detail() {
             <KpiCard
               label="기간 최고가"
               value={kpi ? `${kpi.max.toLocaleString()}원` : '-'}
-              sub="/kg"
+              sub={`/ ${currentUnit}`}
               loading={loading}
             />
             <KpiCard
               label="기간 최저가"
               value={kpi ? `${kpi.min.toLocaleString()}원` : '-'}
-              sub="/kg"
+              sub={`/ ${currentUnit}`}
               loading={loading}
             />
           </div>
@@ -398,7 +409,7 @@ export default function Detail() {
                     tick={{ fontSize: 11, fill: '#64748B' }}
                     width={75}
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<CustomTooltip unit={currentUnit} />} />
                   <Line
                     type="monotone"
                     dataKey="price"
@@ -433,7 +444,7 @@ export default function Detail() {
                 <thead className="text-xs text-subtext-light dark:text-subtext-dark uppercase bg-background-light dark:bg-background-dark">
                   <tr>
                     <th className="px-6 py-3 rounded-l-lg" scope="col">날짜</th>
-                    <th className="px-6 py-3" scope="col">가격 (원/kg)</th>
+                    <th className="px-6 py-3" scope="col">가격 (원 / {currentUnit})</th>
                     <th className="px-6 py-3" scope="col">등급</th>
                     <th className="px-6 py-3 rounded-r-lg" scope="col">등락률</th>
                   </tr>
