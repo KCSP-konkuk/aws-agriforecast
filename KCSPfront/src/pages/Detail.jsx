@@ -6,7 +6,8 @@ import {
 import Layout from '../components/Layout';
 import { api } from '../api/api';
 
-const TARGET_ITEM_NAMES = ['배추', '양파', '양배추', '당근'];
+// agri_price 테이블에서 받아온 품목명 순서 고정
+const ITEM_ORDER = ['배추', '양파', '양배추', '당근'];
 
 function aggregateWeekly(data) {
   const map = new Map();
@@ -75,8 +76,9 @@ function KpiCard({ label, value, sub, valueColor, loading }) {
 }
 
 export default function Detail() {
+  // items: agri_price의 품목명 문자열 배열 ['배추', '양파', ...]
   const [items, setItems] = useState([]);
-  const [selectedItemCode, setSelectedItemCode] = useState(null);
+  const [selectedItemName, setSelectedItemName] = useState(null);
   const [period, setPeriod] = useState('1month');
   const [unit, setUnit] = useState('daily');
   const [customStart, setCustomStart] = useState('');
@@ -85,14 +87,15 @@ export default function Detail() {
   const [loading, setLoading] = useState(false);
   const [tableSearch, setTableSearch] = useState('');
 
-  // API에서 전체 품목을 가져와 4가지만 필터
-  const targetItems = useMemo(
-    () => items.filter((i) => TARGET_ITEM_NAMES.includes(i.itemName)),
-    [items]
-  );
+  // ITEM_ORDER 기준으로 정렬
+  const sortedItems = useMemo(() => {
+    const ordered = ITEM_ORDER.filter((n) => items.includes(n));
+    const rest = items.filter((n) => !ITEM_ORDER.includes(n));
+    return [...ordered, ...rest];
+  }, [items]);
 
-  const fetchPriceData = useCallback((itemCode, currentPeriod, start, end) => {
-    if (!itemCode) return;
+  const fetchPriceData = useCallback((itemName, currentPeriod, start, end) => {
+    if (!itemName) return;
     if (currentPeriod === 'custom' && (!start || !end)) return;
 
     const today = new Date();
@@ -113,21 +116,22 @@ export default function Detail() {
     }
 
     setLoading(true);
-    api.getPriceGraph(itemCode, startDate, endDate)
+    api.getAgriPriceGraph(itemName, startDate, endDate)
       .then((data) => setPriceData(data))
       .catch((err) => console.error('가격 데이터 로드 실패:', err))
       .finally(() => setLoading(false));
   }, []);
 
-  // 초기 품목 목록 로드 → 첫 번째 품목 자동 조회
+  // 초기 품목 목록 로드 (agri_price 기반) → 첫 번째 품목 자동 조회
   useEffect(() => {
-    api.getItems()
+    api.getAgriItems()
       .then((data) => {
         setItems(data);
-        const first = data.find((i) => TARGET_ITEM_NAMES.includes(i.itemName));
+        const ordered = ITEM_ORDER.filter((n) => data.includes(n));
+        const first = ordered.length > 0 ? ordered[0] : data[0];
         if (first) {
-          setSelectedItemCode(first.itemCode);
-          fetchPriceData(first.itemCode, '1month', '', '');
+          setSelectedItemName(first);
+          fetchPriceData(first, '1month', '', '');
         }
       })
       .catch((err) => console.error('품목 로드 실패:', err));
@@ -135,11 +139,11 @@ export default function Detail() {
 
   // 품목 변경 시 자동 재조회
   useEffect(() => {
-    if (selectedItemCode) fetchPriceData(selectedItemCode, period, customStart, customEnd);
-  }, [selectedItemCode]);
+    if (selectedItemName) fetchPriceData(selectedItemName, period, customStart, customEnd);
+  }, [selectedItemName]);
 
   const handleSearch = () => {
-    fetchPriceData(selectedItemCode, period, customStart, customEnd);
+    fetchPriceData(selectedItemName, period, customStart, customEnd);
   };
 
   const validPrices = useMemo(() => {
@@ -182,7 +186,7 @@ export default function Detail() {
     return `${validPrices[0].date} ~ ${validPrices[validPrices.length - 1].date}`;
   }, [period, customStart, customEnd, validPrices]);
 
-  const selectedItem = items.find((i) => i.itemCode === selectedItemCode);
+  const selectedItem = selectedItemName;
 
   const xAxisInterval = useMemo(() => {
     if (chartData.length <= 30) return 4;
@@ -226,7 +230,7 @@ export default function Detail() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-col gap-1">
               <h2 className="text-3xl font-extrabold tracking-tight text-text-light dark:text-text-dark">
-                농산물 가격 분석{selectedItem ? `: ${selectedItem.itemName}` : ''}
+                농산물 가격 분석{selectedItem ? `: ${selectedItem}` : ''}
               </h2>
               <p className="text-base font-normal text-subtext-light dark:text-subtext-dark">
                 과거, 현재, 그리고 AI 예측 가격 데이터를 시각적으로 분석하세요.
@@ -246,11 +250,11 @@ export default function Detail() {
                 <select
                   id="item-select"
                   className="w-full h-10 px-3 text-base bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition"
-                  value={selectedItemCode ?? ''}
-                  onChange={(e) => setSelectedItemCode(Number(e.target.value))}
+                  value={selectedItemName ?? ''}
+                  onChange={(e) => setSelectedItemName(e.target.value)}
                 >
-                  {targetItems.map((item) => (
-                    <option key={item.itemCode} value={item.itemCode}>{item.itemName}</option>
+                  {sortedItems.map((name) => (
+                    <option key={name} value={name}>{name}</option>
                   ))}
                 </select>
               </div>
@@ -356,7 +360,7 @@ export default function Detail() {
             <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
               <div>
                 <h3 className="text-lg font-bold text-text-light dark:text-text-dark">
-                  {selectedItem?.itemName ?? '품목'} 가격 추이
+                  {selectedItem ?? '품목'} 가격 추이
                 </h3>
                 <p className="text-sm text-subtext-light dark:text-subtext-dark">기간: {periodLabel}</p>
               </div>

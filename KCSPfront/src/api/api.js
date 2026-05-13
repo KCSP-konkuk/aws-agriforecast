@@ -278,6 +278,24 @@ export const api = {
     return await response.json();
   },
   
+  // agri_price 테이블 품목 목록 조회 (배추·양파·양배추·당근)
+  getAgriItems: async () => {
+    const response = await fetch(`${API_BASE_URL}/price/agri/items`);
+    if (!response.ok) throw new Error('품목 목록을 불러오는데 실패했습니다.');
+    return await response.json();
+  },
+
+  // agri_price 테이블 기반 가격 그래프 조회
+  getAgriPriceGraph: async (itemName, startDate, endDate) => {
+    const startStr = startDate.toISOString().split('T')[0];
+    const endStr   = endDate.toISOString().split('T')[0];
+    const response = await fetch(
+      `${API_BASE_URL}/price/agri/graph?itemName=${encodeURIComponent(itemName)}&startDate=${startStr}&endDate=${endStr}`
+    );
+    if (!response.ok) throw new Error('가격 데이터를 불러오는데 실패했습니다.');
+    return await response.json();
+  },
+
   // 가격 그래프 데이터 조회
   getPriceGraph: async (itemCode, startDate, endDate, grade = '전체') => {
     const startStr = startDate.toISOString().split('T')[0];
