@@ -148,7 +148,7 @@ export default function Detail() {
 
   const validPrices = useMemo(() => {
     if (!priceData?.priceData) return [];
-    return priceData.priceData.filter((d) => d.price !== null);
+    return priceData.priceData.filter((d) => d.price !== null && d.price > 0);
   }, [priceData]);
 
   const kpi = useMemo(() => {

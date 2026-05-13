@@ -106,7 +106,7 @@ public class PriceController {
             List<AgriPrice> prices = agriPriceRepository.findByItemNameAndDateRange(itemName, startKey, endKey);
 
             List<Map<String, Object>> priceData = prices.stream()
-                    .filter(p -> p.getAvgPrice() != null)
+                    .filter(p -> p.getAvgPrice() != null && p.getAvgPrice() > 0)
                     .map(p -> {
                         Map<String, Object> entry = new LinkedHashMap<>();
                         entry.put("date", String.format("%d-%02d-%02d", p.getYear(), p.getMonth(), p.getDay()));
