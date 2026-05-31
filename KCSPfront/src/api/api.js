@@ -285,6 +285,15 @@ export const api = {
     return await response.json();
   },
 
+  // 품목별 AI 예측가 조회 (onion/cabbage/carrot/head_cabbage predictions 테이블)
+  getPredictions: async (itemName) => {
+    const response = await fetch(
+      `${API_BASE_URL}/price/agri/predictions?itemName=${encodeURIComponent(itemName)}`
+    );
+    if (!response.ok) throw new Error('예측 데이터를 불러오는데 실패했습니다.');
+    return await response.json();
+  },
+
   // agri_price 테이블 기반 가격 그래프 조회
   getAgriPriceGraph: async (itemName, startDate, endDate) => {
     const startStr = startDate.toISOString().split('T')[0];

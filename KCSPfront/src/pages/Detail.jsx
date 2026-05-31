@@ -19,31 +19,35 @@ const ITEM_UNIT = {
 
 function aggregateWeekly(data) {
   const map = new Map();
-  data.forEach(({ date, price }) => {
+  data.forEach(({ date, price, predictedPrice }) => {
     const d = new Date(date);
     const day = d.getDay();
     const monday = new Date(d);
     monday.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
     const key = monday.toISOString().split('T')[0];
-    if (!map.has(key)) map.set(key, []);
-    map.get(key).push(price);
+    if (!map.has(key)) map.set(key, { prices: [], predicted: [] });
+    if (price != null) map.get(key).prices.push(price);
+    if (predictedPrice != null) map.get(key).predicted.push(predictedPrice);
   });
-  return [...map.entries()].map(([date, prices]) => ({
+  return [...map.entries()].map(([date, { prices, predicted }]) => ({
     date,
-    price: Math.round(prices.reduce((a, b) => a + b, 0) / prices.length),
+    price: prices.length > 0 ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : null,
+    predictedPrice: predicted.length > 0 ? Math.round(predicted.reduce((a, b) => a + b, 0) / predicted.length) : null,
   }));
 }
 
 function aggregateMonthly(data) {
   const map = new Map();
-  data.forEach(({ date, price }) => {
+  data.forEach(({ date, price, predictedPrice }) => {
     const key = date.substring(0, 7);
-    if (!map.has(key)) map.set(key, []);
-    map.get(key).push(price);
+    if (!map.has(key)) map.set(key, { prices: [], predicted: [] });
+    if (price != null) map.get(key).prices.push(price);
+    if (predictedPrice != null) map.get(key).predicted.push(predictedPrice);
   });
-  return [...map.entries()].map(([date, prices]) => ({
+  return [...map.entries()].map(([date, { prices, predicted }]) => ({
     date,
-    price: Math.round(prices.reduce((a, b) => a + b, 0) / prices.length),
+    price: prices.length > 0 ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : null,
+    predictedPrice: predicted.length > 0 ? Math.round(predicted.reduce((a, b) => a + b, 0) / predicted.length) : null,
   }));
 }
 
@@ -57,12 +61,21 @@ function formatXTick(dateStr, unit) {
 
 function CustomTooltip({ active, payload, label, unit }) {
   if (!active || !payload?.length) return null;
+  const priceEntry = payload.find((p) => p.dataKey === 'price');
+  const predEntry  = payload.find((p) => p.dataKey === 'predictedPrice');
   return (
     <div className="p-3 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg shadow-lg text-sm">
       <p className="font-semibold text-text-light dark:text-text-dark mb-1">{label}</p>
-      <p style={{ color: '#4A90E2' }}>
-        {payload[0].value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
-      </p>
+      {priceEntry?.value != null && (
+        <p style={{ color: '#4A90E2' }}>
+          실거래가: {priceEntry.value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
+        </p>
+      )}
+      {predEntry?.value != null && (
+        <p style={{ color: '#F59E0B' }}>
+          AI 예측가: {predEntry.value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
+        </p>
+      )}
     </div>
   );
 }
@@ -96,6 +109,7 @@ export default function Detail() {
   const [priceData, setPriceData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [tableSearch, setTableSearch] = useState('');
+  const [predictionData, setPredictionData] = useState([]);
 
   // ITEM_ORDER 기준으로 정렬
   const sortedItems = useMemo(() => {
@@ -152,6 +166,14 @@ export default function Detail() {
     if (selectedItemName) fetchPriceData(selectedItemName, period, customStart, customEnd);
   }, [selectedItemName]);
 
+  // 품목 변경 시 예측 데이터 조회
+  useEffect(() => {
+    if (!selectedItemName) return;
+    api.getPredictions(selectedItemName)
+      .then((data) => setPredictionData(data.predictions ?? []))
+      .catch(() => setPredictionData([]));
+  }, [selectedItemName]);
+
   const handleSearch = () => {
     fetchPriceData(selectedItemName, period, customStart, customEnd);
   };
@@ -178,11 +200,33 @@ export default function Detail() {
   }, [validPrices]);
 
   const chartData = useMemo(() => {
-    if (validPrices.length === 0) return [];
-    if (unit === 'weekly') return aggregateWeekly(validPrices);
-    if (unit === 'monthly') return aggregateMonthly(validPrices);
-    return validPrices.map((d) => ({ date: d.date, price: d.price }));
-  }, [validPrices, unit]);
+    if (validPrices.length === 0 && predictionData.length === 0) return [];
+
+    const predMap  = new Map(predictionData.map((p) => [p.date, Number(p.predictedPrice)]));
+    const priceMap = new Map(validPrices.map((d) => [d.date, d.price]));
+    const allDates = [...new Set([...priceMap.keys(), ...predMap.keys()])].sort();
+
+    const merged = allDates.map((date) => ({
+      date,
+      price: priceMap.has(date) ? priceMap.get(date) : null,
+      predictedPrice: predMap.has(date) ? predMap.get(date) : null,
+    }));
+
+    // 실거래가 마지막 점을 예측선의 시작점으로 공유 → 선이 끊기지 않고 이어짐
+    if (predictionData.length > 0) {
+      let lastActualIdx = -1;
+      for (let i = merged.length - 1; i >= 0; i--) {
+        if (merged[i].price != null) { lastActualIdx = i; break; }
+      }
+      if (lastActualIdx >= 0) {
+        merged[lastActualIdx] = { ...merged[lastActualIdx], predictedPrice: merged[lastActualIdx].price };
+      }
+    }
+
+    if (unit === 'weekly') return aggregateWeekly(merged);
+    if (unit === 'monthly') return aggregateMonthly(merged);
+    return merged;
+  }, [validPrices, predictionData, unit]);
 
   const tableData = useMemo(() => {
     const daily = [...validPrices].reverse();
@@ -375,9 +419,17 @@ export default function Detail() {
                 </h3>
                 <p className="text-sm text-subtext-light dark:text-subtext-dark">기간: {periodLabel}</p>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#4A90E2' }}></div>
-                <span className="text-subtext-light dark:text-subtext-dark">실거래가</span>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#4A90E2' }}></div>
+                  <span className="text-subtext-light dark:text-subtext-dark">실거래가</span>
+                </div>
+                {predictionData.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="#F59E0B" strokeWidth="2" /></svg>
+                    <span className="text-subtext-light dark:text-subtext-dark">AI 예측가</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -419,6 +471,17 @@ export default function Detail() {
                     activeDot={{ r: 5 }}
                     connectNulls={false}
                   />
+                  {predictionData.length > 0 && (
+                    <Line
+                      type="monotone"
+                      dataKey="predictedPrice"
+                      stroke="#F59E0B"
+                      strokeWidth={2}
+                      dot={chartData.length <= 60 ? { r: 3, fill: '#F59E0B' } : false}
+                      activeDot={{ r: 5 }}
+                      connectNulls={false}
+                    />
+                  )}
                 </LineChart>
               </ResponsiveContainer>
             )}

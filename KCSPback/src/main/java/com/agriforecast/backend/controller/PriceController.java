@@ -6,6 +6,7 @@ import com.agriforecast.backend.dto.PriceGraphResponse;
 import com.agriforecast.backend.entity.AgriPrice;
 import com.agriforecast.backend.repository.AgriPriceRepository;
 import com.agriforecast.backend.service.KamisService;
+import com.agriforecast.backend.service.PredictionService;
 import com.agriforecast.backend.service.PriceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -32,6 +33,9 @@ public class PriceController {
 
     @Autowired
     private AgriPriceRepository agriPriceRepository;
+
+    @Autowired
+    private PredictionService predictionService;
     
     // KAMIS 주요 농산물 일일 가격 조회 (쌀·콩·고구마·감자·배추·양배추·상추)
     @GetMapping("/daily")
@@ -119,6 +123,21 @@ public class PriceController {
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("itemName", itemName);
             result.put("priceData", priceData);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // 품목별 AI 예측가 조회
+    @GetMapping("/agri/predictions")
+    public ResponseEntity<Map<String, Object>> getAgriPredictions(@RequestParam String itemName) {
+        try {
+            List<Map<String, Object>> predictions = predictionService.getPredictions(itemName);
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("itemName", itemName);
+            result.put("predictions", predictions);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             e.printStackTrace();
