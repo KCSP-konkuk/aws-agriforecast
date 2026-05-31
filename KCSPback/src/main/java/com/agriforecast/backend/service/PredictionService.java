@@ -23,11 +23,11 @@ public class PredictionService {
         String tableName = ITEM_TABLE.get(itemName);
         if (tableName == null) return Collections.emptyList();
 
-        // 가장 최근 예측 기준 최대 60건, 날짜 오름차순으로 반환
+        // 오늘 이후(현시점~) 예측값만 날짜 오름차순으로 반환
         String sql =
             "SELECT target_date, predicted_price, actual_price, error_pct " +
-            "FROM (SELECT target_date, predicted_price, actual_price, error_pct " +
-            "      FROM " + tableName + " ORDER BY target_date DESC LIMIT 60) sub " +
+            "FROM " + tableName + " " +
+            "WHERE target_date >= CURDATE() " +
             "ORDER BY target_date ASC";
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
