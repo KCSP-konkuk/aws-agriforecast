@@ -32,6 +32,7 @@ function periodCodeToDate(code) {
 function aggregateWeekly(data) {
   const map = new Map();
   data.forEach(({ date, price, predictedPrice }) => {
+    if (!date) return;
     const d = new Date(date);
     if (isNaN(d.getTime())) return;
     const day = d.getDay();
@@ -52,6 +53,7 @@ function aggregateWeekly(data) {
 function aggregateMonthly(data) {
   const map = new Map();
   data.forEach(({ date, price, predictedPrice }) => {
+    if (!date) return;
     const key = date.substring(0, 7);
     if (!map.has(key)) map.set(key, { prices: [], predicted: [] });
     if (price != null) map.get(key).prices.push(price);
@@ -215,18 +217,24 @@ export default function Detail() {
   const chartData = useMemo(() => {
     if (validPrices.length === 0 && predictionData.length === 0) return [];
 
-    // 오늘(로컬) 기준: 오늘 이하 날짜의 예측은 내일로 이동해 실거래가 구간에 겹치지 않도록 함
+    // 오늘 날짜 (로컬 기준 — KST)
     const _t = new Date();
     const todayStr    = `${_t.getFullYear()}-${String(_t.getMonth()+1).padStart(2,'0')}-${String(_t.getDate()).padStart(2,'0')}`;
     const _tm = new Date(_t); _tm.setDate(_t.getDate() + 1);
     const tomorrowStr = `${_tm.getFullYear()}-${String(_tm.getMonth()+1).padStart(2,'0')}-${String(_tm.getDate()).padStart(2,'0')}`;
 
-    const predMap = new Map(
-      predictionData.map((p) => {
+    // 예측: 오늘 이하 날짜이면 내일로 조정 (오늘 포함 이전에는 AI 예측 표시 안 함)
+    // null/0 예측가는 제외, null 날짜는 제외
+    const predEntries = predictionData
+      .filter((p) => p.predictedPrice != null && p.predictedPrice !== 0)
+      .map((p) => {
         const date = periodCodeToDate(p.date) ?? p.date;
+        if (!date) return null;
         return [date <= todayStr ? tomorrowStr : date, Number(p.predictedPrice)];
       })
-    );
+      .filter(Boolean);
+    const predMap = new Map(predEntries);
+
     const priceMap = new Map(validPrices.map((d) => [d.date, d.price]));
     const allDates = [...new Set([...priceMap.keys(), ...predMap.keys()])].sort();
 
@@ -235,17 +243,6 @@ export default function Detail() {
       price: priceMap.has(date) ? priceMap.get(date) : null,
       predictedPrice: predMap.has(date) ? predMap.get(date) : null,
     }));
-
-    // 실거래가 마지막 점을 예측선의 시작점으로 공유 → 선이 끊기지 않고 이어짐
-    if (predictionData.length > 0) {
-      let lastActualIdx = -1;
-      for (let i = merged.length - 1; i >= 0; i--) {
-        if (merged[i].price != null) { lastActualIdx = i; break; }
-      }
-      if (lastActualIdx >= 0) {
-        merged[lastActualIdx] = { ...merged[lastActualIdx], predictedPrice: merged[lastActualIdx].price };
-      }
-    }
 
     if (unit === 'weekly') return aggregateWeekly(merged);
     if (unit === 'monthly') return aggregateMonthly(merged);
