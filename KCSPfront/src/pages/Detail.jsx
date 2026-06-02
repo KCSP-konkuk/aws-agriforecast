@@ -17,10 +17,23 @@ const ITEM_UNIT = {
   당근:   '20키로상자',
 };
 
+// "202606상순" → "2026-06-01", "202606중순" → "2026-06-11", "202606하순" → "2026-06-21"
+function periodCodeToDate(code) {
+  if (!code || code.length < 7) return null;
+  try {
+    const year  = parseInt(code.substring(0, 4), 10);
+    const month = parseInt(code.substring(4, 6), 10);
+    const suffix = code.substring(6);
+    const day = suffix === '상순' ? 1 : suffix === '중순' ? 11 : 21;
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  } catch { return null; }
+}
+
 function aggregateWeekly(data) {
   const map = new Map();
   data.forEach(({ date, price, predictedPrice }) => {
     const d = new Date(date);
+    if (isNaN(d.getTime())) return;
     const day = d.getDay();
     const monday = new Date(d);
     monday.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
@@ -63,6 +76,7 @@ function CustomTooltip({ active, payload, label, unit }) {
   if (!active || !payload?.length) return null;
   const priceEntry = payload.find((p) => p.dataKey === 'price');
   const predEntry  = payload.find((p) => p.dataKey === 'predictedPrice');
+  const isActualBridge = payload[0]?.payload?.isActualBridge;
   return (
     <div className="p-3 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg shadow-lg text-sm">
       <p className="font-semibold text-text-light dark:text-text-dark mb-1">{label}</p>
@@ -71,7 +85,7 @@ function CustomTooltip({ active, payload, label, unit }) {
           실거래가: {priceEntry.value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
         </p>
       )}
-      {predEntry?.value != null && (
+      {!isActualBridge && predEntry?.value != null && (
         <p style={{ color: '#F59E0B' }}>
           AI 예측가: {predEntry.value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
         </p>
@@ -202,7 +216,9 @@ export default function Detail() {
   const chartData = useMemo(() => {
     if (validPrices.length === 0 && predictionData.length === 0) return [];
 
-    const predMap  = new Map(predictionData.map((p) => [p.date, Number(p.predictedPrice)]));
+    const predMap  = new Map(
+      predictionData.map((p) => [periodCodeToDate(p.date) ?? p.date, Number(p.predictedPrice)])
+    );
     const priceMap = new Map(validPrices.map((d) => [d.date, d.price]));
     const allDates = [...new Set([...priceMap.keys(), ...predMap.keys()])].sort();
 
@@ -212,20 +228,29 @@ export default function Detail() {
       predictedPrice: predMap.has(date) ? predMap.get(date) : null,
     }));
 
-    // 실거래가 마지막 점을 예측선의 시작점으로 공유 → 선이 끊기지 않고 이어짐
+    // 집계 먼저 수행
+    let result;
+    if (unit === 'weekly') result = aggregateWeekly(merged);
+    else if (unit === 'monthly') result = aggregateMonthly(merged);
+    else result = merged;
+
+    // 집계 결과의 마지막 실거래가 점을 예측선 시작점으로 공유 (선 연결용)
+    // isActualBridge 플래그로 툴팁/dot에서 예측값처럼 표시되지 않도록 구분
     if (predictionData.length > 0) {
       let lastActualIdx = -1;
-      for (let i = merged.length - 1; i >= 0; i--) {
-        if (merged[i].price != null) { lastActualIdx = i; break; }
+      for (let i = result.length - 1; i >= 0; i--) {
+        if (result[i].price != null) { lastActualIdx = i; break; }
       }
       if (lastActualIdx >= 0) {
-        merged[lastActualIdx] = { ...merged[lastActualIdx], predictedPrice: merged[lastActualIdx].price };
+        result[lastActualIdx] = {
+          ...result[lastActualIdx],
+          predictedPrice: result[lastActualIdx].price,
+          isActualBridge: true,
+        };
       }
     }
 
-    if (unit === 'weekly') return aggregateWeekly(merged);
-    if (unit === 'monthly') return aggregateMonthly(merged);
-    return merged;
+    return result;
   }, [validPrices, predictionData, unit]);
 
   const tableData = useMemo(() => {
@@ -477,8 +502,14 @@ export default function Detail() {
                       dataKey="predictedPrice"
                       stroke="#F59E0B"
                       strokeWidth={2}
-                      dot={chartData.length <= 60 ? { r: 3, fill: '#F59E0B' } : false}
-                      activeDot={{ r: 5 }}
+                      dot={chartData.length <= 60
+                        ? (p) => p.payload?.isActualBridge
+                            ? <circle key={p.key} cx={p.cx} cy={p.cy} r={0} />
+                            : <circle key={p.key} cx={p.cx} cy={p.cy} r={3} fill="#F59E0B" />
+                        : false}
+                      activeDot={(p) => p.payload?.isActualBridge
+                        ? <circle key={p.key} cx={p.cx} cy={p.cy} r={0} />
+                        : <circle key={p.key} cx={p.cx} cy={p.cy} r={5} fill="#F59E0B" />}
                       connectNulls={false}
                     />
                   )}
