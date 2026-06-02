@@ -17,7 +17,7 @@ const ITEM_UNIT = {
   당근:   '20키로상자',
 };
 
-// "202606상순" → "2026-06-01", "202606중순" → "2026-06-11", "202606하순" → "2026-06-21"
+// "202606상순" → "2026-06-01" (집계용 날짜)
 function periodCodeToDate(code) {
   if (!code || code.length < 7) return null;
   try {
@@ -27,6 +27,16 @@ function periodCodeToDate(code) {
     const day = suffix === '상순' ? 1 : suffix === '중순' ? 11 : 21;
     return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   } catch { return null; }
+}
+
+// "202606상순" → "2026-06-상순" (일별 차트 표시용)
+function periodCodeToDisplay(code) {
+  if (!code || code.length < 7) return null;
+  const year   = code.substring(0, 4);
+  const month  = code.substring(4, 6);
+  const suffix = code.substring(6);
+  if (!['상순', '중순', '하순'].includes(suffix)) return null;
+  return `${year}-${month}-${suffix}`;
 }
 
 function aggregateWeekly(data) {
@@ -70,7 +80,11 @@ function formatXTick(dateStr, unit) {
   if (!dateStr) return '';
   if (unit === 'monthly') return dateStr;
   const parts = dateStr.split('-');
-  if (parts.length === 3) return `${parts[1]}/${parts[2]}`;
+  if (parts.length === 3) {
+    // 예측 기간 표시: "2026-06-상순" → "06/상순"
+    if (/상순|중순|하순/.test(parts[2])) return `${parts[1]}/${parts[2]}`;
+    return `${parts[1]}/${parts[2]}`;
+  }
   return dateStr;
 }
 
@@ -78,6 +92,7 @@ function CustomTooltip({ active, payload, label, unit }) {
   if (!active || !payload?.length) return null;
   const priceEntry = payload.find((p) => p.dataKey === 'price');
   const predEntry  = payload.find((p) => p.dataKey === 'predictedPrice');
+  const isActualBridge = payload[0]?.payload?.isActualBridge;
   return (
     <div className="p-3 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg shadow-lg text-sm">
       <p className="font-semibold text-text-light dark:text-text-dark mb-1">{label}</p>
@@ -86,7 +101,7 @@ function CustomTooltip({ active, payload, label, unit }) {
           실거래가: {priceEntry.value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
         </p>
       )}
-      {predEntry?.value != null && (
+      {!isActualBridge && predEntry?.value != null && (
         <p style={{ color: '#F59E0B' }}>
           AI 예측가: {predEntry.value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
         </p>
@@ -223,11 +238,17 @@ export default function Detail() {
     const _tm = new Date(_t); _tm.setDate(_t.getDate() + 1);
     const tomorrowStr = `${_tm.getFullYear()}-${String(_tm.getMonth()+1).padStart(2,'0')}-${String(_tm.getDate()).padStart(2,'0')}`;
 
-    // 예측: 오늘 이하 날짜이면 내일로 조정 (오늘 포함 이전에는 AI 예측 표시 안 함)
-    // null/0 예측가는 제외, null 날짜는 제외
-    const predEntries = predictionData
-      .filter((p) => p.predictedPrice != null && p.predictedPrice !== 0)
+    const validPred = predictionData.filter((p) => p.predictedPrice != null && p.predictedPrice !== 0);
+
+    // 일별: "2026-06-상순" 표시형 날짜 사용 (상순/중순/하순 직접 노출)
+    // 주별/월별: 집계를 위해 YYYY-MM-DD 수치형 날짜 사용 (오늘 이하면 내일로 조정)
+    const predEntries = validPred
       .map((p) => {
+        if (unit === 'daily') {
+          const displayDate = periodCodeToDisplay(p.date);
+          if (!displayDate) return null;
+          return [displayDate, Number(p.predictedPrice)];
+        }
         const date = periodCodeToDate(p.date) ?? p.date;
         if (!date) return null;
         return [date <= todayStr ? tomorrowStr : date, Number(p.predictedPrice)];
@@ -244,9 +265,29 @@ export default function Detail() {
       predictedPrice: predMap.has(date) ? predMap.get(date) : null,
     }));
 
-    if (unit === 'weekly') return aggregateWeekly(merged);
-    if (unit === 'monthly') return aggregateMonthly(merged);
-    return merged;
+    // 집계 수행
+    let result;
+    if (unit === 'weekly')       result = aggregateWeekly(merged);
+    else if (unit === 'monthly') result = aggregateMonthly(merged);
+    else                         result = merged;
+
+    // 집계 후 브리지: 마지막 실거래가 점의 predictedPrice가 없는 경우에만 연결선 추가
+    // isActualBridge 플래그 → 툴팁·dot에서 "AI 예측가" 숨김
+    if (validPred.length > 0) {
+      let lastActualIdx = -1;
+      for (let i = result.length - 1; i >= 0; i--) {
+        if (result[i].price != null) { lastActualIdx = i; break; }
+      }
+      if (lastActualIdx >= 0 && result[lastActualIdx].predictedPrice == null) {
+        result[lastActualIdx] = {
+          ...result[lastActualIdx],
+          predictedPrice: result[lastActualIdx].price,
+          isActualBridge: true,
+        };
+      }
+    }
+
+    return result;
   }, [validPrices, predictionData, unit]);
 
   const tableData = useMemo(() => {
@@ -498,8 +539,14 @@ export default function Detail() {
                       dataKey="predictedPrice"
                       stroke="#F59E0B"
                       strokeWidth={2}
-                      dot={chartData.length <= 60 ? { r: 3, fill: '#F59E0B' } : false}
-                      activeDot={{ r: 5 }}
+                      dot={chartData.length <= 60
+                        ? (p) => p.payload?.isActualBridge
+                            ? <circle key={p.key} cx={p.cx} cy={p.cy} r={0} />
+                            : <circle key={p.key} cx={p.cx} cy={p.cy} r={3} fill="#F59E0B" />
+                        : false}
+                      activeDot={(p) => p.payload?.isActualBridge
+                        ? <circle key={p.key} cx={p.cx} cy={p.cy} r={0} />
+                        : <circle key={p.key} cx={p.cx} cy={p.cy} r={5} fill="#F59E0B" />}
                       connectNulls={false}
                     />
                   )}
