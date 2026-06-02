@@ -215,8 +215,17 @@ export default function Detail() {
   const chartData = useMemo(() => {
     if (validPrices.length === 0 && predictionData.length === 0) return [];
 
-    const predMap  = new Map(
-      predictionData.map((p) => [periodCodeToDate(p.date) ?? p.date, Number(p.predictedPrice)])
+    // 오늘(로컬) 기준: 오늘 이하 날짜의 예측은 내일로 이동해 실거래가 구간에 겹치지 않도록 함
+    const _t = new Date();
+    const todayStr    = `${_t.getFullYear()}-${String(_t.getMonth()+1).padStart(2,'0')}-${String(_t.getDate()).padStart(2,'0')}`;
+    const _tm = new Date(_t); _tm.setDate(_t.getDate() + 1);
+    const tomorrowStr = `${_tm.getFullYear()}-${String(_tm.getMonth()+1).padStart(2,'0')}-${String(_tm.getDate()).padStart(2,'0')}`;
+
+    const predMap = new Map(
+      predictionData.map((p) => {
+        const date = periodCodeToDate(p.date) ?? p.date;
+        return [date <= todayStr ? tomorrowStr : date, Number(p.predictedPrice)];
+      })
     );
     const priceMap = new Map(validPrices.map((d) => [d.date, d.price]));
     const allDates = [...new Set([...priceMap.keys(), ...predMap.keys()])].sort();
