@@ -39,9 +39,16 @@ function periodCodeToDisplay(code) {
   return `${year}-${month}-${suffix}`;
 }
 
+function periodCodeToShortLabel(code) {
+  const display = periodCodeToDisplay(code);
+  if (!display) return null;
+  const [, month, suffix] = display.split('-');
+  return `${month}/${suffix}`;
+}
+
 function aggregateWeekly(data) {
   const map = new Map();
-  data.forEach(({ date, price, predictedPrice }) => {
+  data.forEach(({ date, price, predictedPrice, predictionLabel }) => {
     if (!date) return;
     const d = new Date(date);
     if (isNaN(d.getTime())) return;
@@ -49,14 +56,18 @@ function aggregateWeekly(data) {
     const monday = new Date(d);
     monday.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
     const key = monday.toISOString().split('T')[0];
-    if (!map.has(key)) map.set(key, { prices: [], predicted: [] });
+    if (!map.has(key)) map.set(key, { prices: [], predicted: [], predictionLabels: [] });
     if (price != null) map.get(key).prices.push(price);
-    if (predictedPrice != null) map.get(key).predicted.push(predictedPrice);
+    if (predictedPrice != null) {
+      map.get(key).predicted.push(predictedPrice);
+      if (predictionLabel) map.get(key).predictionLabels.push(predictionLabel);
+    }
   });
-  return [...map.entries()].map(([date, { prices, predicted }]) => ({
+  return [...map.entries()].map(([date, { prices, predicted, predictionLabels }]) => ({
     date,
     price: prices.length > 0 ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : null,
     predictedPrice: predicted.length > 0 ? Math.round(predicted.reduce((a, b) => a + b, 0) / predicted.length) : null,
+    predictionLabel: predictionLabels.length > 0 ? [...new Set(predictionLabels)].join(', ') : null,
   }));
 }
 
@@ -93,9 +104,10 @@ function CustomTooltip({ active, payload, label, unit }) {
   const priceEntry = payload.find((p) => p.dataKey === 'price');
   const predEntry  = payload.find((p) => p.dataKey === 'predictedPrice');
   const isActualBridge = payload[0]?.payload?.isActualBridge;
+  const displayLabel = payload[0]?.payload?.predictionLabel ?? label;
   return (
     <div className="p-3 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg shadow-lg text-sm">
-      <p className="font-semibold text-text-light dark:text-text-dark mb-1">{label}</p>
+      <p className="font-semibold text-text-light dark:text-text-dark mb-1">{displayLabel}</p>
       {priceEntry?.value != null && (
         <p style={{ color: '#4A90E2' }}>
           실거래가: {priceEntry.value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
@@ -239,21 +251,25 @@ export default function Detail() {
     const tomorrowStr = `${_tm.getFullYear()}-${String(_tm.getMonth()+1).padStart(2,'0')}-${String(_tm.getDate()).padStart(2,'0')}`;
 
     const validPred = predictionData.filter((p) => p.predictedPrice != null && p.predictedPrice !== 0);
+    const latestPred = validPred[0];
 
     // 일별: "2026-06-상순" 표시형 날짜 사용 (상순/중순/하순 직접 노출)
     // 주별/월별: 집계를 위해 YYYY-MM-DD 수치형 날짜 사용 (오늘 이하면 내일로 조정)
-    const predEntries = validPred
+    const predEntries = latestPred ? [latestPred]
       .map((p) => {
+        const predictedPrice = Math.round(Number(p.predictedPrice));
+        if (!Number.isFinite(predictedPrice)) return null;
         if (unit === 'daily') {
           const displayDate = periodCodeToDisplay(p.date);
           if (!displayDate) return null;
-          return [displayDate, Number(p.predictedPrice)];
+          return [displayDate, { price: predictedPrice, label: periodCodeToShortLabel(p.date) }];
         }
         const date = periodCodeToDate(p.date) ?? p.date;
         if (!date) return null;
-        return [date <= todayStr ? tomorrowStr : date, Number(p.predictedPrice)];
+        const label = periodCodeToShortLabel(p.date);
+        return [date <= todayStr ? tomorrowStr : date, { price: predictedPrice, label }];
       })
-      .filter(Boolean);
+      .filter(Boolean) : [];
     const predMap = new Map(predEntries);
 
     const priceMap = new Map(validPrices.map((d) => [d.date, d.price]));
@@ -262,7 +278,8 @@ export default function Detail() {
     const merged = allDates.map((date) => ({
       date,
       price: priceMap.has(date) ? priceMap.get(date) : null,
-      predictedPrice: predMap.has(date) ? predMap.get(date) : null,
+      predictedPrice: predMap.has(date) ? predMap.get(date).price : null,
+      predictionLabel: predMap.has(date) ? predMap.get(date).label : null,
     }));
 
     // 집계 수행
@@ -514,7 +531,7 @@ export default function Detail() {
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" />
                   <XAxis
                     dataKey="date"
-                    tickFormatter={(d) => formatXTick(d, unit)}
+                    tickFormatter={(d, index) => chartData[index]?.predictionLabel ?? formatXTick(d, unit)}
                     tick={{ fontSize: 11, fill: '#64748B' }}
                     interval={xAxisInterval}
                   />
@@ -540,12 +557,13 @@ export default function Detail() {
                       stroke="#F59E0B"
                       strokeWidth={2}
                       dot={chartData.length <= 60
-                        ? (p) => p.payload?.isActualBridge
-                            ? <circle key={p.key} cx={p.cx} cy={p.cy} r={0} />
-                            : <circle key={p.key} cx={p.cx} cy={p.cy} r={3} fill="#F59E0B" />
+                        ? (p) => {
+                            if (p.value == null || p.payload?.isActualBridge) return null;
+                            return <circle key={p.key} cx={p.cx} cy={p.cy} r={3} fill="#F59E0B" />;
+                          }
                         : false}
-                      activeDot={(p) => p.payload?.isActualBridge
-                        ? <circle key={p.key} cx={p.cx} cy={p.cy} r={0} />
+                      activeDot={(p) => p.value == null || p.payload?.isActualBridge
+                        ? null
                         : <circle key={p.key} cx={p.cx} cy={p.cy} r={5} fill="#F59E0B" />}
                       connectNulls={false}
                     />
