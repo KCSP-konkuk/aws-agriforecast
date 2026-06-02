@@ -245,7 +245,6 @@ export default function Detail() {
 
     const validPred = predictionData.filter((p) => p.predictedPrice != null && p.predictedPrice !== 0);
     const latestPred = validPred[0];
-    const lastActualDate = validPrices[validPrices.length - 1]?.date;
 
     // 실제 날짜 축에 예측점을 배치하고, 화면에는 순별 라벨을 표시한다.
     const predEntries = latestPred ? [latestPred]
@@ -255,7 +254,7 @@ export default function Detail() {
         if (unit === 'daily') {
           const date = periodCodeToDate(p.date) ?? p.date;
           if (!date) return null;
-          return [lastActualDate ?? (date <= todayStr ? todayStr : date), { price: predictedPrice, label: periodCodeToDisplay(p.date) }];
+          return [date <= todayStr ? todayStr : date, { price: predictedPrice, label: periodCodeToDisplay(p.date) }];
         }
         const date = periodCodeToDate(p.date) ?? p.date;
         if (!date) return null;
