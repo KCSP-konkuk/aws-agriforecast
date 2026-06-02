@@ -76,7 +76,6 @@ function CustomTooltip({ active, payload, label, unit }) {
   if (!active || !payload?.length) return null;
   const priceEntry = payload.find((p) => p.dataKey === 'price');
   const predEntry  = payload.find((p) => p.dataKey === 'predictedPrice');
-  const isActualBridge = payload[0]?.payload?.isActualBridge;
   return (
     <div className="p-3 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg shadow-lg text-sm">
       <p className="font-semibold text-text-light dark:text-text-dark mb-1">{label}</p>
@@ -85,7 +84,7 @@ function CustomTooltip({ active, payload, label, unit }) {
           실거래가: {priceEntry.value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
         </p>
       )}
-      {!isActualBridge && predEntry?.value != null && (
+      {predEntry?.value != null && (
         <p style={{ color: '#F59E0B' }}>
           AI 예측가: {predEntry.value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
         </p>
@@ -228,29 +227,20 @@ export default function Detail() {
       predictedPrice: predMap.has(date) ? predMap.get(date) : null,
     }));
 
-    // 집계 먼저 수행
-    let result;
-    if (unit === 'weekly') result = aggregateWeekly(merged);
-    else if (unit === 'monthly') result = aggregateMonthly(merged);
-    else result = merged;
-
-    // 집계 결과의 마지막 실거래가 점을 예측선 시작점으로 공유 (선 연결용)
-    // isActualBridge 플래그로 툴팁/dot에서 예측값처럼 표시되지 않도록 구분
+    // 실거래가 마지막 점을 예측선의 시작점으로 공유 → 선이 끊기지 않고 이어짐
     if (predictionData.length > 0) {
       let lastActualIdx = -1;
-      for (let i = result.length - 1; i >= 0; i--) {
-        if (result[i].price != null) { lastActualIdx = i; break; }
+      for (let i = merged.length - 1; i >= 0; i--) {
+        if (merged[i].price != null) { lastActualIdx = i; break; }
       }
       if (lastActualIdx >= 0) {
-        result[lastActualIdx] = {
-          ...result[lastActualIdx],
-          predictedPrice: result[lastActualIdx].price,
-          isActualBridge: true,
-        };
+        merged[lastActualIdx] = { ...merged[lastActualIdx], predictedPrice: merged[lastActualIdx].price };
       }
     }
 
-    return result;
+    if (unit === 'weekly') return aggregateWeekly(merged);
+    if (unit === 'monthly') return aggregateMonthly(merged);
+    return merged;
   }, [validPrices, predictionData, unit]);
 
   const tableData = useMemo(() => {
@@ -502,14 +492,8 @@ export default function Detail() {
                       dataKey="predictedPrice"
                       stroke="#F59E0B"
                       strokeWidth={2}
-                      dot={chartData.length <= 60
-                        ? (p) => p.payload?.isActualBridge
-                            ? <circle key={p.key} cx={p.cx} cy={p.cy} r={0} />
-                            : <circle key={p.key} cx={p.cx} cy={p.cy} r={3} fill="#F59E0B" />
-                        : false}
-                      activeDot={(p) => p.payload?.isActualBridge
-                        ? <circle key={p.key} cx={p.cx} cy={p.cy} r={0} />
-                        : <circle key={p.key} cx={p.cx} cy={p.cy} r={5} fill="#F59E0B" />}
+                      dot={chartData.length <= 60 ? { r: 3, fill: '#F59E0B' } : false}
+                      activeDot={{ r: 5 }}
                       connectNulls={false}
                     />
                   )}
