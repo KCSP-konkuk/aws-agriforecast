@@ -253,16 +253,15 @@ export default function Detail() {
     const validPred = predictionData.filter((p) => p.predictedPrice != null && p.predictedPrice !== 0);
     const latestPred = validPred[0];
 
-    // 일별: "2026-06-상순" 표시형 날짜 사용 (상순/중순/하순 직접 노출)
-    // 주별/월별: 집계를 위해 YYYY-MM-DD 수치형 날짜 사용 (오늘 이하면 내일로 조정)
+    // 실제 날짜 축에 예측점을 배치하고, 화면에는 순별 라벨을 표시한다.
     const predEntries = latestPred ? [latestPred]
       .map((p) => {
         const predictedPrice = Math.round(Number(p.predictedPrice));
         if (!Number.isFinite(predictedPrice)) return null;
         if (unit === 'daily') {
-          const displayDate = periodCodeToDisplay(p.date);
-          if (!displayDate) return null;
-          return [displayDate, { price: predictedPrice, label: periodCodeToShortLabel(p.date) }];
+          const date = periodCodeToDate(p.date) ?? p.date;
+          if (!date) return null;
+          return [date <= todayStr ? todayStr : date, { price: predictedPrice, label: periodCodeToShortLabel(p.date) }];
         }
         const date = periodCodeToDate(p.date) ?? p.date;
         if (!date) return null;
