@@ -39,13 +39,6 @@ function periodCodeToDisplay(code) {
   return `${year}-${month}-${suffix}`;
 }
 
-function periodCodeToShortLabel(code) {
-  const display = periodCodeToDisplay(code);
-  if (!display) return null;
-  const [, month, suffix] = display.split('-');
-  return `${month}/${suffix}`;
-}
-
 function aggregateWeekly(data) {
   const map = new Map();
   data.forEach(({ date, price, predictedPrice, predictionLabel }) => {
@@ -261,11 +254,11 @@ export default function Detail() {
         if (unit === 'daily') {
           const date = periodCodeToDate(p.date) ?? p.date;
           if (!date) return null;
-          return [date <= todayStr ? todayStr : date, { price: predictedPrice, label: periodCodeToShortLabel(p.date) }];
+          return [date <= todayStr ? todayStr : date, { price: predictedPrice, label: periodCodeToDisplay(p.date) }];
         }
         const date = periodCodeToDate(p.date) ?? p.date;
         if (!date) return null;
-        const label = periodCodeToShortLabel(p.date);
+        const label = periodCodeToDisplay(p.date);
         return [date <= todayStr ? tomorrowStr : date, { price: predictedPrice, label }];
       })
       .filter(Boolean) : [];
