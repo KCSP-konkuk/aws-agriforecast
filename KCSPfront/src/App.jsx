@@ -11,8 +11,6 @@ import CommunityView from './pages/CommunityView';
 import CommunityViewMy from './pages/CommunityViewMy';
 import Detail from './pages/Detail';
 import MyPage from './pages/MyPage';
-import NotificationsReceived from './pages/NotificationsReceived';
-import NotificationsDelete from './pages/NotificationsDelete';
 
 function App() {
   return (
@@ -30,8 +28,6 @@ function App() {
         <Route path="/community/:id" element={<CommunityView />} />
         <Route path="/detail" element={<Detail />} />
         <Route path="/mypage" element={<MyPage />} />
-        <Route path="/mypage/notifications" element={<NotificationsReceived />} />
-        <Route path="/mypage/notifications/delete" element={<NotificationsDelete />} />
       </Routes>
     </Router>
   );

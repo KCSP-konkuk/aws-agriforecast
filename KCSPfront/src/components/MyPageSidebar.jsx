@@ -15,8 +15,6 @@ export default function MyPageSidebar({ user, onLogout }) {
 
   const menuItems = [
     { path: '/mypage', label: '계정정보', icon: 'person' },
-    { path: '/mypage/notifications', label: '받은 알림', icon: 'notifications' },
-    { path: '/mypage/notifications/delete', label: '알림 삭제', icon: 'notifications_off' }
   ];
 
   return (
