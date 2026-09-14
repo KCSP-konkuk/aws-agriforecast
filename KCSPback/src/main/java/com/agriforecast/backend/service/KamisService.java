@@ -24,7 +24,7 @@ public class KamisService {
     private static final Set<String> TARGET_PRODUCTS = Set.of("272", "275", "281", "285", "295", "297", "301");
 
     private static final String KAMIS_URL =
-            "http://www.kamis.or.kr/service/price/xml.do?action=dailySalesList" +
+            "https://www.kamis.or.kr/service/price/xml.do?action=dailySalesList" +
             "&p_cert_key=%s&p_cert_id=%s&p_returntype=json";
 
     @Value("${kamis.cert-key:test}")
