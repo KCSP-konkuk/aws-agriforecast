@@ -1,0 +1,10 @@
+[Unit]
+Description=AgriForecast DB 백업 매일 실행
+
+[Timer]
+OnCalendar=*-*-* 18:00:00 UTC
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

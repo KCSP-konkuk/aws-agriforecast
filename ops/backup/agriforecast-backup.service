@@ -1,0 +1,14 @@
+[Unit]
+Description=AgriForecast DB 백업 (mysqldump)
+After=mysql.service
+Requires=mysql.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+ExecStart=/opt/agri-forecast/backup/db-backup.sh
+TimeoutStartSec=1800
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=agri-backup
