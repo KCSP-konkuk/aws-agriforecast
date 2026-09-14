@@ -1,0 +1,10 @@
+[Unit]
+Description=AgriForecast 예측 파이프라인 매일 실행
+
+[Timer]
+OnCalendar=*-*-* 20:30:00 UTC
+Persistent=true
+RandomizedDelaySec=600
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,64 @@
+name: Deploy Model Batch to EC2
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "KCSPmodel/batch/**"
+      - ".github/workflows/deploy-model-batch.yml"
+
+jobs:
+  deploy-batch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload batch to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: KCSPmodel/batch/*
+          target: /home/ubuntu/deploy/model
+          strip_components: 2
+          rm: true
+
+      - name: Install and verify on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            set -e
+            APP=/opt/agri-forecast/model
+            sudo mkdir -p $APP/data && sudo chown -R ubuntu:ubuntu $APP
+
+            # 기상 CSV는 서버가 매 실행마다 갱신하므로 덮어쓰지 않는다
+            cp /home/ubuntu/deploy/model/pipeline.py $APP/pipeline.py
+            cp /home/ubuntu/deploy/model/data/hist_*.csv $APP/data/
+            for f in weather_haenam weather_taebak; do
+              [ -f "$APP/data/$f.csv" ] || cp /home/ubuntu/deploy/model/data/$f.csv $APP/data/
+            done
+
+            sudo cp /home/ubuntu/deploy/model/agriforecast-predict.service /etc/systemd/system/
+            sudo cp /home/ubuntu/deploy/model/agriforecast-predict.timer   /etc/systemd/system/
+            sudo systemctl daemon-reload
+            sudo systemctl enable agriforecast-predict.timer
+
+            # 파이프라인을 한 번 돌려 실제로 동작하는지 확인
+            sudo systemctl start agriforecast-predict.service
+            RESULT=$(systemctl show agriforecast-predict.service -p Result --value)
+            journalctl -u agriforecast-predict -n 30 --no-pager || true
+            if [ "$RESULT" != "success" ]; then
+              echo "::error::파이프라인 실행 실패 (Result=$RESULT)"
+              exit 1
+            fi
+            echo "배치 배포 성공"
+            systemctl list-timers agriforecast-predict --no-pager | head -3
