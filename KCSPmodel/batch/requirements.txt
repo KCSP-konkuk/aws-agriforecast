@@ -1,0 +1,9 @@
+# 버전 고정 필수
+#  - pandas 3.x 는 fillna(method=) 제거로 기존 모델 스크립트 실행 불가
+#  - xgboost 버전에 따라 학습 결과가 달라짐 (3.4.1: R²0.787 / 3.2.0: R²0.804)
+pandas==2.2.3
+numpy<2.3
+scikit-learn
+xgboost==3.2.0
+pymysql
+requests

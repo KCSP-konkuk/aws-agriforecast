@@ -208,32 +208,40 @@ SELECTED = ['pma3', 'pmom3', 'plag1', '평균_최저초상온도_l3', 'piy', 'py
 
 
 def build_features(df):
+    """배추가격_최종모델_v2.py의 피쳐 엔지니어링과 동일 (후보 77개)"""
     for lag in [1, 2, 3, 4, 5, 6, 9, 12, 18, 36]:
         df[f'plag{lag}'] = df[TARGET].shift(lag)
     for w in [3, 6, 12]:
         df[f'pma{w}'] = df[TARGET].shift(1).rolling(w).mean()
     for w in [3, 6]:
         df[f'pstd{w}'] = df[TARGET].shift(1).rolling(w).std()
-    df['pmom3'] = df['plag1'] / df['plag3'].replace(0, np.nan)
-    df['pyoy'] = df['plag1'] / df['plag36'].replace(0, np.nan)
+    df['pmom3'] = df['plag1'] - df['plag4']
+    df['pyoy'] = df[TARGET].shift(1) / df[TARGET].shift(37) - 1
     df['p_vs_py'] = df['plag1'] / df['평년'].replace(0, np.nan)
     df['p_vs_jn'] = df['plag1'] / df['전년'].replace(0, np.nan)
-    for lag in [1, 3, 6, 12]:
+
+    for lag in [1, 2, 3]:
         df[f'slag{lag}'] = df['총반입량'].shift(lag)
-    for w in [3, 6]:
-        df[f'sma{w}'] = df['총반입량'].shift(1).rolling(w).mean()
+    df['sma3'] = df['총반입량'].shift(1).rolling(3).mean()
+    df['sma6'] = df['총반입량'].shift(1).rolling(6).mean()
+    df['schg'] = df['총반입량'].shift(1).pct_change()
+    df['svma'] = df['slag1'] / df['sma6'].replace(0, np.nan)
     df['ps_ratio'] = df['plag1'] / df['slag1'].replace(0, np.nan)
+
     for lag in [1, 3, 6, 12, 18]:
         df[f'srlag{lag}'] = df['평균_검색량'].shift(lag)
     df['srma3'] = df['평균_검색량'].shift(1).rolling(3).mean()
+
     for c in WEATHER_COLS:
         for lag in [1, 3, 6, 9]:
             df[f'{c}_l{lag}'] = df[c].shift(lag)
+
     df['temp_range_l3'] = df['평균_최고기온'].shift(3) - df['평균_최저기온'].shift(3)
     df['heat_stress'] = (df['평균_최고기온'].shift(3) > 30).astype(int)
     df['cold_stress'] = (df['평균_최저기온'].shift(3) < -5).astype(int)
     df['heavy_rain_l3'] = (df['총_강수량'].shift(3) > 100).astype(int)
     df['heavy_rain_l6'] = (df['총_강수량'].shift(6) > 100).astype(int)
+
     df['msin'] = np.sin(2 * np.pi * df['Month'] / 12)
     df['mcos'] = np.cos(2 * np.pi * df['Month'] / 12)
     df['piy'] = (df['Month'] - 1) * 3 + df['Period']
@@ -242,6 +250,18 @@ def build_features(df):
     df['kimchi'] = ((df['Month'] >= 10) & (df['Month'] <= 12)).astype(int)
     df['summer'] = ((df['Month'] >= 7) & (df['Month'] <= 9)).astype(int)
     return df
+
+
+def clean(df):
+    """v2와 동일: 후보 피쳐 전체가 유효해지는 지점부터 사용 후 보간"""
+    exclude = ({'idx', 'Year', 'Month', 'Period', 'PeriodStr', 'DATE',
+                TARGET, '전년', '평년', '총반입량', '평균_검색량'} | set(WEATHER_COLS))
+    all_features = [c for c in df.columns if c not in exclude and not df[c].isna().all()]
+    first_valid = df[all_features].dropna().index.min()
+    out = df.loc[first_valid:].copy().reset_index(drop=True)
+    out[all_features] = out[all_features].ffill().fillna(0).replace([np.inf, -np.inf], 0)
+    log.info('후보 피쳐 %d개 / 유효 시작 %s', len(all_features), out.DATE.iloc[0])
+    return out
 
 
 def main():
@@ -306,11 +326,7 @@ def main():
         df = df.sort_values('idx').reset_index(drop=True)
         log.info('병합 %d행 (%s ~ %s)', len(df), df.DATE.iloc[0], df.DATE.iloc[-1])
 
-        df = build_features(df)
-        # 원본과 동일: 시차 피쳐가 모두 유효해지는 지점부터 사용 후 결측 보간
-        first_valid = df[SELECTED].dropna().index.min()
-        df = df.loc[first_valid:].reset_index(drop=True)
-        df[SELECTED] = df[SELECTED].ffill().fillna(0).replace([np.inf, -np.inf], 0)
+        df = clean(build_features(df))
 
         train = df[(df.DATE != target_date) & df[TARGET].notna()]
         test = df[df.DATE == target_date]
