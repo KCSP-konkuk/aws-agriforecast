@@ -53,8 +53,9 @@ jobs:
             sudo cp /home/ubuntu/deploy/model/agriforecast-predict-onion.service /etc/systemd/system/
             sudo cp /home/ubuntu/deploy/model/agriforecast-predict-onion.timer   /etc/systemd/system/
             sudo systemctl daemon-reload
-            sudo systemctl enable agriforecast-predict.timer
-            sudo systemctl enable agriforecast-predict-onion.timer
+            # --now 가 있어야 지금 바로 뜬다. enable 만 하면 다음 부팅까지 inactive 다.
+            sudo systemctl enable --now agriforecast-predict.timer
+            sudo systemctl enable --now agriforecast-predict-onion.timer
 
             # 품목별로 한 번씩 돌려 실제로 동작하는지 확인. 하나라도 실패하면 배포 실패다.
             FAILED=""
