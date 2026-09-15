@@ -37,7 +37,7 @@ KMA_URL = 'https://apihub.kma.go.kr/api/typ01/url/kma_sfcdd.php'
 
 ITEM = '양파'
 STATION = 288          # 밀양 — 원본 기준지 창녕군 대지면에 가장 가까운 ASOS 상시 지점
-SOLAR_DONOR = 264      # 거창 — 밀양은 일사 관측이 2025-05 부터뿐이라 과거분을 공여받는다
+SOLAR_DONOR = 264      # 거창 — 일사는 전 구간 이쪽 값을 쓴다(밀양 관측은 2025-05 부터뿐)
 WEATHER_CSV = 'weather_miryang.csv'
 PM = {'상순': 0, '중순': 1, '하순': 2}
 PS = ['상순', '중순', '하순']
@@ -188,7 +188,9 @@ def update_weather():
         don = aggregate_weather(daily[daily.stn == SOLAR_DONOR])[['DATE', '평균 일사량(MJ/㎡)']] \
             .rename(columns={'평균 일사량(MJ/㎡)': 'si_d'})
         new = new.merge(don, on='DATE', how='left')
-        new['평균 일사량(MJ/㎡)'] = new['평균 일사량(MJ/㎡)'].fillna(new['si_d'])
+        # 일사는 결측만 메우는 게 아니라 **항상** 거창 값으로 덮는다. fillna 로 두면 밀양에
+        # 관측이 생긴 2025-05 를 기점으로 한 컬럼 안에서 관측지가 갈린다.
+        new['평균 일사량(MJ/㎡)'] = new['si_d']
         new = new.drop(columns=['si_d'])
         keep = cur[cur.DATE.astype(str) < new.DATE.astype(str).min()]
         merged = pd.concat([keep, new[['DATE'] + [c for c in new.columns
