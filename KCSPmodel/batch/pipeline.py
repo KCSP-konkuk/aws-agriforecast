@@ -156,7 +156,9 @@ def update_weather(last_needed):
         don = aggregate_weather(daily, SOLAR_DONOR[name])[['DATE', '평균_일사량']] \
             .rename(columns={'평균_일사량': 'si_d'})
         new = new.merge(don, on='DATE', how='left')
-        new['평균_일사량'] = new['평균_일사량'].fillna(new['si_d'])
+        # 일사는 결측만 메우는 게 아니라 **항상** 공여 지점 값으로 덮는다. fillna 로 두면
+        # 태백에 일사 관측이 생긴 2025 년을 기점으로 한 컬럼 안에서 관측지가 갈린다.
+        new['평균_일사량'] = new['si_d']
         new = new.drop(columns=['si_d'])
         merged = pd.concat([cur[cur.DATE.astype(str) < new.DATE.min()], new], ignore_index=True)
         merged['k'] = [to_idx(int(str(d)[:4]), int(str(d)[4:6]), PM[str(d)[6:]]) for d in merged.DATE]
