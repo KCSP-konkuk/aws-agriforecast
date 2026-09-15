@@ -1,0 +1,11 @@
+[Unit]
+Description=AgriForecast 양파 예측 파이프라인 매일 실행
+
+[Timer]
+# 배추(20:30 UTC)와 겹치지 않게 20분 뒤. t3.small 이라 XGBoost 학습이 겹치면 부담이다.
+OnCalendar=*-*-* 20:50:00 UTC
+Persistent=true
+RandomizedDelaySec=600
+
+[Install]
+WantedBy=timers.target

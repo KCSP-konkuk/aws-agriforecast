@@ -41,24 +41,33 @@ jobs:
             sudo mkdir -p $APP/data && sudo chown -R ubuntu:ubuntu $APP
 
             # 기상 CSV는 서버가 매 실행마다 갱신하므로 덮어쓰지 않는다
-            cp /home/ubuntu/deploy/model/pipeline.py $APP/pipeline.py
+            cp /home/ubuntu/deploy/model/pipeline.py       $APP/pipeline.py
+            cp /home/ubuntu/deploy/model/pipeline_onion.py $APP/pipeline_onion.py
             cp /home/ubuntu/deploy/model/data/hist_*.csv $APP/data/
-            for f in weather_haenam weather_taebak; do
+            for f in weather_haenam weather_taebak weather_miryang; do
               [ -f "$APP/data/$f.csv" ] || cp /home/ubuntu/deploy/model/data/$f.csv $APP/data/
             done
 
-            sudo cp /home/ubuntu/deploy/model/agriforecast-predict.service /etc/systemd/system/
-            sudo cp /home/ubuntu/deploy/model/agriforecast-predict.timer   /etc/systemd/system/
+            sudo cp /home/ubuntu/deploy/model/agriforecast-predict.service       /etc/systemd/system/
+            sudo cp /home/ubuntu/deploy/model/agriforecast-predict.timer         /etc/systemd/system/
+            sudo cp /home/ubuntu/deploy/model/agriforecast-predict-onion.service /etc/systemd/system/
+            sudo cp /home/ubuntu/deploy/model/agriforecast-predict-onion.timer   /etc/systemd/system/
             sudo systemctl daemon-reload
             sudo systemctl enable agriforecast-predict.timer
+            sudo systemctl enable agriforecast-predict-onion.timer
 
-            # 파이프라인을 한 번 돌려 실제로 동작하는지 확인
-            sudo systemctl start agriforecast-predict.service
-            RESULT=$(systemctl show agriforecast-predict.service -p Result --value)
-            journalctl -u agriforecast-predict -n 30 --no-pager || true
-            if [ "$RESULT" != "success" ]; then
-              echo "::error::파이프라인 실행 실패 (Result=$RESULT)"
+            # 품목별로 한 번씩 돌려 실제로 동작하는지 확인. 하나라도 실패하면 배포 실패다.
+            FAILED=""
+            for u in agriforecast-predict agriforecast-predict-onion; do
+              sudo systemctl start $u.service || true
+              RESULT=$(systemctl show $u.service -p Result --value)
+              echo "--- $u (Result=$RESULT)"
+              journalctl -u $u -n 30 --no-pager || true
+              [ "$RESULT" = "success" ] || FAILED="$FAILED $u"
+            done
+            if [ -n "$FAILED" ]; then
+              echo "::error::파이프라인 실행 실패:$FAILED"
               exit 1
             fi
             echo "배치 배포 성공"
-            systemctl list-timers agriforecast-predict --no-pager | head -3
+            systemctl list-timers 'agriforecast-predict*' --no-pager | head -4
