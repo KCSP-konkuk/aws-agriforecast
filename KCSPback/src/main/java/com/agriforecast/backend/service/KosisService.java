@@ -23,8 +23,8 @@ import java.util.Map;
 
 /**
  * KOSIS API → CpiData, PpiData DB 저장
- * CPI: 소비자물가지수 품목별 (배추, 양배추, 양파)
- * PPI: 생산자물가지수 품목별 (배추, 양배추, 양파)
+ * CPI: 소비자물가지수 품목별 (배추, 양배추, 당근, 양파)
+ * PPI: 생산자물가지수 품목별 (배추, 양배추, 양파) — 당근은 통계 항목이 없다
  */
 @Service
 @Transactional
@@ -69,14 +69,16 @@ public class KosisService {
     }
 
     // CPI 품목 코드: objL2 사용 (DT_1J22112 테이블)
+    // 당근은 CPI 에만 있다 — PPI(DT_404Y016) 891개 품목에 당근 항목 자체가 없다.
     private static final Map<String, String> CPI_ITEM_CODES = Map.of(
             "배추",  "A02A01701",
             "양배추", "A02A01704",
+            "당근",  "A02A01710",
             "양파",  "A02A01722"
     );
 
     /**
-     * 연도 범위로 CPI 수집 및 저장 (배추, 양배추, 양파)
+     * 연도 범위로 CPI 수집 및 저장 (배추, 양배추, 당근, 양파)
      */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public int collectCpi(int startYear, int endYear) {
