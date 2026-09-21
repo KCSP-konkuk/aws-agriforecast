@@ -11,7 +11,8 @@
 systemd 타이머로 매일 실행. 순이 바뀌면 예측 대상이 자동으로 다음 순이 된다.
 """
 import os, sys, json, logging
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 import numpy as np
 import pandas as pd
 import pymysql
@@ -72,6 +73,15 @@ def next_period(y, m, p):
     if p == 2:
         return (y + 1, 1, 0) if m == 12 else (y, m + 1, 0)
     return y, m, p + 1
+
+
+KST = ZoneInfo('Asia/Seoul')
+
+
+def kst_today():
+    """서버 TZ가 UTC라 date.today()는 KST 새벽 실행 시 하루 전을 가리킨다.
+    순(旬) 판정·기상 수집 범위는 모두 한국 날짜 기준이어야 한다."""
+    return datetime.now(KST).date()
 
 
 def last_complete_period(today):
@@ -146,7 +156,7 @@ def update_weather(last_needed):
         # 마지막 보유 순은 진행 중이었을 수 있으므로 그 달부터 항상 다시 받아 덮어씀
         y, m = int(have_max[:4]), int(have_max[4:6])
         start = date(y, m, 1)
-        daily = fetch_kma(start, date.today() - timedelta(days=1),
+        daily = fetch_kma(start, kst_today() - timedelta(days=1),
                           f'{stn}:{SOLAR_DONOR[name]}')
         if daily.empty:
             log.warning('기상[%s] 신규 데이터 없음', name)
@@ -267,7 +277,7 @@ def clean(df):
 
 
 def main():
-    today = date.today()
+    today = kst_today()
     ly, lm, lp = last_complete_period(today)
     last_idx = to_idx(ly, lm, lp)
     ny, nm, np_ = next_period(ly, lm, lp)
