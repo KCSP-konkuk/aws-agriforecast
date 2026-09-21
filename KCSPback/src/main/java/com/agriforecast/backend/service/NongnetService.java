@@ -228,6 +228,7 @@ public class NongnetService {
         items.put("양파", new String[] { "24400", "1키로", "1" });
         items.put("양배추", new String[] { "21200", "8키로망대", "8" });
         items.put("당근", new String[] { "23200", "20키로상자", "20" });
+        items.put("홍고추", new String[] { "24210", "10키로상자", "10" });
         return items;
     }
 }
