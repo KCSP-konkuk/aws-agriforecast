@@ -28,6 +28,10 @@ public class NongnetService {
     private static final Logger logger = LoggerFactory.getLogger(NongnetService.class);
     private static final String URL = "https://www.nongnet.or.kr/front/M000000258/marketInfo/garak.do";
     private static final Map<String, String[]> TARGET_ITEMS = createTargetItems();
+    /** 농넷은 간헐적으로 응답이 늘어진다. 실패 건만 아래 횟수까지 다시 시도한다. */
+    private static final int MAX_ATTEMPTS = 3;
+    private static final int TIMEOUT_MS = 20000;
+    private static final long RETRY_DELAY_MS = 3000L;
 
     private final AgriPriceRepository agriPriceRepository;
 
@@ -82,26 +86,10 @@ public class NongnetService {
                 }
 
                 try {
-                    Document doc = Jsoup.connect(URL)
-                            .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                            .cookies(sessionCookies)
-                            .referrer(URL)
-                            .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-                            .header("Accept-Language", "ko-KR,ko;q=0.9")
-                            .data("searchSymbol1", "garak")
-                            .data("searchName1", "가락")
-                            .data("menuType", "garak")
-                            .data("searchDate", targetDateStr)
-                            .data("bestDate", targetDateStr)
-                            .data("searchName2", pumName)
-                            .data("searchSymbol2", pumCd)
-                            .data("searchScd", pumCd)
-                            .data("searchName3", trdName)
-                            .data("searchSymbol3", trdCd)
-                            .data("searchTrd", trdCd)
-                            .timeout(10000)
-                            .post();
-
+                    Document doc = fetchWithRetry(sessionCookies, targetDateStr, pumName, pumCd, trdName, trdCd);
+                    if (doc == null) {
+                        continue;
+                    }
                     Elements tables = doc.select("table");
                     if (!tables.isEmpty()) {
                         Element firstTable = tables.first();
@@ -120,9 +108,9 @@ public class NongnetService {
                                     String priceStr = tds.get(i - 1).text().replace(",", "").trim();
                                     if (!priceStr.isEmpty() && !priceStr.equals("-")) {
                                         priceToSave = Double.parseDouble(priceStr);
-                                    }
-                                    if ("상".equals(gradeType)) {
-                                        break; // '상'을 찾으면 즉시 종료
+                                        if ("상".equals(gradeType)) {
+                                            break; // '상'에 실제 값이 있을 때만 종료
+                                        }
                                     }
                                 }
                             }
@@ -154,25 +142,84 @@ public class NongnetService {
         return savedCount;
     }
 
+
+    /**
+     * 농넷 일별 표를 가져온다. 타임아웃 등 실패 시 MAX_ATTEMPTS 까지 재시도하고,
+     * 끝내 실패하면 null 을 돌려준다(해당 건만 건너뜀).
+     */
+    private Document fetchWithRetry(Map<String, String> sessionCookies, String targetDateStr,
+                                    String pumName, String pumCd, String trdName, String trdCd) {
+        Exception last = null;
+        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            try {
+                return Jsoup.connect(URL)
+                        .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                        .cookies(sessionCookies)
+                        .referrer(URL)
+                        .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                        .header("Accept-Language", "ko-KR,ko;q=0.9")
+                        .data("searchSymbol1", "garak")
+                        .data("searchName1", "가락")
+                        .data("menuType", "garak")
+                        .data("searchDate", targetDateStr)
+                        .data("bestDate", targetDateStr)
+                        .data("searchName2", pumName)
+                        .data("searchSymbol2", pumCd)
+                        .data("searchScd", pumCd)
+                        .data("searchName3", trdName)
+                        .data("searchSymbol3", trdCd)
+                        .data("searchTrd", trdCd)
+                        .timeout(TIMEOUT_MS)
+                        .post();
+            } catch (Exception e) {
+                last = e;
+                logger.warn("Nongnet 크롤링 재시도 {}/{} ({} - {}): {}",
+                        attempt, MAX_ATTEMPTS, targetDateStr, pumName, e.getMessage());
+                if (attempt < MAX_ATTEMPTS) {
+                    try {
+                        Thread.sleep(RETRY_DELAY_MS);
+                    } catch (InterruptedException ignore) {
+                        Thread.currentThread().interrupt();
+                        return null;
+                    }
+                }
+            }
+        }
+        logger.error("Nongnet 크롤링 최종 실패 ({} - {}): {}", targetDateStr, pumName,
+                last == null ? "unknown" : last.getMessage());
+        return null;
+    }
+
     /**
      * GET 요청으로 세션 쿠키(JSESSIONID 등) 획득
      */
     private Map<String, String> acquireSessionCookies() {
+        for (int attempt = 1; attempt <= 2; attempt++) {
         try {
             Connection.Response response = Jsoup.connect(URL)
                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                     .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
                     .header("Accept-Language", "ko-KR,ko;q=0.9")
                     .method(Connection.Method.GET)
-                    .timeout(10000)
+                    .timeout(TIMEOUT_MS)
                     .execute();
             Map<String, String> cookies = response.cookies();
             logger.info("농넷 세션 쿠키 획득: {}", cookies.keySet());
             return cookies;
         } catch (Exception e) {
-            logger.warn("농넷 세션 쿠키 획득 실패 (쿠키 없이 진행): {}", e.getMessage());
-            return Collections.emptyMap();
+            logger.warn("농넷 세션 쿠키 획득 실패 {}/2: {}", attempt, e.getMessage());
+            if (attempt < 2) {
+                try {
+                    Thread.sleep(RETRY_DELAY_MS);
+                } catch (InterruptedException ignore) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
         }
+        }
+        logger.warn("농넷 세션 쿠키 획득 실패 - 쿠키 없이 진행");
+        return Collections.emptyMap();
     }
 
     private static Map<String, String[]> createTargetItems() {

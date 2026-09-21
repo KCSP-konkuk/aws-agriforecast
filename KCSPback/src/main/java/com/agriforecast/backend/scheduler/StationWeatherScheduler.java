@@ -26,9 +26,9 @@ public class StationWeatherScheduler {
     }
 
     /**
-     * 매일 새벽 1시: 전날 데이터 수집
+     * 매일 10:00 KST: 전날 데이터 수집
      */
-    @Scheduled(cron = "0 0 1 * * *")
+    @Scheduled(cron = "0 0 10 * * *", zone = "Asia/Seoul")
     public void dailyCollect() {
         LocalDate yesterday = LocalDate.now().minusDays(1);
         logger.info("일별 기상 수집 시작: {}", yesterday);

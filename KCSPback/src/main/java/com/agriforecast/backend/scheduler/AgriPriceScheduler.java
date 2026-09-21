@@ -18,7 +18,7 @@ import java.time.LocalDate;
  *  1단계: CSV(2018~2025) → DB 일괄 적재 (추후 구현)
  *  2단계: 2026-01-01 ~ 어제까지 누락 데이터 크롤링으로 보충
  *
- * [매일 새벽 2시]
+ * [매일 11:00 KST]
  *  전날 데이터 크롤링 → DB 저장
  */
 @Component
@@ -28,6 +28,9 @@ public class AgriPriceScheduler {
 
     /** CSV 이후 크롤링 수집 시작일 */
     private static final LocalDate CRAWL_START = LocalDate.of(2026, 3, 22);
+
+    /** 매일 수집 후 되짚어 확인할 일수 (농넷 타임아웃 결손 자동 복구용) */
+    private static final int BACKFILL_DAYS = 7;
 
     private final NongnetService nongnetService;
 
@@ -58,13 +61,26 @@ public class AgriPriceScheduler {
     }
 
     /**
-     * 매일 새벽 2시: 전날 데이터 크롤링
+     * 매일 11:00 KST: 전날 데이터 크롤링 + 최근 7일 누락분 보충
      */
-    @Scheduled(cron = "0 0 2 * * *")
+    @Scheduled(cron = "0 0 11 * * *", zone = "Asia/Seoul")
     public void dailyCollect() {
         LocalDate yesterday = LocalDate.now().minusDays(1);
         logger.info("일별 가격 수집 시작: {}", yesterday);
         int saved = nongnetService.collectPriceByDateRange(yesterday, yesterday);
         logger.info("일별 가격 수집 완료: {}건 저장", saved);
+
+        // 농넷 타임아웃으로 빠진 날이 영구 결손으로 남지 않도록 최근 구간을 다시 훑는다.
+        // collectPriceByDateRange 가 이미 있는 날짜는 건너뛰므로 실제 요청은 결손분에만 나간다.
+        LocalDate backfillFrom = yesterday.minusDays(BACKFILL_DAYS - 1L);
+        if (backfillFrom.isBefore(CRAWL_START)) {
+            backfillFrom = CRAWL_START;
+        }
+        if (!backfillFrom.isAfter(yesterday)) {
+            int refilled = nongnetService.collectPriceByDateRange(backfillFrom, yesterday);
+            if (refilled > 0) {
+                logger.info("가격 누락분 보충: {} ~ {}, {}건", backfillFrom, yesterday, refilled);
+            }
+        }
     }
 }

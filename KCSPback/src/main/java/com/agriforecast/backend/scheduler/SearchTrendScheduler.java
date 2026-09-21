@@ -27,7 +27,7 @@ public class SearchTrendScheduler {
         this.naverDataLabService = naverDataLabService;
     }
 
-    @Scheduled(cron = "0 0 4 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 30 10 * * *", zone = "Asia/Seoul")
     public void dailyCollect() {
         LocalDate yesterday = LocalDate.now().minusDays(1);
         logger.info("검색량 일별 자동 수집 시작: {}", yesterday);

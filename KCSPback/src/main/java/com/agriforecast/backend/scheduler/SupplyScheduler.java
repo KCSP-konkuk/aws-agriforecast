@@ -26,9 +26,9 @@ public class SupplyScheduler {
     }
 
     /**
-     * 매일 새벽 3시: 전날 데이터 수집
+     * 매일 12:00 KST: 전날 데이터 수집
      */
-    @Scheduled(cron = "0 0 3 * * *")
+    @Scheduled(cron = "0 0 12 * * *", zone = "Asia/Seoul")
     public void dailyCollect() {
         LocalDate yesterday = LocalDate.now().minusDays(1);
         logger.info("일별 반입량 수집 시작: {}", yesterday);
