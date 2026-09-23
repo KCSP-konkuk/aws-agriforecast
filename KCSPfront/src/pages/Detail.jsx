@@ -7,7 +7,7 @@ import Layout from '../components/Layout';
 import { api } from '../api/api';
 
 // agri_price 테이블에서 받아온 품목명 순서 고정
-const ITEM_ORDER = ['배추', '양파', '양배추', '당근'];
+const ITEM_ORDER = ['배추', '양파', '홍고추', '양배추', '당근'];
 
 // 품목별 거래 단위
 const ITEM_UNIT = {
@@ -15,6 +15,7 @@ const ITEM_UNIT = {
   양파:   '1키로',
   양배추: '8키로망대',
   당근:   '20키로상자',
+  홍고추: '10키로상자',
 };
 
 // "202606상순" → "2026-06-01" (집계용 날짜)

@@ -1,0 +1,11 @@
+[Unit]
+Description=AgriForecast 홍고추 예측 파이프라인 매일 실행
+
+[Timer]
+# 양파(20:50 UTC + 최대 10분)가 끝난 뒤. 시드 12 개 학습이라 셋 중 가장 오래 걸린다(수 분).
+OnCalendar=*-*-* 21:10:00 UTC
+Persistent=true
+RandomizedDelaySec=600
+
+[Install]
+WantedBy=timers.target

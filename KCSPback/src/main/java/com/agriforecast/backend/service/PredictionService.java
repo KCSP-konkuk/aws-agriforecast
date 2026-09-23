@@ -18,7 +18,8 @@ public class PredictionService {
         "양파",   "onion_predictions",
         "배추",   "cabbage_predictions",
         "당근",   "carrot_predictions",
-        "양배추", "head_cabbage_predictions"
+        "양배추", "head_cabbage_predictions",
+        "홍고추", "redpepper_predictions"
     );
 
     public List<Map<String, Object>> getPredictions(String itemName) {
