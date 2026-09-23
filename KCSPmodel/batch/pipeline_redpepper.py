@@ -387,7 +387,8 @@ def load_hist():
     anchors = set()                                # 일별 조회를 이미 한 날(창의 끝)
     a = os.path.join(DATA, CACHE_ANCHOR)
     if os.path.exists(a):
-        anchors = set(pd.read_csv(a, parse_dates=['anchor']).anchor.dt.date)
+        # 조회할 창이 없던 날엔 헤더만 저장된다 — 빈 열은 날짜로 파싱되지 않으므로 직접 변환한다
+        anchors = {d.date() for d in pd.to_datetime(pd.read_csv(a)['anchor'])}
     return soon, daily.drop_duplicates('date', keep='last'), anchors, hist_end
 
 
