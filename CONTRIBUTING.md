@@ -73,9 +73,11 @@ flowchart LR
 | 작업 | 시각 (KST) | 정의 위치 |
 |---|---|---|
 | DB 백업 | 매일 03:00 | `ops/backup/` (**자동 배포 안 됨**, 서버에 수동 설치) |
-| 배추 예측 | 매일 05:30 | `KCSPmodel/batch/agriforecast-predict.timer` |
-| 양파 예측 | 매일 05:50 | `KCSPmodel/batch/agriforecast-predict-onion.timer` |
-| 가격·반입량·검색량 등 수집 | 백엔드 스케줄러 | `KCSPback` 의 `@Scheduled` |
+| 배추 예측 | 매일 05:30 (+최대 10분) | `KCSPmodel/batch/agriforecast-predict.timer` |
+| 양파 예측 | 매일 05:50 (+최대 10분) | `KCSPmodel/batch/agriforecast-predict-onion.timer` |
+| 홍고추 예측 | 매일 06:10 (+최대 10분) | `KCSPmodel/batch/agriforecast-predict-redpepper.timer` |
+| 검색량 전체 갱신 | 매일 10:30 | `KCSPback` `SearchTrendScheduler` — 2016-01-01~어제를 한 번에 다시 받는다 |
+| 가격·반입량 등 그 밖의 수집 | 백엔드 스케줄러 | `KCSPback` 의 `@Scheduled` |
 
 타이머 파일의 `OnCalendar` 는 **UTC** 로 적혀 있다(서버 TZ 가 UTC). KST 로 착각하지 말 것.
 
@@ -135,7 +137,8 @@ flowchart LR
 
 **모델 배치**
 
-- 새 품목 파이프라인을 추가하면 `deploy-model-batch.yml` 의 **복사 목록·타이머 등록·검증 루프에 직접 추가**해야 한다. 파일만 넣으면 서버에 안 올라간다
+- 새 품목 파이프라인을 추가하면 `deploy-model-batch.yml` 의 **복사 목록·타이머 등록·검증 루프에 직접 추가**해야 한다. 파일만 넣으면 서버에 안 올라간다. **3절의 '서버에서 자동으로 도는 것' 표도 같이 고친다**
+- 캐시·상태 파일을 쓰는 배치는 **같은 조건으로 두 번 연달아 실행**하는 테스트를 둔다. 첫 실행만 보면 못 잡는다(2026-09-23 홍고추 hotfix #13)
 - `data/hist_*.csv` 는 배포 때마다 덮어쓴다. `weather_*.csv` 는 서버가 매일 갱신하므로 **없을 때만** 복사한다
 - `KCSPmodel/batch/requirements.txt` 버전 고정을 풀지 않는다 — pandas 2.2.3(3.x 는 실행 불가), xgboost 3.2.0(버전이 오르면 성능이 떨어진다). 워크플로는 패키지를 설치하지 않으므로, 바꾸면 서버 venv 에 직접 반영해야 한다
 - 날짜·순 판정은 반드시 KST 기준(`kst_today()`). 서버 시계는 UTC 다
