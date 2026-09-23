@@ -7,13 +7,15 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 /**
  * 네이버 검색량 데이터 수집 스케줄러.
  *
- * [매일 새벽 4시]
- *  전날 검색량 API 호출 → DB 저장
+ * [매일 10:30 KST]
+ *  키워드마다 2016-01-01 ~ 어제를 한 번에 다시 받아 덮어쓴다.
+ *  데이터랩 값은 요청 기간 기준 상대값이라 하루씩 받으면 매일 100 이 된다(2026-09-14 ~ 22 사고).
  */
 @Component
 public class SearchTrendScheduler {
@@ -29,16 +31,14 @@ public class SearchTrendScheduler {
 
     @Scheduled(cron = "0 30 10 * * *", zone = "Asia/Seoul")
     public void dailyCollect() {
-        LocalDate yesterday = LocalDate.now().minusDays(1);
-        logger.info("검색량 일별 자동 수집 시작: {}", yesterday);
+        LocalDate yesterday = LocalDate.now(ZoneId.of("Asia/Seoul")).minusDays(1);
+        logger.info("검색량 전체 갱신 시작: {} ~ {}", NaverDataLabService.SERIES_START, yesterday);
 
         for (String keyword : KEYWORDS) {
             try {
-                int saved = naverDataLabService.collectAndSave(keyword, yesterday, yesterday);
-                logger.info("검색량 일별 자동 수집 완료 - keyword={}, saved={}", keyword, saved);
+                naverDataLabService.refreshSeries(keyword, yesterday);
             } catch (Exception e) {
-                logger.error("검색량 일별 자동 수집 실패 - keyword={}, date={}: {}",
-                        keyword, yesterday, e.getMessage());
+                logger.error("검색량 갱신 실패 - keyword={}, end={}: {}", keyword, yesterday, e.getMessage());
             }
         }
     }
