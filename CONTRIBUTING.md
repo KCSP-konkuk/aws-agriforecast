@@ -14,7 +14,7 @@
 
 ```bash
 git fetch origin
-git checkout -b feature/redpepper-pipeline origin/develop
+git checkout -b feature/redpepper-pipeline origin/develop   # 기본 브랜치가 develop 이다
 ```
 
 - 브랜치 이름은 영어 소문자·하이픈 (`feature/onion-weather`, `hotfix/nongnet-timeout`)
@@ -80,7 +80,7 @@ flowchart LR
 
 ## 4. PR
 
-- **base 는 `develop`** (`gh pr create --base develop`). 레포 기본 브랜치가 `main` 이라 그냥 만들면 `main` 으로 잡힌다 — 꼭 확인
+- **base 는 `develop`**. 레포 기본 브랜치가 `develop` 이라 그냥 만들면 `develop` 으로 잡힌다. 릴리스 PR 만 base 를 `main` 으로 바꾼다
 - 제목은 커밋과 같은 형식 (`feat: …`)
 - 작업 중이면 **Draft PR** 로 먼저 열고 같은 브랜치에 이어 올린다
 - 머지 방식
