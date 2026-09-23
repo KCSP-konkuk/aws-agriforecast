@@ -1,0 +1,15 @@
+[Unit]
+Description=AgriForecast 홍고추 순별 가격 예측 파이프라인
+After=network-online.target mysql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/agri-forecast/model
+ExecStart=/opt/agri-forecast/model/venv/bin/python /opt/agri-forecast/model/pipeline_redpepper.py
+TimeoutStartSec=1800
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=agri-predict-redpepper
