@@ -37,6 +37,7 @@ git checkout -b feature/redpepper-pipeline origin/develop   # 기본 브랜치�
 | `docs` | 문서 | `docs: 작업·배포 가이드 추가` |
 | `chore` | 그 밖의 정리 | `chore: 프로덕션 JPA SQL 로그 비활성화` |
 | `refactor` | 동작 변화 없는 구조 변경 | |
+| `test` | 테스트 추가·수정 | `test: 홍고추 파이프라인 테스트 추가` |
 
 - 제목은 **명사형으로 끝낸다** — `~추가`, `~수정`, `~정리`, `~통일`. `~한다` 평서문은 쓰지 않는다
 - 스코프는 붙이지 않는다 (`feat(model): …` ✗ → `feat: …` ✓)
@@ -83,6 +84,11 @@ flowchart LR
 - **base 는 `develop`**. 레포 기본 브랜치가 `develop` 이라 그냥 만들면 `develop` 으로 잡힌다. 릴리스 PR 만 base 를 `main` 으로 바꾼다
 - 제목은 커밋과 같은 형식 (`feat: …`)
 - 작업 중이면 **Draft PR** 로 먼저 열고 같은 브랜치에 이어 올린다
+- PR 을 열면 **CI(`ci.yml`)** 가 돈다. **빨간불이면 머지하지 않는다**
+  - 모델 배치: `requirements.txt` 고정 버전으로 설치 → 파이프라인 컴파일 → `KCSPmodel/batch/tests` (외부 요청·DB 없이 가짜 응답으로 돈다)
+  - 백엔드: 컴파일 + 외부 의존 없는 테스트만(기존 테스트 대부분은 실제 API·DB 를 불러 CI 에서 뺐다)
+  - 프론트: `npm run build` (lint 는 기존 오류가 있어 아직 뺐다)
+  - CI 는 서버·외부 API·DB 에 붙지 않는다. 그쪽 실패는 배포 워크플로의 실행 검증·헬스체크가 잡는다
 - 머지 방식
   - `feature/*` → `develop`: **Squash and merge**
   - `develop` → `main`, `hotfix/*` → `main`, `main` → `develop`: **Create a merge commit** (두 브랜치의 조상 관계를 유지해야 다음 릴리스 PR 에 충돌이 안 난다)
@@ -133,6 +139,7 @@ flowchart LR
 - `data/hist_*.csv` 는 배포 때마다 덮어쓴다. `weather_*.csv` 는 서버가 매일 갱신하므로 **없을 때만** 복사한다
 - `KCSPmodel/batch/requirements.txt` 버전 고정을 풀지 않는다 — pandas 2.2.3(3.x 는 실행 불가), xgboost 3.2.0(버전이 오르면 성능이 떨어진다). 워크플로는 패키지를 설치하지 않으므로, 바꾸면 서버 venv 에 직접 반영해야 한다
 - 날짜·순 판정은 반드시 KST 기준(`kst_today()`). 서버 시계는 UTC 다
+- 파이프라인을 고치면 `KCSPmodel/batch/tests` 를 같이 고친다. 외부 없이 도는 백엔드 테스트를 새로 만들면 `ci.yml` 의 `--tests` 목록에 추가한다
 
 **외부 수집원(농넷 등)**
 
