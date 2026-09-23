@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,34 +37,31 @@ public class SearchTrendController {
     }
 
     // 검색 트렌드 수집(백필)
-    // POST /api/trend/collect?startDate=2026-03-22&endDate=2026-09-13
-    // keyword 생략 시 기본 4개 품목(배추/양파/양배추/당근) 전체 수집
+    // POST /api/trend/collect[?keyword=양배추][&endDate=2026-09-22]
+    // keyword 생략 시 기본 4개 품목 전체. 항상 2016-01-01 부터 endDate(생략 시 어제)까지 한 번에 받아 덮어쓴다.
+    // 기간을 나눠 받으면 데이터랩 정규화 기준이 구간마다 달라지므로 시작일은 받지 않는다.
     @PostMapping("/collect")
     public ResponseEntity<Map<String, Object>> collectTrends(
             @RequestParam(required = false) String keyword,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
         List<String> keywords = (keyword == null || keyword.isBlank())
                 ? DEFAULT_KEYWORDS
                 : List.of(keyword);
+        LocalDate end = endDate != null ? endDate : LocalDate.now(ZoneId.of("Asia/Seoul")).minusDays(1);
 
         Map<String, Object> saved = new LinkedHashMap<>();
-        int total = 0;
         for (String kw : keywords) {
             try {
-                int count = naverDataLabService.collectAndSave(kw, startDate, endDate);
-                saved.put(kw, count);
-                total += count;
+                saved.put(kw, naverDataLabService.refreshSeries(kw, end).toString());
             } catch (Exception e) {
                 saved.put(kw, "실패: " + e.getMessage());
             }
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("startDate", startDate.toString());
-        result.put("endDate", endDate.toString());
-        result.put("total", total);
+        result.put("startDate", NaverDataLabService.SERIES_START.toString());
+        result.put("endDate", end.toString());
         result.put("saved", saved);
         return ResponseEntity.ok(result);
     }
