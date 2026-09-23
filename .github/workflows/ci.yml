@@ -1,0 +1,68 @@
+name: CI
+
+# PR 단계 검사. 서버·외부 API·DB 에 붙지 않는다 — 그쪽 실패는 배포 워크플로의 실행 검증이 잡는다.
+on:
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  model-batch:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: KCSPmodel/batch
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'          # 서버(Ubuntu 24.04)와 같은 버전
+          cache: pip
+          cache-dependency-path: KCSPmodel/batch/requirements.txt
+      - name: Install deps (서버와 같은 고정 버전)
+        run: pip install -r requirements.txt pytest
+      - name: Compile pipelines
+        run: python -m py_compile pipeline.py pipeline_onion.py pipeline_redpepper.py
+      - name: Pytest
+        run: python -m pytest -q tests
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: KCSPback
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      # 기존 테스트 대부분은 실제 농넷·환율 API 를 부르거나 DB 가 필요해 CI 에서 돌리지 않는다.
+      # 외부 없이 도는 테스트만 여기에 이름으로 추가한다.
+      - name: Compile + 외부 의존 없는 테스트
+        run: |
+          chmod +x gradlew
+          ./gradlew compileJava test --tests 'com.agriforecast.backend.service.NaverDataLabServiceRefreshTest'
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: KCSPfront
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: KCSPfront/package-lock.json
+      # lint 는 기존 코드에 오류 27개가 있어 넣지 않았다(정리 후 추가)
+      - name: Build
+        run: |
+          npm ci
+          npm run build

@@ -67,6 +67,7 @@ PARAMS = dict(max_depth=5, n_estimators=1200, learning_rate=0.08, subsample=0.8,
               colsample_bytree=0.9, min_child_weight=12, reg_lambda=1.0,
               objective='reg:absoluteerror')
 SEEDS = 12
+DLAST_MAX_GAP = 10   # 막판 가격: 순 시작일과 마지막 거래일 간격 상한(일)
 
 REQ_GAP = 2.0          # 외부 요청 사이 최소 간격(초)
 REQ_TRY = 3
@@ -236,15 +237,18 @@ def assemble(soon, daily, target):
     target 과 그 뒤 행의 가격은 비운다. 다음 달 평년·전년은 정의대로 계산해 채운다"""
     rp = soon['홍고추'].copy()
     rp = rp[rp.DATE <= target].set_index('DATE')
-    codes = [shift_soon(target, n) for n in range(1, 4)]
-    for c in codes:
-        rp.loc[c] = [np.nan, np.nan, np.nan]
+    # 대상 순 행은 보통 API 가 준다(평년·전년 포함). 없으면 만들어 정의로 채운다
+    for c in [target] + [shift_soon(target, n) for n in range(1, 4)]:
+        if c not in rp.index:
+            rp.loc[c] = [np.nan, np.nan, np.nan]
     rp = rp.sort_index().reset_index()
     rp.loc[rp.DATE >= target, 'val'] = np.nan
     p = pd.to_numeric(rp.val, errors='coerce').tolist()
-    for i in rp.index[rp.DATE > target]:
-        rp.loc[i, 'yearAvg'] = olympic_avg(p, i)
-        rp.loc[i, 'bfYear'] = p[i - 36] if i >= 36 else np.nan
+    for i in rp.index[rp.DATE >= target]:
+        if pd.isna(rp.loc[i, 'yearAvg']):
+            rp.loc[i, 'yearAvg'] = olympic_avg(p, i)
+        if pd.isna(rp.loc[i, 'bfYear']):
+            rp.loc[i, 'bfYear'] = p[i - 36] if i >= 36 else np.nan
     df = rp.rename(columns={'val': 'price', 'yearAvg': 'ny', 'bfYear': 'py'})[['DATE', 'price', 'ny', 'py']]
     for c in ('price', 'ny', 'py'):
         df[c] = pd.to_numeric(df[c], errors='coerce')
@@ -311,7 +315,12 @@ def f_dlast(df, daily):
     d = daily.dropna(subset=['상']).sort_values('date')
     dd = pd.to_datetime(d.date).values; v = d['상'].values
     idx = np.searchsorted(dd, df.start.values, side='left') - 1
-    last = np.where(idx >= 0, v[np.clip(idx, 0, None)], np.nan)
+    ok = idx >= 0
+    last = np.where(ok, v[np.clip(idx, 0, None)], np.nan)
+    # 일별 조회가 계속 실패하면 몇 달 전 값을 집어 올 수 있다. 명절 휴장도 5일을 넘지 않았으므로
+    # (2001~2026 거래일 간격 최대 6일) 순 시작보다 DLAST_MAX_GAP 일 넘게 전이면 결측으로 둔다
+    gap = (df.start.values - dd[np.clip(idx, 0, None)]).astype('timedelta64[D]').astype(float)
+    last = np.where(ok & (gap <= DLAST_MAX_GAP), last, np.nan)
     return pd.DataFrame({'d_last1_vs_p1': last / df.price.shift(1)}, index=df.index)
 
 
@@ -321,8 +330,11 @@ def features(df, cross, trend, daily):
 
 
 # ---------------------------------------------------------------- 모델
-def fit_predict(df, X, train, test, params=PARAMS, k=K_TOP, seeds=SEEDS):
+def fit_predict(df, X, train, test, params=None, k=None, seeds=None):
     """비율 타깃. train 행으로 상위 k 피쳐를 고른 뒤 시드 평균. 반환: test 행 예측가"""
+    params = PARAMS if params is None else params
+    k = K_TOP if k is None else k
+    seeds = SEEDS if seeds is None else seeds
     A = df.price.shift(1); cols = list(X.columns)
     t = (df.price / A)[train]; ok = (t.notna() & np.isfinite(t)).values
     m0 = xgb.XGBRegressor(**params, random_state=0).fit(X.loc[train, cols][ok], t[ok])
