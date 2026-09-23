@@ -229,3 +229,27 @@ def test_필수_피쳐가_비면_쓰지_않고_실패한다(sandbox, monkeypatch
     # 과거분(~6/20) 이후 일별 창을 하나도 못 받으면 대상 순의 막판 가격이 비어야 한다
     assert pl.main() == 1
     assert not [q for q, a in conn.sql if q.startswith('INSERT')]
+
+
+def test_빈구간이_없는_날을_연달아_실행해도_된다(tmp_path, monkeypatch):
+    """운영 첫날 사고(2026-09-23): 조회할 일별 창이 없으면 앵커 캐시가 헤더만 저장되고,
+    다음 실행이 그 빈 파일을 날짜로 읽다가 죽었다"""
+    import shutil
+    for fn in list(pl.HIST_SOON.values()) + [pl.HIST_DAILY]:
+        shutil.copy(os.path.join(pl.DATA, fn), tmp_path)
+    full = {nm: pd.read_csv(os.path.join(pl.DATA, fn)).astype({'DATE': str}) for nm, fn in pl.HIST_SOON.items()}
+    conn = _Conn()
+    monkeypatch.setattr(pl, 'DATA', str(tmp_path))
+    monkeypatch.setattr(pl, 'fetch_soon', lambda http, item, day: full[item].tail(9)[['DATE', 'val', 'yearAvg', 'bfYear']])
+    monkeypatch.setattr(pl, 'fetch_daily', lambda http, day: pytest.fail('과거분이 덮으므로 일별 조회가 없어야 한다'))
+    monkeypatch.setattr(pl, 'fetch_trend', lambda http, props, end: fake_trend(end))
+    monkeypatch.setattr(pl, 'nongnet_session', lambda http: None)
+    monkeypatch.setattr(pl, 'props', lambda: {})
+    monkeypatch.setattr(pl, 'db', lambda P: conn)
+    monkeypatch.setattr(pl, 'kst_today', lambda: date(2026, 9, 23))
+    monkeypatch.setattr(pl, 'SEEDS', 2)
+    monkeypatch.setattr(pl, 'PARAMS', {**pl.PARAMS, 'n_estimators': 30})
+
+    assert pl.main() == 0
+    assert pd.read_csv(tmp_path / pl.CACHE_ANCHOR).empty      # 헤더만 있는 파일이 생긴다
+    assert pl.main() == 0                                     # 이 두 번째 실행이 운영에서 죽었다
