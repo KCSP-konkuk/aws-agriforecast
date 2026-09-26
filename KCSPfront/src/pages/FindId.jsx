@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import AuthLayout from '../components/AuthLayout';
+import { TextField, FormError, SubmitButton } from '../components/FormField';
 
 export default function FindId() {
   const [formData, setFormData] = useState({
@@ -47,67 +49,25 @@ export default function FindId() {
   };
 
   return (
-    <div className="font-display bg-background-light dark:bg-background-dark min-h-screen flex items-center justify-center p-6">
-      <div className="findid-container bg-white dark:bg-gray-800 rounded-lg shadow-lg p-10 w-full max-w-md text-center">
-        <h2 className="text-3xl font-bold mb-2 text-charcoal-gray dark:text-text-light">아이디 찾기</h2>
-        <p className="subtitle text-gray-600 dark:text-gray-400 mb-6">이름과 이메일을 입력하세요</p>
+    <AuthLayout title="아이디 찾기" subtitle="가입할 때 입력한 이름과 이메일을 입력하세요.">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <TextField label="이름" id="name" value={formData.name} onChange={handleChange} placeholder="예: 김농부" required />
+        <TextField label="이메일" id="email" type="email" invalid={!!error} value={formData.email} onChange={handleChange} placeholder="you@example.com" required />
+        <FormError>{error}</FormError>
+        <SubmitButton>아이디 찾기</SubmitButton>
+      </form>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group text-left">
-            <label htmlFor="name" className="text-charcoal-gray dark:text-text-light">이름</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-charcoal-gray dark:text-text-light focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="e.g., 김농부"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
+      {showResult && (
+        <div className="mt-6 rounded-lg border border-primary/20 bg-primary-light p-4 text-center">
+          <p className="text-text-main">
+            아이디: <strong className="text-primary text-lg">{foundId}</strong>
+          </p>
+        </div>
+      )}
 
-          <div className="form-group text-left relative">
-            <label htmlFor="email" className="text-charcoal-gray dark:text-text-light">이메일</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              className={`w-full px-4 py-3 rounded-lg border bg-white dark:bg-gray-700 text-charcoal-gray dark:text-text-light focus:outline-none focus:ring-2 focus:ring-primary ${
-                error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              }`}
-              placeholder="you@example.com"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-            {error && <p className="error-message text-red-600 text-sm mt-1">{error}</p>}
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-green-brand hover:bg-green-brand-light text-white font-bold py-3 rounded-lg transition-colors mt-2"
-          >
-            아이디 찾기
-          </button>
-        </form>
-
-        {showResult && (
-          <div className="result-box mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg" style={{display: 'block'}}>
-            <p className="text-gray-700 dark:text-gray-300">
-              아이디: <strong className="text-green-brand text-lg">{foundId}</strong>
-            </p>
-          </div>
-        )}
-
-        <Link 
-          to="/login" 
-          className="back-login block mt-6 text-muted-blue hover:underline text-sm font-medium"
-        >
-          로그인 화면으로
-        </Link>
-      </div>
-    </div>
+      <p className="mt-8 text-center text-sm">
+        <Link to="/login" className="font-bold text-primary hover:underline">로그인 화면으로</Link>
+      </p>
+    </AuthLayout>
   );
 }
-
