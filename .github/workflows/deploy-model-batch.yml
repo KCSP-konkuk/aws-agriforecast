@@ -44,6 +44,7 @@ jobs:
             cp /home/ubuntu/deploy/model/pipeline.py       $APP/pipeline.py
             cp /home/ubuntu/deploy/model/pipeline_onion.py $APP/pipeline_onion.py
             cp /home/ubuntu/deploy/model/pipeline_redpepper.py $APP/pipeline_redpepper.py
+            cp /home/ubuntu/deploy/model/backtest.py       $APP/backtest.py   # 세 파이프라인이 import 한다
             cp /home/ubuntu/deploy/model/data/hist_*.csv $APP/data/
             for f in weather_haenam weather_taebak weather_miryang; do
               [ -f "$APP/data/$f.csv" ] || cp /home/ubuntu/deploy/model/data/$f.csv $APP/data/
