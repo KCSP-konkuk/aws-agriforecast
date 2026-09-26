@@ -8,21 +8,37 @@ const DIRECTION_CONFIG = {
   '2': { symbol: '―', colorClass: 'text-text-main dark:text-gray-200' },
 };
 
+// 품목별 사용 데이터는 KCSPmodel/batch/pipeline*.py 기준. 모델 입력이 바뀌면 여기도 맞출 것
 const DATA_SOURCES = [
-  { icon: 'price_change',            label: '가격 이력',       desc: '순별 도매 평균가' },
-  { icon: 'wb_sunny',                label: '기상 데이터',     desc: '기온·강수·습도·일사량' },
-  { icon: 'local_shipping',          label: '시장 반입량',     desc: '도매시장 공급량' },
-  { icon: 'currency_exchange',       label: '환율',            desc: 'USD/KRW · CNY/KRW' },
-  { icon: 'shopping_cart',           label: '소비자물가지수',  desc: 'CPI' },
-  { icon: 'precision_manufacturing', label: '생산자물가지수',  desc: 'PPI' },
-  { icon: 'local_gas_station',       label: '국제 유가',       desc: '원유 종가 · 등락률' },
+  { icon: 'price_change',      label: '도매 가격',        desc: '농넷 가락시장 · 전 품목' },
+  { icon: 'local_shipping',    label: '시장 반입량',      desc: '배추 · 양파' },
+  { icon: 'wb_sunny',          label: '산지 기상',        desc: '기상청 ASOS · 배추 · 양파' },
+  { icon: 'search',            label: '검색량',           desc: '네이버 데이터랩 · 배추 · 홍고추' },
+  { icon: 'currency_exchange', label: '환율',             desc: 'USD · CNY · 양파' },
+  { icon: 'shopping_cart',     label: '물가지수',         desc: 'CPI · PPI · 양파' },
+  { icon: 'history',           label: '평년 · 전년 가격', desc: '양파 · 홍고추' },
+  { icon: 'nutrition',         label: '연관 품목 가격',   desc: '풋고추 · 청피망 · 홍고추' },
 ];
 
 const PIPELINE_STEPS = [
-  { step: '01', icon: 'database',       title: '데이터 수집',      desc: '7종 외부 데이터 통합 및 순별 정렬' },
-  { step: '02', icon: 'auto_awesome',   title: '피처 엔지니어링',  desc: '시계열 래그·이동평균·계절성·교차변수' },
-  { step: '03', icon: 'model_training', title: 'XGBoost 학습',     desc: '5-Fold 시계열 교차검증 + 하이퍼파라미터 탐색' },
-  { step: '04', icon: 'trending_up',    title: '순별 가격 예측',   desc: '상순·중순·하순 10일 단위 도매가 예측' },
+  { step: '01', icon: 'database',       title: '데이터 수집',      desc: '시세·기상·환율·물가·검색량을 순별로 정렬' },
+  { step: '02', icon: 'auto_awesome',   title: '피처 엔지니어링',  desc: '가격 래그·이동평균·계절성·기상 지표' },
+  { step: '03', icon: 'model_training', title: 'XGBoost 학습',     desc: '품목별 모델을 최신 데이터로 매일 재학습' },
+  { step: '04', icon: 'trending_up',    title: '순별 가격 예측',   desc: '다음 순 도매가 예측 후 실제가와 오차 기록' },
+];
+
+const MODEL_FEATURES = [
+  '품목별 XGBoost 모델을 따로 학습',
+  '배추: 여름(7~9월)엔 고랭지 산지 기상으로 전환',
+  '양파: 보릿고개(1~4월) 구간 가중 학습',
+  '홍고추: 직전 순 대비 변화율 예측 + 12개 모델 평균',
+];
+
+const KEY_VARIABLES = [
+  '과거 가격 추이 (최대 36순 래그 · 이동평균)',
+  '반입량 변화 · 가격 대비 공급 비율',
+  '산지 기상 (기온·강수·일사 · 집중호우)',
+  '환율·물가지수 시차 영향 · 검색량 추이',
 ];
 
 export default function Home() {
@@ -166,16 +182,16 @@ export default function Home() {
                       XGBoost 기반 순별(10일) 도매가격 예측
                     </h3>
                     <p className="text-sm text-text-main/75 dark:text-gray-300 leading-relaxed">
-                      2018~2024년 실측 데이터를 학습한 AI 모델이 가격·기상·공급량·환율·물가지수·유가 등
-                      <strong className="text-text-main dark:text-gray-100"> 7종의 외부 데이터</strong>를 복합 분석하여
-                      <strong className="text-text-main dark:text-gray-100"> 상순·중순·하순 단위</strong>로 농산물 도매가격을 예측합니다.
+                      품목마다 가격을 움직이는 요인이 달라 <strong className="text-text-main dark:text-gray-100">배추·양파·홍고추 모델을 각각 따로</strong> 설계했습니다.
+                      가격·반입량·기상·환율·물가지수·검색량 중 품목에 맞는 데이터로 매일 새벽 다시 학습해
+                      <strong className="text-text-main dark:text-gray-100"> 다음 순(상순·중순·하순)</strong> 도매가격을 예측합니다.
                     </p>
                     <div className="flex gap-4 mt-3">
                       {[
-                        { label: '학습 기간', value: '2018 – 2024' },
+                        { label: '예측 품목', value: '배추·양파·홍고추' },
                         { label: '예측 단위', value: '순별 (10일)' },
                         { label: '알고리즘',  value: 'XGBoost' },
-                        { label: '검증 방법', value: '5-Fold CV' },
+                        { label: '갱신 주기', value: '매일 새벽' },
                       ].map(({ label, value }) => (
                         <div key={label} className="text-center">
                           <p className="text-xs text-text-main/50 dark:text-gray-500">{label}</p>
@@ -214,7 +230,7 @@ export default function Home() {
               {/* 학습 데이터 소스 */}
               <div className="mb-4">
                 <p className="text-xs font-bold text-text-main/50 dark:text-gray-500 uppercase tracking-wider mb-3">
-                  학습 데이터 소스 (7종)
+                  학습 데이터 소스 ({DATA_SOURCES.length}종)
                 </p>
                 <div className="grid grid-cols-4 gap-2">
                   {DATA_SOURCES.map((src) => (
@@ -240,23 +256,13 @@ export default function Home() {
                     모델 특징
                   </h4>
                   <ul className="space-y-1.5 text-sm text-text-main/80 dark:text-gray-300">
-                    <li className="flex items-start gap-2">
+                  {MODEL_FEATURES.map((text) => (
+                    <li key={text} className="flex items-start gap-2">
                       <span className="material-symbols-outlined text-primary text-base mt-0.5">check_circle</span>
-                      XGBoost 그래디언트 부스팅
+                      {text}
                     </li>
-                    <li className="flex items-start gap-2">
-                      <span className="material-symbols-outlined text-primary text-base mt-0.5">check_circle</span>
-                      시계열 5-Fold 교차검증
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="material-symbols-outlined text-primary text-base mt-0.5">check_circle</span>
-                      보릿고개(1~4월) 구간 가중 학습
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="material-symbols-outlined text-primary text-base mt-0.5">check_circle</span>
-                      그리드 탐색 기반 하이퍼파라미터 최적화
-                    </li>
-                  </ul>
+                  ))}
+                </ul>
                 </div>
 
                 <div className="rounded-xl p-4 bg-primary-light dark:bg-primary/10 border border-primary/20 dark:border-primary/30">
@@ -265,23 +271,13 @@ export default function Home() {
                     주요 예측 변수
                   </h4>
                   <ul className="space-y-1.5 text-sm text-text-main/80 dark:text-gray-300">
-                    <li className="flex items-start gap-2">
+                  {KEY_VARIABLES.map((text) => (
+                    <li key={text} className="flex items-start gap-2">
                       <span className="material-symbols-outlined text-primary text-base mt-0.5">bar_chart</span>
-                      과거 가격 추이 (최대 36순 래그)
+                      {text}
                     </li>
-                    <li className="flex items-start gap-2">
-                      <span className="material-symbols-outlined text-primary text-base mt-0.5">bar_chart</span>
-                      반입량 변화율 · 전년 대비 공급량
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="material-symbols-outlined text-primary text-base mt-0.5">bar_chart</span>
-                      기상 이상 지표 (폭염·냉해·가뭄)
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="material-symbols-outlined text-primary text-base mt-0.5">bar_chart</span>
-                      환율·유가 복합 시차 영향
-                    </li>
-                  </ul>
+                  ))}
+                </ul>
                 </div>
               </div>
             </section>
