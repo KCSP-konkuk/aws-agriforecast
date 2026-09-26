@@ -47,7 +47,7 @@ jobs:
       - name: Compile + 외부 의존 없는 테스트
         run: |
           chmod +x gradlew
-          ./gradlew compileJava test --tests 'com.agriforecast.backend.service.NaverDataLabServiceRefreshTest'
+          ./gradlew compileJava test --tests 'com.agriforecast.backend.service.NaverDataLabServiceRefreshTest' --tests 'com.agriforecast.backend.service.NaverNewsServiceFilterTest'
 
   frontend:
     runs-on: ubuntu-latest
