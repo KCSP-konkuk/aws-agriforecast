@@ -1,6 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { api } from '../api/api';
+import AuthLayout from '../components/AuthLayout';
+import { TextField, PasswordField, FormError, SubmitButton } from '../components/FormField';
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -11,8 +13,6 @@ export default function Signup() {
     password: '',
     confirm: ''
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -71,111 +71,21 @@ export default function Signup() {
   };
 
   return (
-    <div className="font-display bg-background-light dark:bg-background-dark min-h-screen flex items-center justify-center p-6">
-      <div className="signup-container bg-white dark:bg-gray-800 rounded-lg shadow-lg p-10 w-full max-w-md">
-        <h2 className="text-3xl font-bold text-center mb-6 text-charcoal-gray dark:text-text-light">AgriForecaster</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="fullname" className="text-charcoal-gray dark:text-text-light">이름</label>
-            <input
-              type="text"
-              id="fullname"
-              name="fullname"
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-charcoal-gray dark:text-text-light focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="e.g., 김농부"
-              value={formData.fullname}
-              onChange={handleChange}
-              required
-            />
-          </div>
+    <AuthLayout title="회원가입" subtitle="몇 가지 정보만 입력하면 바로 시작할 수 있어요.">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <TextField label="이름" id="fullname" value={formData.fullname} onChange={handleChange} placeholder="예: 김농부" required />
+        <TextField label="아이디" id="username" value={formData.username} onChange={handleChange} placeholder="아이디를 입력하세요" required />
+        <TextField label="이메일" id="email" type="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" required />
+        <PasswordField label="비밀번호" id="password" value={formData.password} onChange={handleChange} placeholder="6자 이상 입력하세요" required />
+        <PasswordField label="비밀번호 확인" id="confirm" invalid={!!error} value={formData.confirm} onChange={handleChange} placeholder="비밀번호를 다시 입력하세요" required />
+        <FormError>{error}</FormError>
+        <SubmitButton loading={loading} loadingText="회원가입 중...">회원가입</SubmitButton>
+      </form>
 
-          <div className="form-group">
-            <label htmlFor="username" className="text-charcoal-gray dark:text-text-light">아이디</label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-charcoal-gray dark:text-text-light focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="아이디를 입력하세요"
-              value={formData.username}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="email" className="text-charcoal-gray dark:text-text-light">이메일</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-charcoal-gray dark:text-text-light focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="you@example.com"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-group relative">
-            <label htmlFor="password" className="text-charcoal-gray dark:text-text-light">비밀번호</label>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              id="password"
-              name="password"
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-charcoal-gray dark:text-text-light focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="비밀번호를 입력하세요"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-            <span
-              className="absolute right-4 top-10 cursor-pointer text-gray-500"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              👁️
-            </span>
-          </div>
-
-          <div className="form-group relative">
-            <label htmlFor="confirm" className="text-charcoal-gray dark:text-text-light">비밀번호 확인</label>
-            <input
-              type={showConfirm ? 'text' : 'password'}
-              id="confirm"
-              name="confirm"
-              className={`w-full px-4 py-3 rounded-lg border bg-white dark:bg-gray-700 text-charcoal-gray dark:text-text-light focus:outline-none focus:ring-2 focus:ring-primary ${
-                error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              }`}
-              placeholder="비밀번호를 다시 입력하세요"
-              value={formData.confirm}
-              onChange={handleChange}
-              required
-            />
-            <span
-              className="absolute right-4 top-10 cursor-pointer text-gray-500"
-              onClick={() => setShowConfirm(!showConfirm)}
-            >
-              👁️
-            </span>
-            {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-green-brand hover:bg-green-brand-light disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-colors"
-          >
-            {loading ? '회원가입 중...' : '회원가입'}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <Link to="/login" className="text-muted-blue hover:underline">이미 계정이 있으신가요? 로그인</Link>
-        </div>
-      </div>
-    </div>
+      <p className="mt-8 text-center text-sm text-subtext-light">
+        이미 계정이 있으신가요?
+        <Link to="/login" className="font-bold text-primary hover:underline ml-1">로그인</Link>
+      </p>
+    </AuthLayout>
   );
 }
-
-
-
