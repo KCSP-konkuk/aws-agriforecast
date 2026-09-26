@@ -4,6 +4,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import Layout from '../components/Layout';
+import PredictionHistory from '../components/PredictionHistory';
 import { api } from '../api/api';
 
 // agri_price 테이블에서 받아온 품목명 순서 고정
@@ -565,6 +566,9 @@ export default function Detail() {
               </ResponsiveContainer>
             )}
           </div>
+
+          {/* 예측 적중 이력 */}
+          {selectedItem && <PredictionHistory itemName={selectedItem} unit={currentUnit} />}
 
           {/* 상세 데이터 테이블 */}
           <div className="p-6 bg-surface-light rounded-xl border border-border-light shadow-sm">
