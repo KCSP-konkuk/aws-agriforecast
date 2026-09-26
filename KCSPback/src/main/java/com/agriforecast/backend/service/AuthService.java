@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Optional;
+import com.agriforecast.backend.security.JwtProvider;
 
 @Service
 @Transactional
@@ -34,6 +35,9 @@ public class AuthService {
     
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtProvider jwtProvider;
     
     public LoginResponse login(LoginRequest request) {
         logger.info("로그인 시도 - 아이디: {}", request.getUsername());
@@ -64,7 +68,6 @@ public class AuthService {
         }
         
         AuthPassword authPassword = authPasswordOpt.get();
-        logger.info("비밀번호 정보 찾음 - 저장된 해시: {}", authPassword.getPassword().substring(0, Math.min(20, authPassword.getPassword().length())) + "...");
         
         // 4. 비밀번호 검증
         String storedPassword = authPassword.getPassword();
@@ -72,7 +75,6 @@ public class AuthService {
         
         // BCrypt를 사용한 비밀번호 검증
         boolean matches = passwordEncoder.matches(inputPassword, storedPassword);
-        logger.info("비밀번호 검증 결과: {}", matches);
         
         if (!matches) {
             logger.warn("비밀번호 불일치 - 아이디: {}", request.getUsername());
@@ -90,16 +92,20 @@ public class AuthService {
         userInfo.setEmail(profile != null ? profile.getEmail() : "");
         
         logger.info("로그인 성공 - 아이디: {}, 이름: {}", user.getId(), userInfo.getName());
-        return new LoginResponse(true, "로그인 성공", userInfo);
+        return new LoginResponse(true, "로그인 성공", userInfo, jwtProvider.issue(user.getSeqNoA010()));
     }
     
     public SignupResponse signup(SignupRequest request) {
         logger.info("회원가입 시도 - 아이디: {}, 이름: {}", request.getUsername(), request.getFullname());
         
-        // 1. 아이디 중복 체크
+        // 1. 입력 규칙 확인 → 아이디 중복 체크
+        Optional<SignupValidator.Violation> violation = SignupValidator.validate(request);
+        if (violation.isPresent()) {
+            return new SignupResponse(false, violation.get().message(), violation.get().field());
+        }
         if (memberUserRepository.existsByUserId(request.getUsername())) {
             logger.warn("이미 존재하는 아이디 - 아이디: {}", request.getUsername());
-            return new SignupResponse(false, "이미 존재하는 아이디입니다.");
+            return new SignupResponse(false, "이미 사용 중인 아이디입니다.", "username");
         }
         
         // 2. 사용자 생성
@@ -125,8 +131,8 @@ public class AuthService {
         // 6. MemberProfile 생성
         MemberProfile profile = new MemberProfile();
         profile.setMemberUser(user);
-        profile.setName(request.getFullname());
-        profile.setEmail(request.getEmail());
+        profile.setName(request.getFullname().trim());
+        profile.setEmail(request.getEmail().trim());
         
         // 7. 관계 설정 및 저장
         user.setAuthPassword(authPassword);
@@ -141,5 +147,17 @@ public class AuthService {
             return new SignupResponse(false, "회원가입 중 오류가 발생했습니다.");
         }
     }
-}
 
+    /** 회원가입 화면의 아이디 중복 확인용. 규칙에 맞지 않으면 그 안내를, 맞으면 사용 가능 여부를 돌려준다 */
+    @Transactional(readOnly = true)
+    public SignupResponse checkUsername(String username) {
+        Optional<SignupValidator.Violation> violation = SignupValidator.usernameProblem(username);
+        if (violation.isPresent()) {
+            return new SignupResponse(false, violation.get().message(), "username");
+        }
+        if (memberUserRepository.existsByUserId(username)) {
+            return new SignupResponse(false, "이미 사용 중인 아이디입니다.", "username");
+        }
+        return new SignupResponse(true, "사용할 수 있는 아이디입니다.");
+    }
+}

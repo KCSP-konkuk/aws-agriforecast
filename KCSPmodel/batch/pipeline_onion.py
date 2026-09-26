@@ -31,6 +31,8 @@ import pymysql
 import requests
 import xgboost as xgb
 
+import backtest
+
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(BASE, 'data')
 SECRET = '/opt/agri-forecast/application-secret.properties'
@@ -369,6 +371,32 @@ def clean(df):
 
 
 # ---------------------------------------------------------------- main
+def fit_predict(train, test):
+    """매일 예측과 백테스트가 같은 설정을 쓰도록 한 곳에 둔다"""
+    w = np.where(train['Month'].values <= 4, WEIGHT_JAN_APR, 1.0)
+    model = xgb.XGBRegressor(**PARAMS)
+    model.fit(train[SELECTED].values, train[TARGET].values, sample_weight=w)
+    return float(model.predict(test[SELECTED].values)[0])
+
+
+def run_backtest(conn, df):
+    """2026년 완료 순마다 직전 순까지만 학습해 예측 → onion_backtest. 피쳐가 빈 순은 매일 예측처럼 건너뛴다"""
+    rows = []
+    for t in backtest.targets(df.DATE, df[TARGET].notna()):
+        ti = df.index[df.DATE == t][0]
+        test = df.loc[[ti]]
+        if test[SELECTED].isna().any(axis=None):
+            log.warning('백테스트 %s 건너뜀: 결측 피쳐 %s', t, [c for c in SELECTED if test[c].isna().any()])
+            continue
+        train = df[(df.index < ti) & df[TARGET].notna()]
+        rows.append(backtest.row(t, fit_predict(train, test), df.loc[ti, TARGET], train.DATE.iloc[-1]))
+        log.info('백테스트 %s 예측 %.0f / 실제 %.0f (%.1f%%)', t, rows[-1]['predicted_price'],
+                 rows[-1]['actual_price'], rows[-1]['error_pct'])
+    backtest.save(conn, 'onion_backtest', rows)
+    log.info('백테스트 %d순 저장, MAPE %s%%', len(rows), backtest.mape(rows))
+    return 0
+
+
 def main():
     ly, lm, lp = last_complete_period(kst_today())
     last_idx = to_idx(ly, lm, lp)
@@ -428,6 +456,8 @@ def main():
         log.info('병합 %d행 (%s ~ %s)', len(df), df.DATE.iloc[0], df.DATE.iloc[-1])
 
         df = clean(build_features(df))
+        if backtest.requested():
+            return run_backtest(conn, df)
 
         train = df[(df.DATE != target_date) & df[TARGET].notna()]
         test = df[df.DATE == target_date]
@@ -439,10 +469,7 @@ def main():
             return 1
         log.info('학습 %d행 (%s ~ %s)', len(train), train.DATE.iloc[0], train.DATE.iloc[-1])
 
-        w = np.where(train['Month'].values <= 4, WEIGHT_JAN_APR, 1.0)
-        model = xgb.XGBRegressor(**PARAMS)
-        model.fit(train[SELECTED].values, train[TARGET].values, sample_weight=w)
-        pred = float(model.predict(test[SELECTED].values)[0])
+        pred = fit_predict(train, test)
         log.info('예측 %s = %.0f원', target_date, pred)
 
         with conn.cursor() as cur:
