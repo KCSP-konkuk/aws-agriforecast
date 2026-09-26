@@ -19,6 +19,8 @@ import pymysql
 import requests
 import xgboost as xgb
 
+import backtest
+
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(BASE, 'data')
 SECRET = '/opt/agri-forecast/application-secret.properties'
@@ -276,6 +278,28 @@ def clean(df):
     return out
 
 
+def fit_predict(train, test):
+    """매일 예측과 백테스트가 같은 설정을 쓰도록 한 곳에 둔다"""
+    model = xgb.XGBRegressor(n_estimators=500, max_depth=3, learning_rate=0.05,
+                             subsample=0.8, colsample_bytree=0.8, random_state=42, verbosity=0)
+    model.fit(train[SELECTED].values, train[TARGET].values)
+    return float(model.predict(test[SELECTED].values)[0])
+
+
+def run_backtest(conn, df):
+    """2026년 완료 순마다 직전 순까지만 학습해 예측 → cabbage_backtest"""
+    rows = []
+    for t in backtest.targets(df.DATE, df[TARGET].notna()):
+        ti = df.index[df.DATE == t][0]
+        train = df[(df.index < ti) & df[TARGET].notna()]
+        rows.append(backtest.row(t, fit_predict(train, df.loc[[ti]]), df.loc[ti, TARGET], train.DATE.iloc[-1]))
+        log.info('백테스트 %s 예측 %.0f / 실제 %.0f (%.1f%%)', t, rows[-1]['predicted_price'],
+                 rows[-1]['actual_price'], rows[-1]['error_pct'])
+    backtest.save(conn, 'cabbage_backtest', rows)
+    log.info('백테스트 %d순 저장, MAPE %s%%', len(rows), backtest.mape(rows))
+    return 0
+
+
 def main():
     today = kst_today()
     ly, lm, lp = last_complete_period(today)
@@ -339,6 +363,8 @@ def main():
         log.info('병합 %d행 (%s ~ %s)', len(df), df.DATE.iloc[0], df.DATE.iloc[-1])
 
         df = clean(build_features(df))
+        if backtest.requested():
+            return run_backtest(conn, df)
 
         train = df[(df.DATE != target_date) & df[TARGET].notna()]
         test = df[df.DATE == target_date]
@@ -346,10 +372,7 @@ def main():
             log.error('예측 대상 행 없음'); return 1
         log.info('학습 %d행 (%s ~ %s)', len(train), train.DATE.iloc[0], train.DATE.iloc[-1])
 
-        model = xgb.XGBRegressor(n_estimators=500, max_depth=3, learning_rate=0.05,
-                                 subsample=0.8, colsample_bytree=0.8, random_state=42, verbosity=0)
-        model.fit(train[SELECTED].values, train[TARGET].values)
-        pred = float(model.predict(test[SELECTED].values)[0])
+        pred = fit_predict(train, test)
         log.info('예측 %s = %.0f원', target_date, pred)
 
         with conn.cursor() as cur:

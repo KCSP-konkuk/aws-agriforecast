@@ -145,6 +145,12 @@ public class PriceController {
         }
     }
 
+    // 품목별 예측 적중 이력 (백테스트 + 실제 운영 예측)
+    @GetMapping("/agri/prediction-history")
+    public ResponseEntity<Map<String, Object>> getPredictionHistory(@RequestParam String itemName) {
+        return ResponseEntity.ok(predictionService.getHistory(itemName));
+    }
+
     // 가격 그래프 데이터 조회
     @GetMapping("/graph")
     public ResponseEntity<PriceGraphResponse> getPriceGraph(

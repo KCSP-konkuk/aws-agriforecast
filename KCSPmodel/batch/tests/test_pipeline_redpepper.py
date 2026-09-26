@@ -253,3 +253,52 @@ def test_빈구간이_없는_날을_연달아_실행해도_된다(tmp_path, monk
     assert pl.main() == 0
     assert pd.read_csv(tmp_path / pl.CACHE_ANCHOR).empty      # 헤더만 있는 파일이 생긴다
     assert pl.main() == 0                                     # 이 두 번째 실행이 운영에서 죽었다
+
+
+# ---------------------------------------------------------------- 백테스트
+# 테스트용 가벼운 모델 (결정적). 규칙 검사가 목적이라 정확도는 보지 않는다
+LIGHT = dict(max_depth=3, n_estimators=30, learning_rate=0.1, objective='reg:absoluteerror')
+
+
+def light_fit(df, X, train, test):
+    return pl.fit_predict(df, X, train, test, params=LIGHT, k=20, seeds=1)
+
+
+def test_백테스트는_2026년_실제가가_있는_순만_예측한다(built):
+    df, X = built
+    rows = pl.backtest_rows(df, X, fit=light_fit)
+    dates = [r['target_date'] for r in rows]
+    assert dates and dates[0] >= '202601상순' and dates == sorted(dates)
+    assert TARGET not in dates                       # 가격이 아직 없는 예측 대상 순은 제외
+    for r in rows:
+        assert r['trained_until'] < r['target_date']  # 학습은 대상 순 직전까지
+        assert r['actual_price'] == df.price[df.DATE == r['target_date']].iloc[0]
+
+
+def test_백테스트_예측은_대상순과_그_뒤_가격을_바꿔도_같다(hist):
+    """대상 순부터의 가격을 엉뚱하게 바꿔도 예측이 같아야 그때 몰랐던 정보를 안 쓴 것이다"""
+    soon, daily = hist
+    t = '202605중순'
+    cross = {k: soon[k] for k in ('풋고추', '청피망')}
+
+    def predict_at(soon_rp):
+        s = dict(soon, 홍고추=soon_rp)
+        df = pl.assemble(s, daily, TARGET)
+        X = pl.features(df, cross, fake_trend(), daily)
+        ti = df.index[df.DATE == t][0]
+        train = df.price.notna() & df.price.shift(1).notna() & (df.index < ti)
+        return light_fit(df, X, train, df.index == ti)[0][0]
+
+    base = predict_at(soon['홍고추'])
+    scrambled = soon['홍고추'].copy()
+    later = scrambled.DATE >= t
+    scrambled.loc[later, 'val'] = pd.to_numeric(scrambled.loc[later, 'val']) * 7 + 12345
+    assert predict_at(scrambled) == pytest.approx(base)
+
+
+def test_백테스트_공통_계산():
+    import backtest as bt
+    assert bt.targets(['202512하순', '202601상순', '202601중순', '202601하순'], [True, True, False, True]) \
+        == ['202601상순', '202601하순']
+    assert bt.error_pct(110, 100) == 10.0
+    assert bt.mape([{'error_pct': 10.0}, {'error_pct': 20.0}, {'error_pct': None}]) == 15.0

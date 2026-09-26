@@ -4,6 +4,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import Layout from '../components/Layout';
+import PredictionHistory from '../components/PredictionHistory';
 import { api } from '../api/api';
 
 // 예측 모델이 있는 품목만 보여준다 (백엔드 PredictionService.ITEM_TABLE 과 맞출 것)
@@ -556,6 +557,9 @@ export default function Detail() {
               </ResponsiveContainer>
             )}
           </div>
+
+          {/* 예측 적중 이력 */}
+          {selectedItem && <PredictionHistory itemName={selectedItem} unit={currentUnit} />}
 
           {/* 상세 데이터 테이블 */}
           <div className="p-6 bg-surface-light rounded-xl border border-border-light shadow-sm">
