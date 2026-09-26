@@ -20,8 +20,11 @@ public class KamisService {
 
     private static final Logger logger = LoggerFactory.getLogger(KamisService.class);
 
-    // 쌀/20kg(272), 콩(275), 고구마(281), 감자/수미(285), 배추(295), 양배추(297), 상추/적(301)
-    private static final Set<String> TARGET_PRODUCTS = Set.of("272", "275", "281", "285", "295", "297", "301");
+    // 쌀/20kg(272), 콩(275), 고구마(281), 감자/수미(285), 양배추(297), 상추/적(301)
+    private static final Set<String> TARGET_PRODUCTS = Set.of("272", "275", "281", "285", "297", "301");
+    // 배추는 계절마다 품목번호가 바뀐다(여름 291 '배추/여름(고랭지)', 그 외 295 등) → 이름으로 고른다.
+    // '배추/' 로 시작하는 것만 — 양배추·알배기배추·얼갈이배추는 이름이 달라 걸리지 않는다
+    private static final String CABBAGE_PREFIX = "배추/";
 
     private static final String KAMIS_URL =
             "https://www.kamis.or.kr/service/price/xml.do?action=dailySalesList" +
@@ -61,13 +64,12 @@ public class KamisService {
                 String productClsCode = getText(item, "product_cls_code");
                 String productNo = getText(item, "productno");
 
-                // 소매(01) + 대상 품목만 필터
-                if (!"01".equals(productClsCode) || !TARGET_PRODUCTS.contains(productNo)) {
+                String name = getText(item, "productName");
+                if (!isTarget(productClsCode, productNo, name)) {
                     continue;
                 }
 
                 KamisDailyPriceResponse dto = new KamisDailyPriceResponse();
-                String name = getText(item, "productName");
                 dto.setItemName(name.isBlank() ? getText(item, "item_name") : name);
                 dto.setUnit(getText(item, "unit"));
                 dto.setPrice(getText(item, "dpr1"));
@@ -83,6 +85,12 @@ public class KamisService {
         }
 
         return result;
+    }
+
+    /** 소매(01) 가격 중 홈 화면에 보여줄 품목인지 */
+    static boolean isTarget(String productClsCode, String productNo, String productName) {
+        if (!"01".equals(productClsCode)) return false;
+        return TARGET_PRODUCTS.contains(productNo) || productName.startsWith(CABBAGE_PREFIX);
     }
 
     private String getText(JsonNode node, String fieldName) {
