@@ -2,6 +2,8 @@ import Layout from '../components/Layout';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { api } from '../api/api';
+import LoginRequired from '../components/LoginRequired';
+import { isLoggedIn, getUser, loginPath } from '../auth';
 
 export default function CommunityViewMy() {
   const { id } = useParams();
@@ -12,6 +14,8 @@ export default function CommunityViewMy() {
   const [loading, setLoading] = useState(true);
   const [commentLoading, setCommentLoading] = useState(false);
   const [error, setError] = useState('');
+  const [commentError, setCommentError] = useState('');
+  const [actionError, setActionError] = useState('');
 
   useEffect(() => {
     loadPost();
@@ -25,14 +29,10 @@ export default function CommunityViewMy() {
       const postData = await api.getPost(id);
       setPost(postData);
       
-      // 본인 글인지 확인
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        const user = JSON.parse(userData);
-        if (postData.authorId !== user.seqNoA010) {
-          // 본인 글이 아니면 일반 보기 페이지로 이동
-          navigate(`/community/${id}`, { replace: true });
-        }
+      // 로그인 안 했거나 본인 글이 아니면 일반 보기 페이지로 (수정·삭제 버튼을 보이지 않게)
+      const user = getUser();
+      if (!user || postData.authorId !== user.seqNoA010) {
+        navigate(`/community/${id}`, { replace: true });
       }
     } catch (err) {
       console.error('게시글 로드 실패:', err);
@@ -56,13 +56,15 @@ export default function CommunityViewMy() {
     if (!comment.trim()) return;
 
     setCommentLoading(true);
+    setCommentError('');
     try {
       await api.createComment(id, comment);
       setComment('');
       loadComments(); // 댓글 목록 새로고침
     } catch (err) {
       console.error('댓글 작성 실패:', err);
-      alert('댓글 작성에 실패했습니다.');
+      // 로그인이 만료됐으면 clearLogin 으로 폼이 로그인 안내로 바뀐다
+      setCommentError(err.needsLogin ? '' : err.message || '댓글 작성에 실패했습니다.');
     } finally {
       setCommentLoading(false);
     }
@@ -76,7 +78,9 @@ export default function CommunityViewMy() {
       navigate('/community');
     } catch (err) {
       console.error('게시글 삭제 실패:', err);
-      alert('게시글 삭제에 실패했습니다.');
+      // 로그인이 만료됐으면 로그인 후 이 글로 돌아오게 한다
+      if (err.needsLogin) navigate(loginPath(`/community/${id}/my`));
+      else setActionError(err.message || '게시글 삭제에 실패했습니다.');
     }
   };
 
@@ -133,6 +137,7 @@ export default function CommunityViewMy() {
             </div>
           </div>
 
+          {actionError && <p className="mb-4 text-sm text-red-600">{actionError}</p>}
           <div className="bg-white border border-border-light rounded-lg p-6">
             <h2 className="text-2xl font-bold text-text-main mb-3">{post.title}</h2>
             <p className="text-sm text-subtext-light mb-4">
@@ -154,6 +159,12 @@ export default function CommunityViewMy() {
                 </div>
               ))}
             </div>
+            {commentError && <p className="mt-4 text-sm text-red-600">{commentError}</p>}
+            {!isLoggedIn() ? (
+              <div className="mt-4">
+                <LoginRequired compact title="댓글을 쓰려면 로그인해 주세요." />
+              </div>
+            ) : (
             <form className="mt-4 flex gap-2" onSubmit={handleCommentSubmit}>
               <input
                 type="text"
@@ -171,6 +182,7 @@ export default function CommunityViewMy() {
                 {commentLoading ? '등록 중...' : '등록'}
               </button>
             </form>
+            )}
           </section>
         </div>
       </main>

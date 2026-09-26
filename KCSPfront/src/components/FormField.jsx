@@ -5,22 +5,31 @@ const inputClass = (invalid) =>
     invalid ? 'border-red-500' : 'border-gray-300'
   }`;
 
-export function TextField({ label, id, invalid, ...props }) {
+const MESSAGE_COLOR = { error: 'text-red-600', success: 'text-primary', info: 'text-subtext-light' };
+
+// 입력 칸 아래 한 줄 안내. tone: error | success | info
+function FieldMessage({ id, message, tone = 'error' }) {
+  if (!message) return null;
+  return <p id={`${id}-message`} className={`text-xs ${MESSAGE_COLOR[tone]}`}>{message}</p>;
+}
+
+export function TextField({ label, id, invalid, message, tone, ...props }) {
   return (
     <div className="flex flex-col gap-2">
       <label htmlFor={id} className="text-sm font-medium text-text-main">{label}</label>
-      <input id={id} name={id} className={inputClass(invalid)} {...props} />
+      <input id={id} name={id} className={inputClass(invalid)} aria-invalid={!!invalid} aria-describedby={message ? `${id}-message` : undefined} {...props} />
+      <FieldMessage id={id} message={message} tone={tone} />
     </div>
   );
 }
 
-export function PasswordField({ label, id, invalid, ...props }) {
+export function PasswordField({ label, id, invalid, message, tone, ...props }) {
   const [visible, setVisible] = useState(false);
   return (
     <div className="flex flex-col gap-2">
       <label htmlFor={id} className="text-sm font-medium text-text-main">{label}</label>
       <div className="relative">
-        <input id={id} name={id} type={visible ? 'text' : 'password'} className={`${inputClass(invalid)} pr-12`} {...props} />
+        <input id={id} name={id} type={visible ? 'text' : 'password'} className={`${inputClass(invalid)} pr-12`} aria-invalid={!!invalid} aria-describedby={message ? `${id}-message` : undefined} {...props} />
         <button
           type="button"
           onClick={() => setVisible((v) => !v)}
@@ -30,6 +39,7 @@ export function PasswordField({ label, id, invalid, ...props }) {
           <span className="material-symbols-outlined">{visible ? 'visibility_off' : 'visibility'}</span>
         </button>
       </div>
+      <FieldMessage id={id} message={message} tone={tone} />
     </div>
   );
 }
@@ -41,11 +51,11 @@ export function FormError({ children }) {
   );
 }
 
-export function SubmitButton({ loading, loadingText, children }) {
+export function SubmitButton({ loading, loadingText, disabled, children }) {
   return (
     <button
       type="submit"
-      disabled={loading}
+      disabled={loading || disabled}
       className="flex w-full items-center justify-center h-12 rounded-lg bg-primary hover:bg-primary-hover text-white text-base font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {loading ? loadingText : children}
