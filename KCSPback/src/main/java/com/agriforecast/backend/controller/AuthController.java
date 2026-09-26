@@ -39,6 +39,9 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
+
+    @GetMapping("/check-username")
+    public ResponseEntity<SignupResponse> checkUsername(@RequestParam String username) {
+        return ResponseEntity.ok(authService.checkUsername(username));
+    }
 }
-
-

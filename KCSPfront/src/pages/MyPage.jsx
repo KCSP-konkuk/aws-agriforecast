@@ -2,33 +2,25 @@ import Layout from '../components/Layout';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import MyPageSidebar from '../components/MyPageSidebar';
+import { getUser, clearLogin, loginPath } from '../auth';
 
 export default function MyPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // 로그인 상태 확인
-    const userData = localStorage.getItem('user');
-    const isLoggedIn = localStorage.getItem('isLoggedIn');
-    
-    if (!isLoggedIn || !userData) {
-      // 로그인 안 되어 있으면 로그인 페이지로 이동
-      navigate('/login');
+    // 로그인 안 되어 있으면 로그인 후 다시 마이페이지로
+    const current = getUser();
+    if (!current) {
+      navigate(loginPath('/mypage'), { replace: true });
     } else {
-      const parsedUser = JSON.parse(userData);
-      setUser(parsedUser);
+      setUser(current);
     }
   }, [navigate]);
 
   const handleLogout = () => {
-    // localStorage에서 로그인 정보 삭제
-    localStorage.removeItem('user');
-    localStorage.removeItem('isLoggedIn');
-    
-    // 헤더 업데이트를 위한 커스텀 이벤트 발생
-    window.dispatchEvent(new Event('loginStatusChanged'));
-    
+    clearLogin();
+
     // 홈 페이지로 이동
     navigate('/');
   };

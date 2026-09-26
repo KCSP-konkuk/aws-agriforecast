@@ -2,6 +2,8 @@ import Layout from '../components/Layout';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { api } from '../api/api';
+import LoginRequired from '../components/LoginRequired';
+import { isLoggedIn } from '../auth';
 
 export default function CommunityWrite() {
   const navigate = useNavigate();
@@ -12,6 +14,8 @@ export default function CommunityWrite() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // 로그인 안 했거나 쓰는 도중 로그인이 만료되면 안내 화면으로 바꾼다
+  const [needsLogin, setNeedsLogin] = useState(!isLoggedIn());
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -39,7 +43,8 @@ export default function CommunityWrite() {
       navigate(`/community/${response.id}`);
     } catch (err) {
       console.error('글 작성 실패:', err);
-      setError(err.message || '글 작성에 실패했습니다.');
+      if (err.needsLogin) setNeedsLogin(true);
+      else setError(err.message || '글 작성에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -50,6 +55,12 @@ export default function CommunityWrite() {
       <main className="flex-1 py-10">
         <div className="mx-auto w-full max-w-[960px] px-4 sm:px-6">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-text-main mb-6">글 쓰기</h1>
+          {needsLogin ? (
+            <LoginRequired
+              title="로그인하면 글을 쓸 수 있어요"
+              description="커뮤니티에 글을 남기려면 AgriForecast 계정으로 로그인해 주세요. 로그인하면 이 화면으로 돌아옵니다."
+            />
+          ) : (<>
           
           {error && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -116,6 +127,7 @@ export default function CommunityWrite() {
               </Link>
             </div>
           </form>
+          </>)}
         </div>
       </main>
     </Layout>
