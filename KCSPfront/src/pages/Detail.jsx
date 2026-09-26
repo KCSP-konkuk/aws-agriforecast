@@ -100,8 +100,8 @@ function CustomTooltip({ active, payload, label, unit }) {
   const isActualBridge = payload[0]?.payload?.isActualBridge;
   const displayLabel = payload[0]?.payload?.predictionLabel ?? label;
   return (
-    <div className="p-3 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg shadow-lg text-sm">
-      <p className="font-semibold text-text-light dark:text-text-dark mb-1">{displayLabel}</p>
+    <div className="p-3 bg-surface-light border border-border-light rounded-lg shadow-lg text-sm">
+      <p className="font-semibold text-text-main mb-1">{displayLabel}</p>
       {priceEntry?.value != null && (
         <p style={{ color: '#4A90E2' }}>
           실거래가: {priceEntry.value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
@@ -118,15 +118,15 @@ function CustomTooltip({ active, payload, label, unit }) {
 
 function KpiCard({ label, value, sub, valueColor, loading }) {
   return (
-    <div className="p-5 bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm">
-      <p className="text-sm font-medium text-subtext-light dark:text-subtext-dark">{label}</p>
+    <div className="p-5 bg-surface-light rounded-xl border border-border-light shadow-sm">
+      <p className="text-sm font-medium text-subtext-light">{label}</p>
       <div className="flex items-baseline gap-2 mt-1">
         {loading ? (
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-28" />
+          <div className="h-8 bg-gray-200 rounded animate-pulse w-28" />
         ) : (
           <>
-            <p className={`text-3xl font-bold ${valueColor || 'text-text-light dark:text-text-dark'}`}>{value}</p>
-            {sub && <span className={`text-sm font-semibold ${valueColor || 'text-subtext-light dark:text-subtext-dark'}`}>{sub}</span>}
+            <p className={`text-3xl font-bold ${valueColor || 'text-text-main '}`}>{value}</p>
+            {sub && <span className={`text-sm font-semibold ${valueColor || 'text-subtext-light '}`}>{sub}</span>}
           </>
         )}
       </div>
@@ -327,7 +327,7 @@ export default function Detail() {
       className={`flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg transition ${
         period === p
           ? 'bg-primary/20 text-primary'
-          : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-text-light dark:text-text-dark'
+          : 'bg-gray-100 hover:bg-gray-200 text-text-main '
       }`}
       onClick={() => setPeriod(p)}
     >
@@ -340,8 +340,8 @@ export default function Detail() {
     <button
       className={`flex-1 text-center text-sm py-1 rounded-md transition ${
         unit === u
-          ? 'bg-surface-light dark:bg-surface-dark shadow-sm font-semibold text-text-light dark:text-text-dark'
-          : 'text-subtext-light dark:text-subtext-dark'
+          ? 'bg-surface-light shadow-sm font-semibold text-text-main '
+          : 'text-subtext-light '
       }`}
       onClick={() => setUnit(u)}
     >
@@ -356,27 +356,27 @@ export default function Detail() {
           {/* 페이지 헤딩 */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-col gap-1">
-              <h2 className="text-3xl font-extrabold tracking-tight text-text-light dark:text-text-dark">
+              <h2 className="text-3xl font-extrabold tracking-tight text-text-main">
                 농산물 가격 분석{selectedItem ? `: ${selectedItem}` : ''}
               </h2>
-              <p className="text-base font-normal text-subtext-light dark:text-subtext-dark">
+              <p className="text-base font-normal text-subtext-light">
                 과거, 현재, 그리고 AI 예측 가격 데이터를 시각적으로 분석하세요.
               </p>
             </div>
           </div>
 
           {/* 필터 & 컨트롤 패널 */}
-          <div className="p-4 bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm">
+          <div className="p-4 bg-surface-light rounded-xl border border-border-light shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
               {/* 품종 선택 */}
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-text-light dark:text-text-dark" htmlFor="item-select">
+                <label className="text-sm font-semibold text-text-main" htmlFor="item-select">
                   품종 선택
                 </label>
                 <select
                   id="item-select"
-                  className="w-full h-10 px-3 text-base bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition"
+                  className="w-full h-10 px-3 text-base bg-background-light border border-border-light rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition"
                   value={selectedItemName ?? ''}
                   onChange={(e) => setSelectedItemName(e.target.value)}
                 >
@@ -388,7 +388,7 @@ export default function Detail() {
 
               {/* 기간 설정 */}
               <div className="flex flex-col gap-2">
-                <p className="text-sm font-semibold text-text-light dark:text-text-dark">기간 설정</p>
+                <p className="text-sm font-semibold text-text-main">기간 설정</p>
                 <div className="flex items-center gap-2 flex-wrap">
                   {periodBtn('1month', '최근 1개월')}
                   {periodBtn('1year', '1년')}
@@ -399,8 +399,8 @@ export default function Detail() {
 
               {/* 단위 */}
               <div className="flex flex-col gap-2">
-                <p className="text-sm font-semibold text-text-light dark:text-text-dark">단위</p>
-                <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <p className="text-sm font-semibold text-text-main">단위</p>
+                <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg">
                   {unitBtn('daily', '일별')}
                   {unitBtn('weekly', '주별')}
                   {unitBtn('monthly', '월별')}
@@ -409,11 +409,11 @@ export default function Detail() {
 
               {/* 검색 버튼 */}
               <div className="flex flex-col gap-2">
-                <p className="text-sm font-semibold text-text-light dark:text-text-dark">조회</p>
+                <p className="text-sm font-semibold text-text-main">조회</p>
                 <button
                   onClick={handleSearch}
                   disabled={loading}
-                  className="flex items-center justify-center gap-2 w-full h-10 px-4 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/90 active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  className="flex items-center justify-center gap-2 w-full h-10 px-4 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary-hover active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 >
                   <span className="material-symbols-outlined text-lg">search</span>
                   검색
@@ -426,14 +426,14 @@ export default function Detail() {
               <div className="mt-4 flex items-center gap-3">
                 <input
                   type="date"
-                  className="h-10 px-3 text-sm bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary transition"
+                  className="h-10 px-3 text-sm bg-background-light border border-border-light rounded-lg focus:ring-2 focus:ring-primary transition"
                   value={customStart}
                   onChange={(e) => setCustomStart(e.target.value)}
                 />
-                <span className="text-subtext-light dark:text-subtext-dark font-medium">~</span>
+                <span className="text-subtext-light font-medium">~</span>
                 <input
                   type="date"
-                  className="h-10 px-3 text-sm bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary transition"
+                  className="h-10 px-3 text-sm bg-background-light border border-border-light rounded-lg focus:ring-2 focus:ring-primary transition"
                   value={customEnd}
                   onChange={(e) => setCustomEnd(e.target.value)}
                 />
@@ -460,10 +460,10 @@ export default function Detail() {
               valueColor={
                 kpi
                   ? kpi.change > 0
-                    ? 'text-blue-500'
+                    ? 'text-price-up'
                     : kpi.change < 0
-                    ? 'text-red-500'
-                    : 'text-subtext-light dark:text-subtext-dark'
+                    ? 'text-price-down'
+                    : 'text-subtext-light '
                   : ''
               }
               loading={loading}
@@ -483,40 +483,40 @@ export default function Detail() {
           </div>
 
           {/* 가격 추이 차트 */}
-          <div className="p-6 bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm">
+          <div className="p-6 bg-surface-light rounded-xl border border-border-light shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
               <div>
-                <h3 className="text-lg font-bold text-text-light dark:text-text-dark">
+                <h3 className="text-lg font-bold text-text-main">
                   {selectedItem ?? '품목'} 가격 추이
                 </h3>
-                <p className="text-sm text-subtext-light dark:text-subtext-dark">기간: {periodLabel}</p>
+                <p className="text-sm text-subtext-light">기간: {periodLabel}</p>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#4A90E2' }}></div>
-                  <span className="text-subtext-light dark:text-subtext-dark">실거래가</span>
+                  <span className="text-subtext-light">실거래가</span>
                 </div>
                 {predictionData.length > 0 && (
                   <div className="flex items-center gap-2">
                     <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="#F59E0B" strokeWidth="2" /></svg>
-                    <span className="text-subtext-light dark:text-subtext-dark">AI 예측가</span>
+                    <span className="text-subtext-light">AI 예측가</span>
                   </div>
                 )}
               </div>
             </div>
 
             {loading ? (
-              <div className="flex items-center justify-center h-64 bg-background-light dark:bg-background-dark rounded-lg">
+              <div className="flex items-center justify-center h-64 bg-background-light rounded-lg">
                 <div className="flex flex-col items-center gap-3">
                   <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                  <p className="text-sm text-subtext-light dark:text-subtext-dark">데이터 로딩중...</p>
+                  <p className="text-sm text-subtext-light">데이터 로딩중...</p>
                 </div>
               </div>
             ) : chartData.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 bg-background-light dark:bg-background-dark rounded-lg border border-dashed border-border-light dark:border-border-dark">
-                <span className="material-symbols-outlined text-5xl text-subtext-light dark:text-subtext-dark mb-3">bar_chart</span>
-                <p className="text-lg font-semibold text-subtext-light dark:text-subtext-dark">데이터가 없습니다</p>
-                <p className="text-sm text-subtext-light dark:text-subtext-dark mt-1">품목 또는 기간을 선택 후 검색해 주세요</p>
+              <div className="flex flex-col items-center justify-center h-64 bg-background-light rounded-lg border border-dashed border-border-light">
+                <span className="material-symbols-outlined text-5xl text-subtext-light mb-3">bar_chart</span>
+                <p className="text-lg font-semibold text-subtext-light">데이터가 없습니다</p>
+                <p className="text-sm text-subtext-light mt-1">품목 또는 기간을 선택 후 검색해 주세요</p>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
@@ -567,13 +567,13 @@ export default function Detail() {
           </div>
 
           {/* 상세 데이터 테이블 */}
-          <div className="p-6 bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm">
+          <div className="p-6 bg-surface-light rounded-xl border border-border-light shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-              <h3 className="text-lg font-bold text-text-light dark:text-text-dark">상세 데이터</h3>
+              <h3 className="text-lg font-bold text-text-main">상세 데이터</h3>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-subtext-light dark:text-subtext-dark">search</span>
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-subtext-light">search</span>
                 <input
-                  className="w-full md:w-64 h-10 pl-10 pr-4 text-sm bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition"
+                  className="w-full md:w-64 h-10 pl-10 pr-4 text-sm bg-background-light border border-border-light rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition"
                   placeholder="날짜 검색 (예: 2024-01)..."
                   type="text"
                   value={tableSearch}
@@ -583,7 +583,7 @@ export default function Detail() {
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="text-xs text-subtext-light dark:text-subtext-dark uppercase bg-background-light dark:bg-background-dark">
+                <thead className="text-xs text-subtext-light uppercase bg-background-light">
                   <tr>
                     <th className="px-6 py-3 rounded-l-lg" scope="col">날짜</th>
                     <th className="px-6 py-3" scope="col">가격 (원 / {currentUnit})</th>
@@ -594,7 +594,7 @@ export default function Detail() {
                 <tbody>
                   {tableData.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-6 py-8 text-center text-subtext-light dark:text-subtext-dark">
+                      <td colSpan={4} className="px-6 py-8 text-center text-subtext-light">
                         {loading ? '데이터 로딩중...' : '데이터가 없습니다'}
                       </td>
                     </tr>
@@ -607,20 +607,20 @@ export default function Detail() {
                       return (
                         <tr
                           key={row.date}
-                          className={`bg-surface-light dark:bg-surface-dark ${!isLast ? 'border-b dark:border-border-dark' : ''}`}
+                          className={`bg-surface-light ${!isLast ? 'border-b ' : ''}`}
                         >
                           <td className="px-6 py-4 font-medium whitespace-nowrap">{row.date}</td>
                           <td className="px-6 py-4">{row.price?.toLocaleString()}</td>
-                          <td className="px-6 py-4 text-subtext-light dark:text-subtext-dark">{row.grade ?? '-'}</td>
+                          <td className="px-6 py-4 text-subtext-light">{row.grade ?? '-'}</td>
                           <td
                             className={`px-6 py-4 ${
                               pct === null
-                                ? 'text-subtext-light dark:text-subtext-dark'
+                                ? 'text-subtext-light '
                                 : parseFloat(pct) > 0
-                                ? 'text-blue-500'
+                                ? 'text-price-up'
                                 : parseFloat(pct) < 0
-                                ? 'text-red-500'
-                                : 'text-subtext-light dark:text-subtext-dark'
+                                ? 'text-price-down'
+                                : 'text-subtext-light '
                             }`}
                           >
                             {pct === null ? '-' : `${parseFloat(pct) > 0 ? '+' : ''}${pct}%`}
@@ -632,7 +632,7 @@ export default function Detail() {
                 </tbody>
               </table>
               {tableData.length > 20 && (
-                <p className="text-xs text-subtext-light dark:text-subtext-dark text-center mt-3">
+                <p className="text-xs text-subtext-light text-center mt-3">
                   상위 20건 표시 중 (전체 {tableData.length}건)
                 </p>
               )}
