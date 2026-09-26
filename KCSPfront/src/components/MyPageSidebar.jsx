@@ -1,9 +1,8 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import Avatar from './Avatar';
 
 export default function MyPageSidebar({ user, onLogout }) {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const handleLogout = () => {
     if (window.confirm('로그아웃 하시겠습니까?')) {
@@ -19,18 +18,13 @@ export default function MyPageSidebar({ user, onLogout }) {
 
   return (
     <aside className="flex-shrink-0 w-full lg:w-64">
-      <div className="flex flex-col gap-6 bg-[#fafcf8] p-4 rounded-lg border border-[#d9e7d0] h-full">
+      <div className="flex flex-col gap-6 bg-white p-4 rounded-lg border border-border-light h-full">
         <div className="flex flex-col gap-4">
           <div className="flex gap-4 items-center">
-            <div 
-              className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-12" 
-              style={{
-                backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuABR5lA_xfTMGA4GQnJsPJtRDbxvblgln9YnvalBT4vXu9cySy0-c_4fH1ht-gkeZxLxz9zf-0lRKOhAU1XcNR7mGPkUwwvAHmG2jVaYJCVFeygXXI32BHHUe7261gH0ZfKqxWeMWo8wYGdDhlCyUd6LlxkFa-xt20OnHy_ZD4PZWutZi5TTlfrpvxEvykyNGK0JcF5pe8555C1l4ulzQ58Ikopdp6LxajE0YUaSR8hQXLCg26L-Ja4OTnSwWqwNJpMNXezP9tD12U")'
-              }}
-            />
+            <Avatar name={user?.name} size="size-12" />
             <div className="flex flex-col">
-              <h1 className="text-lg font-bold text-[#131b0e]">{user?.name || '사용자'}</h1>
-              <p className="text-sm text-[#6d974e]">{user?.email || user?.username || 'user@example.com'}</p>
+              <h1 className="text-lg font-bold text-text-main">{user?.name || '사용자'}</h1>
+              <p className="text-sm text-subtext-light">{user?.email || user?.id || ''}</p>
             </div>
           </div>
           <nav className="flex flex-col gap-2 mt-4">
@@ -42,8 +36,8 @@ export default function MyPageSidebar({ user, onLogout }) {
                   to={item.path}
                   className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors duration-200 ${
                     isActive
-                      ? 'bg-[#64cf17]/20 text-[#64cf17] border border-[#64cf17]'
-                      : 'hover:bg-[#ecf3e7] text-[#131b0e]'
+                      ? 'bg-primary-light text-primary border border-primary/30'
+                      : 'hover:bg-primary-light text-text-main'
                   }`}
                 >
                   <span className="material-symbols-outlined text-xl">{item.icon}</span>
@@ -56,7 +50,7 @@ export default function MyPageSidebar({ user, onLogout }) {
         <div className="flex flex-col gap-4 mt-auto">
           <Link
             to="#"
-            className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-[#ecf3e7] transition-colors duration-200 text-[#131b0e]"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-primary-light transition-colors duration-200 text-text-main"
           >
             <span className="material-symbols-outlined text-xl">help</span>
             <p className="text-base font-medium">고객 지원</p>

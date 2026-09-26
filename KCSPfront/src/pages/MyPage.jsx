@@ -17,10 +17,6 @@ export default function MyPage() {
       navigate('/login');
     } else {
       const parsedUser = JSON.parse(userData);
-      // 이메일이 없으면 username을 email로 사용
-      if (!parsedUser.email) {
-        parsedUser.email = parsedUser.username || 'user@example.com';
-      }
       setUser(parsedUser);
     }
   }, [navigate]);
@@ -43,20 +39,18 @@ export default function MyPage() {
 
   return (
     <Layout>
-      <div className="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
-        <div className="layout-container flex h-full grow flex-col">
-          <div className="flex flex-1 justify-center py-5 sm:py-10 px-4">
-            <div className="layout-content-container flex w-full max-w-6xl flex-1 flex-col lg:flex-row gap-8">
+          <div className="flex flex-1 justify-center py-5 sm:py-10 px-4 sm:px-6 lg:px-10">
+            <div className="flex w-full max-w-6xl flex-1 flex-col lg:flex-row gap-8">
               <MyPageSidebar user={user} onLogout={handleLogout} />
               
               {/* Main Content */}
               <main className="flex-1 flex flex-col gap-8">
-                <div className="bg-[#fafcf8] p-6 sm:p-8 rounded-lg border border-[#d9e7d0]">
+                <div className="bg-white p-6 sm:p-8 rounded-lg border border-border-light">
                   {/* Page Heading */}
-                  <div className="flex flex-wrap justify-between gap-4 pb-8 border-b border-[#d9e7d0]">
+                  <div className="flex flex-wrap justify-between gap-4 pb-8 border-b border-border-light">
                     <div className="flex min-w-72 flex-col gap-2">
-                      <p className="text-3xl font-black tracking-tight text-[#131b0e]">계정 정보</p>
-                      <p className="text-base text-[#6d974e]">개인 정보를 관리하고 비밀번호를 변경할 수 있습니다.</p>
+                      <p className="text-3xl font-black tracking-tight text-text-main">계정 정보</p>
+                      <p className="text-base text-subtext-light">개인 정보를 관리하고 비밀번호를 변경할 수 있습니다.</p>
                     </div>
                   </div>
                   
@@ -64,46 +58,46 @@ export default function MyPage() {
                   <div className="pt-8 flex flex-col gap-8">
                     {/* Profile Information Section */}
                     <section className="flex flex-col gap-6">
-                      <h3 className="text-xl font-bold text-[#131b0e]">프로필 정보</h3>
+                      <h3 className="text-xl font-bold text-text-main">프로필 정보</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <label className="flex flex-col">
-                          <p className="text-base font-medium pb-2 text-[#131b0e]">이름</p>
-                          <input className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#131b0e] focus:outline-0 focus:ring-2 focus:ring-[#64cf17]/50 border border-[#d9e7d0] bg-white/60 h-14 placeholder:text-[#6d974e] p-4 text-base" defaultValue={user.name || "김농부"}/>
+                          <p className="text-base font-medium pb-2 text-text-main">이름</p>
+                          <input className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light bg-white h-14 placeholder:text-subtext-light p-4 text-base" defaultValue={user.name || ""}/>
                         </label>
                         <label className="flex flex-col">
-                          <p className="text-base font-medium pb-2 text-[#131b0e]">이메일</p>
-                          <input className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#131b0e] focus:outline-0 focus:ring-2 focus:ring-[#64cf17]/50 border border-[#d9e7d0] bg-white/60 h-14 placeholder:text-[#6d974e] p-4 text-base" disabled={true} defaultValue={user.email || user.username || "kim@naver.com"}/>
+                          <p className="text-base font-medium pb-2 text-text-main">이메일</p>
+                          <input className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light bg-white h-14 placeholder:text-subtext-light p-4 text-base" disabled={true} defaultValue={user.email || ""}/>
                         </label>
                         <label className="flex flex-col">
-                          <p className="text-base font-medium pb-2 text-[#131b0e]">연락처</p>
-                          <input className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#131b0e] focus:outline-0 focus:ring-2 focus:ring-[#64cf17]/50 border border-[#d9e7d0] bg-white/60 h-14 placeholder:text-[#6d974e] p-4 text-base" defaultValue="010-1234-5678"/>
+                          <p className="text-base font-medium pb-2 text-text-main">연락처</p>
+                          <input className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light bg-white h-14 placeholder:text-subtext-light p-4 text-base" placeholder="010-0000-0000"/>
                         </label>
                       </div>
                     </section>
                     
                     {/* Password Change Section */}
-                    <section className="flex flex-col gap-6 border-t border-[#d9e7d0] pt-8">
-                      <h3 className="text-xl font-bold text-[#131b0e]">비밀번호 변경</h3>
+                    <section className="flex flex-col gap-6 border-t border-border-light pt-8">
+                      <h3 className="text-xl font-bold text-text-main">비밀번호 변경</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <label className="flex flex-col">
-                          <p className="text-base font-medium pb-2 text-[#131b0e]">현재 비밀번호</p>
-                          <input className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#131b0e] focus:outline-0 focus:ring-2 focus:ring-[#64cf17]/50 border border-[#d9e7d0] bg-white/60 h-14 placeholder:text-[#6d974e] p-4 text-base" placeholder="••••••••" type="password"/>
+                          <p className="text-base font-medium pb-2 text-text-main">현재 비밀번호</p>
+                          <input className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light bg-white h-14 placeholder:text-subtext-light p-4 text-base" placeholder="••••••••" type="password"/>
                         </label>
                         <label className="flex flex-col">
-                          <p className="text-base font-medium pb-2 text-[#131b0e]">새 비밀번호</p>
-                          <input className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#131b0e] focus:outline-0 focus:ring-2 focus:ring-[#64cf17]/50 border border-[#d9e7d0] bg-white/60 h-14 placeholder:text-[#6d974e] p-4 text-base" placeholder="새 비밀번호 입력" type="password"/>
+                          <p className="text-base font-medium pb-2 text-text-main">새 비밀번호</p>
+                          <input className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light bg-white h-14 placeholder:text-subtext-light p-4 text-base" placeholder="새 비밀번호 입력" type="password"/>
                         </label>
                       </div>
                     </section>
                     
                     {/* Account Actions */}
-                    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#d9e7d0] pt-8">
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border-light pt-8">
                       <button className="text-red-500 font-semibold hover:underline">계정 탈퇴</button>
                       <div className="flex gap-4">
-                        <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-[#ecf3e7] text-[#131b0e] text-base font-bold transition-colors duration-200 hover:bg-[#d9e7d0]">
+                        <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-primary-light text-text-main text-base font-bold transition-colors duration-200 hover:bg-primary/15">
                           <span className="truncate">취소</span>
                         </button>
-                        <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-[#64cf17] text-[#131b0e] text-base font-bold transition-colors duration-200 hover:bg-opacity-90">
+                        <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-primary text-white text-base font-bold transition-colors duration-200 hover:bg-primary-hover">
                           <span className="truncate">변경사항 저장</span>
                         </button>
                       </div>
@@ -113,8 +107,6 @@ export default function MyPage() {
               </main>
             </div>
           </div>
-        </div>
-      </div>
     </Layout>
   );
 }
