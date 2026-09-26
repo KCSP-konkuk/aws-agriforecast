@@ -4,9 +4,14 @@ import Logo from './Logo';
 export default function AuthLayout({ title, subtitle, children }) {
   return (
     <div className="grid min-h-screen w-full grid-cols-1 md:grid-cols-2">
-      <div className="hidden md:flex flex-col justify-between p-12 bg-gradient-to-br from-primary to-primary-hover text-white">
-        <Logo className="text-white" />
-        <div>
+      {/* 사진: Unsplash (무료 라이선스) — public/images/README.md */}
+      <div
+        className="relative hidden md:flex flex-col justify-between p-12 text-white bg-cover bg-center"
+        style={{ backgroundImage: "url('/images/login-field.jpg')" }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/70 via-primary/30 to-black/70" aria-hidden="true" />
+        <Logo className="relative text-white" />
+        <div className="relative">
           <h2 className="text-4xl lg:text-5xl font-black leading-tight tracking-[-0.033em]">
             데이터로 농산물의<br />다음 가격을 예측합니다
           </h2>
