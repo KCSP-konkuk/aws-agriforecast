@@ -36,6 +36,8 @@ import pandas as pd
 import requests
 import xgboost as xgb
 
+import backtest
+
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(BASE, 'data')
 SECRET = '/opt/agri-forecast/application-secret.properties'
@@ -434,6 +436,28 @@ def save_cache(soon, daily, anchors, target):
     pd.DataFrame({'anchor': sorted(anchors)}).to_csv(os.path.join(DATA, CACHE_ANCHOR), index=False)
 
 
+REQUIRED = ['plag1', 'd_last1_vs_p1', 'ny', 'py', f'sr_{TREND_KW}_l1', '풋고추_l1', '청피망_l1']
+
+
+def backtest_rows(df, X, fit=None):
+    """2026년 완료 순마다 직전 순까지만 학습해 예측. 필수 피쳐가 빈 순은 매일 예측처럼 건너뛴다.
+    fit 은 테스트에서 가벼운 설정을 넣기 위한 것"""
+    fit = fit or fit_predict
+    rows = []
+    for t in backtest.targets(df.DATE, df.price.notna()):
+        ti = df.index[df.DATE == t][0]
+        miss = [c for c in REQUIRED if pd.isna(X.loc[ti, c])]
+        if miss:
+            log.warning('백테스트 %s 건너뜀: 필수 피쳐 결측 %s', t, miss)
+            continue
+        train = df.price.notna() & df.price.shift(1).notna() & (df.index < ti)
+        pred, _ = fit(df, X, train, df.index == ti)
+        rows.append(backtest.row(t, pred[0], df.price[ti], df.DATE[train].iloc[-1]))
+        log.info('백테스트 %s 예측 %.0f / 실제 %.0f (%.1f%%)', t, rows[-1]['predicted_price'],
+                 rows[-1]['actual_price'], rows[-1]['error_pct'])
+    return rows
+
+
 def main():
     today = kst_today()
     target = soon_of(today)                      # 진행 중인 순 = 예측 대상
@@ -457,12 +481,21 @@ def main():
 
     df = assemble(soon, daily, target)
     X = features(df, {k: soon[k] for k in ('풋고추', '청피망')}, trend, daily)
+    if backtest.requested():
+        rows = backtest_rows(df, X)
+        conn = db(P)
+        try:
+            backtest.save(conn, 'redpepper_backtest', rows)
+        finally:
+            conn.close()
+        log.info('백테스트 %d순 저장, MAPE %s%%', len(rows), backtest.mape(rows))
+        return 0
+
     ti = df.index[df.DATE == target]
     if len(ti) != 1:
         log.error('예측 대상 행 없음'); return 1
     ti = ti[0]
-    need = ['plag1', 'd_last1_vs_p1', 'ny', 'py', f'sr_{TREND_KW}_l1', '풋고추_l1', '청피망_l1']
-    miss = [c for c in need if pd.isna(X.loc[ti, c])]
+    miss = [c for c in REQUIRED if pd.isna(X.loc[ti, c])]
     if miss:
         log.error('예측 대상 행에 필수 피쳐 결측: %s — 쓰지 않고 종료', miss); return 1
     # 평년 정의 점검: API 가 준 대상 순 평년과 계산값이 같아야 다음 달 값도 믿을 수 있다
