@@ -2,6 +2,8 @@ import Layout from '../components/Layout';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { api } from '../api/api';
+import LoginRequired from '../components/LoginRequired';
+import { isLoggedIn, getUser } from '../auth';
 
 export default function CommunityEdit() {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ export default function CommunityEdit() {
   const [loading, setLoading] = useState(false);
   const [loadingPost, setLoadingPost] = useState(true);
   const [error, setError] = useState('');
+  const [needsLogin, setNeedsLogin] = useState(!isLoggedIn());
 
   useEffect(() => {
     loadPost();
@@ -25,15 +28,11 @@ export default function CommunityEdit() {
       setError('');
       const postData = await api.getPost(id);
       
-      // 본인 글인지 확인
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        const user = JSON.parse(userData);
-        if (postData.authorId !== user.seqNoA010) {
-          alert('수정 권한이 없습니다.');
-          navigate(`/community/${id}`);
-          return;
-        }
+      // 본인 글이 아니면 일반 보기로 (로그인 안 했으면 안내 화면이 대신 뜬다)
+      const user = getUser();
+      if (user && postData.authorId !== user.seqNoA010) {
+        navigate(`/community/${id}`, { replace: true });
+        return;
       }
       
       setFormData({
@@ -71,7 +70,8 @@ export default function CommunityEdit() {
       navigate(`/community/${id}/my`);
     } catch (err) {
       console.error('글 수정 실패:', err);
-      setError(err.message || '글 수정에 실패했습니다.');
+      if (err.needsLogin) setNeedsLogin(true);
+      else setError(err.message || '글 수정에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -85,9 +85,22 @@ export default function CommunityEdit() {
       navigate('/community');
     } catch (err) {
       console.error('게시글 삭제 실패:', err);
-      alert('게시글 삭제에 실패했습니다.');
+      if (err.needsLogin) setNeedsLogin(true);
+      else setError(err.message || '게시글 삭제에 실패했습니다.');
     }
   };
+
+  if (needsLogin) {
+    return (
+      <Layout>
+        <main className="flex-1 py-10">
+          <div className="mx-auto w-full max-w-[960px] px-4 sm:px-6">
+            <LoginRequired title="로그인하면 글을 수정할 수 있어요" description="내가 쓴 글은 로그인한 뒤에 고치거나 지울 수 있습니다." />
+          </div>
+        </main>
+      </Layout>
+    );
+  }
 
   if (loadingPost) {
     return (

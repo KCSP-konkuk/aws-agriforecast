@@ -2,6 +2,8 @@ import Layout from '../components/Layout';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { api } from '../api/api';
+import LoginRequired from '../components/LoginRequired';
+import { isLoggedIn, getUser } from '../auth';
 
 export default function CommunityView() {
   const { id } = useParams();
@@ -12,7 +14,14 @@ export default function CommunityView() {
   const [loading, setLoading] = useState(true);
   const [commentLoading, setCommentLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isMyPost, setIsMyPost] = useState(false);
+  const [commentError, setCommentError] = useState('');
+  // 로그인 상태가 바뀌면(만료 포함) 댓글 입력 칸을 다시 그린다
+  const [, setLoginVersion] = useState(0);
+  useEffect(() => {
+    const onChange = () => setLoginVersion((v) => v + 1);
+    window.addEventListener('loginStatusChanged', onChange);
+    return () => window.removeEventListener('loginStatusChanged', onChange);
+  }, []);
 
   useEffect(() => {
     loadPost();
@@ -26,14 +35,10 @@ export default function CommunityView() {
       const postData = await api.getPost(id);
       setPost(postData);
       
-      // 본인 글인지 확인
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        const user = JSON.parse(userData);
-        if (postData.authorId === user.seqNoA010) {
-          setIsMyPost(true);
-          navigate(`/community/${id}/my`, { replace: true });
-        }
+      // 본인 글이면 수정·삭제 버튼이 있는 화면으로
+      const user = getUser();
+      if (user && postData.authorId === user.seqNoA010) {
+        navigate(`/community/${id}/my`, { replace: true });
       }
     } catch (err) {
       console.error('게시글 로드 실패:', err);
@@ -57,13 +62,15 @@ export default function CommunityView() {
     if (!comment.trim()) return;
 
     setCommentLoading(true);
+    setCommentError('');
     try {
       await api.createComment(id, comment);
       setComment('');
       loadComments(); // 댓글 목록 새로고침
     } catch (err) {
       console.error('댓글 작성 실패:', err);
-      alert('댓글 작성에 실패했습니다.');
+      // 로그인이 만료됐으면 clearLogin 으로 폼이 로그인 안내로 바뀐다
+      setCommentError(err.needsLogin ? '' : err.message || '댓글 작성에 실패했습니다.');
     } finally {
       setCommentLoading(false);
     }
@@ -126,6 +133,12 @@ export default function CommunityView() {
                 </div>
               ))}
             </div>
+            {commentError && <p className="mt-4 text-sm text-red-600">{commentError}</p>}
+            {!isLoggedIn() ? (
+              <div className="mt-4">
+                <LoginRequired compact title="댓글을 쓰려면 로그인해 주세요." />
+              </div>
+            ) : (
             <form className="mt-4 flex gap-2" onSubmit={handleCommentSubmit}>
               <input
                 type="text"
@@ -143,6 +156,7 @@ export default function CommunityView() {
                 {commentLoading ? '등록 중...' : '등록'}
               </button>
             </form>
+            )}
           </section>
         </div>
       </main>

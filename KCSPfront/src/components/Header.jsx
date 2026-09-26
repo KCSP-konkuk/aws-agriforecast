@@ -2,6 +2,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Logo from './Logo';
 import Avatar from './Avatar';
+import { getUser } from '../auth';
 
 const NAV_ITEMS = [
   { to: '/', label: '홈', end: true },
@@ -17,17 +18,10 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const checkLoginStatus = () => {
-    // 로그인 상태 확인
-    const loginStatus = localStorage.getItem('isLoggedIn');
-    const userData = localStorage.getItem('user');
-
-    if (loginStatus === 'true' && userData) {
-      setIsLoggedIn(true);
-      setUser(JSON.parse(userData));
-    } else {
-      setIsLoggedIn(false);
-      setUser(null);
-    }
+    // 토큰이 없거나 만료됐으면 로그아웃 상태
+    const current = getUser();
+    setIsLoggedIn(current !== null);
+    setUser(current);
   };
 
   useEffect(() => {

@@ -1,21 +1,36 @@
+import { getToken, clearLogin } from '../auth';
+
 // API 기본 설정
 const API_BASE_URL = '/api';
 
-// 헤더에 사용자 ID 추가하는 헬퍼 함수
+// 로그인 토큰을 붙인 요청 헤더
 const getHeaders = () => {
-  const headers = {
-    'Content-Type': 'application/json',
-  };
-  
-  const userData = localStorage.getItem('user');
-  if (userData) {
-    const user = JSON.parse(userData);
-    if (user.seqNoA010) {
-      headers['X-User-Id'] = user.seqNoA010.toString();
-    }
-  }
-  
+  const headers = { 'Content-Type': 'application/json' };
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
   return headers;
+};
+
+// 로그인이 필요한 요청(글·댓글 쓰기/수정/삭제). 401 이면 남은 로그인 정보를 지우고
+// needsLogin 표시가 붙은 오류를 던져 화면이 로그인 안내를 띄울 수 있게 한다
+const authorizedRequest = async (url, options, fallbackMessage) => {
+  const response = await fetch(url, { ...options, headers: getHeaders() });
+  if (response.ok) {
+    return response.status === 204 ? null : response.json();
+  }
+  let message = fallbackMessage;
+  try {
+    const body = await response.json();
+    if (body?.message) message = body.message;
+  } catch {
+    // 본문이 없거나 JSON 이 아니면 기본 문구
+  }
+  const error = new Error(response.status === 401 ? '로그인이 필요합니다. 다시 로그인해 주세요.' : message);
+  if (response.status === 401) {
+    clearLogin();
+    error.needsLogin = true;
+  }
+  throw error;
 };
 
 // API 호출 함수
@@ -59,10 +74,19 @@ export const api = {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || '회원가입에 실패했습니다.');
+      const error = new Error(data.message || '회원가입에 실패했습니다.');
+      error.field = data.field;
+      throw error;
     }
 
     return data;
+  },
+
+  // 아이디 사용 가능 여부 { success, message }
+  checkUsername: async (username) => {
+    const response = await fetch(`${API_BASE_URL}/auth/check-username?username=${encodeURIComponent(username)}`);
+    if (!response.ok) throw new Error('아이디 확인에 실패했습니다.');
+    return response.json();
   },
 
   // ========== 커뮤니티 API ==========
@@ -113,66 +137,18 @@ export const api = {
   },
 
   // 게시글 작성
-  createPost: async (title, category, content) => {
-    const response = await fetch(`${API_BASE_URL}/community/posts`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({
-        title,
-        category,
-        content,
-      }),
-    });
-
-    if (!response.ok) {
-      let errorMessage = '게시글 작성에 실패했습니다.';
-      try {
-        const errorText = await response.text();
-        if (errorText) {
-          const error = JSON.parse(errorText);
-          errorMessage = error.message || errorMessage;
-        }
-      } catch (e) {
-        // JSON 파싱 실패 시 기본 메시지 사용
-        console.error('에러 응답 파싱 실패:', e);
-      }
-      throw new Error(errorMessage);
-    }
-
-    return await response.json();
-  },
+  createPost: (title, category, content) =>
+    authorizedRequest(`${API_BASE_URL}/community/posts`,
+      { method: 'POST', body: JSON.stringify({ title, category, content }) }, '게시글 작성에 실패했습니다.'),
 
   // 게시글 수정
-  updatePost: async (id, title, category, content) => {
-    const response = await fetch(`${API_BASE_URL}/community/posts/${id}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify({
-        title,
-        category,
-        content,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || '게시글 수정에 실패했습니다.');
-    }
-
-    return await response.json();
-  },
+  updatePost: (id, title, category, content) =>
+    authorizedRequest(`${API_BASE_URL}/community/posts/${id}`,
+      { method: 'PUT', body: JSON.stringify({ title, category, content }) }, '게시글 수정에 실패했습니다.'),
 
   // 게시글 삭제
-  deletePost: async (id) => {
-    const response = await fetch(`${API_BASE_URL}/community/posts/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders(),
-    });
-
-    if (!response.ok) {
-      throw new Error('게시글 삭제에 실패했습니다.');
-    }
-  },
+  deletePost: (id) =>
+    authorizedRequest(`${API_BASE_URL}/community/posts/${id}`, { method: 'DELETE' }, '게시글 삭제에 실패했습니다.'),
 
   // 댓글 목록 조회
   getComments: async (postId) => {
@@ -184,52 +160,18 @@ export const api = {
   },
 
   // 댓글 작성
-  createComment: async (postId, content) => {
-    const response = await fetch(`${API_BASE_URL}/community/posts/${postId}/comments`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({
-        content,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || '댓글 작성에 실패했습니다.');
-    }
-
-    return await response.json();
-  },
+  createComment: (postId, content) =>
+    authorizedRequest(`${API_BASE_URL}/community/posts/${postId}/comments`,
+      { method: 'POST', body: JSON.stringify({ content }) }, '댓글 작성에 실패했습니다.'),
 
   // 댓글 수정
-  updateComment: async (id, content) => {
-    const response = await fetch(`${API_BASE_URL}/community/comments/${id}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify({
-        content,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || '댓글 수정에 실패했습니다.');
-    }
-
-    return await response.json();
-  },
+  updateComment: (id, content) =>
+    authorizedRequest(`${API_BASE_URL}/community/comments/${id}`,
+      { method: 'PUT', body: JSON.stringify({ content }) }, '댓글 수정에 실패했습니다.'),
 
   // 댓글 삭제
-  deleteComment: async (id) => {
-    const response = await fetch(`${API_BASE_URL}/community/comments/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders(),
-    });
-
-    if (!response.ok) {
-      throw new Error('댓글 삭제에 실패했습니다.');
-    }
-  },
+  deleteComment: (id) =>
+    authorizedRequest(`${API_BASE_URL}/community/comments/${id}`, { method: 'DELETE' }, '댓글 삭제에 실패했습니다.'),
 
   // ========== 가격 API ==========
 
