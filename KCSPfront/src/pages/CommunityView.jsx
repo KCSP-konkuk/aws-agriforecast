@@ -79,8 +79,8 @@ export default function CommunityView() {
     return (
       <Layout>
         <main className="flex-1 py-10">
-          <div className="mx-auto w-full max-w-[960px] px-6">
-            <div className="text-center py-10 text-[#6d974e]">로딩 중...</div>
+          <div className="mx-auto w-full max-w-[960px] px-4 sm:px-6">
+            <div className="text-center py-10 text-subtext-light">로딩 중...</div>
           </div>
         </main>
       </Layout>
@@ -91,9 +91,9 @@ export default function CommunityView() {
     return (
       <Layout>
         <main className="flex-1 py-10">
-          <div className="mx-auto w-full max-w-[960px] px-6">
+          <div className="mx-auto w-full max-w-[960px] px-4 sm:px-6">
             <div className="text-center py-10 text-red-600">{error || '게시글을 찾을 수 없습니다.'}</div>
-            <Link to="/community" className="text-[#64cf17] hover:underline">목록으로 돌아가기</Link>
+            <Link to="/community" className="text-primary hover:underline">목록으로 돌아가기</Link>
           </div>
         </main>
       </Layout>
@@ -103,22 +103,22 @@ export default function CommunityView() {
   return (
     <Layout>
       <main className="flex-1 py-10">
-        <div className="mx-auto w-full max-w-[960px] px-6">
-          <h1 className="text-3xl font-extrabold text-[#131b0e] mb-4">글 보기</h1>
-          <div className="bg-white/40 border border-[#d9e7d0] rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-[#131b0e] mb-3">{post.title}</h2>
-            <p className="text-sm text-[#6d974e] mb-4">
+        <div className="mx-auto w-full max-w-[960px] px-4 sm:px-6">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-text-main mb-4">글 보기</h1>
+          <div className="bg-white border border-border-light rounded-lg p-6">
+            <h2 className="text-2xl font-bold text-text-main mb-3">{post.title}</h2>
+            <p className="text-sm text-subtext-light mb-4">
               작성자: {post.authorName || '익명'} | 작성일: {formatDate(post.createdAt)} | 조회수: {post.viewCount || 0}
             </p>
-            <div className="text-[#131b0e] leading-relaxed whitespace-pre-wrap">{post.content}</div>
+            <div className="text-text-main leading-relaxed whitespace-pre-wrap">{post.content}</div>
           </div>
 
           <section className="mt-8">
-            <h3 className="text-lg font-bold text-[#131b0e] mb-3">댓글 {comments.length}</h3>
+            <h3 className="text-lg font-bold text-text-main mb-3">댓글 {comments.length}</h3>
             <div className="space-y-3">
               {comments.map((commentItem) => (
-                <div key={commentItem.id} className="p-4 border border-[#d9e7d0] rounded-lg bg-[#fafcf8]">
-                  <p className="text-sm text-[#131b0e]">
+                <div key={commentItem.id} className="p-4 border border-border-light rounded-lg bg-white">
+                  <p className="text-sm text-text-main">
                     <span className="font-semibold">{commentItem.authorName || '익명'}</span> · {formatDate(commentItem.createdAt)}
                     <br />
                     {commentItem.content}
@@ -131,14 +131,14 @@ export default function CommunityView() {
                 type="text"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                className="flex-1 px-4 py-2 rounded-lg border border-[#d9e7d0] bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#64cf17]"
+                className="flex-1 px-4 py-2 rounded-lg border border-border-light bg-white focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="댓글을 입력하세요"
                 disabled={commentLoading}
               />
               <button
                 type="submit"
                 disabled={commentLoading}
-                className="px-4 h-10 rounded-lg bg-[#64cf17] text-[#131b0e] font-bold hover:bg-opacity-90 disabled:opacity-50"
+                className="px-4 h-10 rounded-lg bg-primary text-white font-bold hover:bg-primary-hover disabled:opacity-50"
               >
                 {commentLoading ? '등록 중...' : '등록'}
               </button>

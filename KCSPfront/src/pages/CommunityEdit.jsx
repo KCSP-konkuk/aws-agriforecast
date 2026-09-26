@@ -93,8 +93,8 @@ export default function CommunityEdit() {
     return (
       <Layout>
         <main className="flex-1 py-10">
-          <div className="mx-auto w-full max-w-[960px] px-6">
-            <div className="text-center py-10 text-[#6d974e]">로딩 중...</div>
+          <div className="mx-auto w-full max-w-[960px] px-4 sm:px-6">
+            <div className="text-center py-10 text-subtext-light">로딩 중...</div>
           </div>
         </main>
       </Layout>
@@ -104,8 +104,8 @@ export default function CommunityEdit() {
   return (
     <Layout>
       <main className="flex-1 py-10">
-        <div className="mx-auto w-full max-w-[960px] px-6">
-          <h1 className="text-3xl font-extrabold text-[#131b0e] mb-6">글 수정</h1>
+        <div className="mx-auto w-full max-w-[960px] px-4 sm:px-6">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-text-main mb-6">글 수정</h1>
           
           {error && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -116,23 +116,23 @@ export default function CommunityEdit() {
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-[#131b0e] mb-1">제목</label>
+                <label className="block text-sm font-medium text-text-main mb-1">제목</label>
                 <input
                   type="text"
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-lg border border-[#d9e7d0] bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#64cf17]"
+                  className="w-full px-4 py-2 rounded-lg border border-border-light bg-white focus:outline-none focus:ring-2 focus:ring-primary"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#131b0e] mb-1">카테고리</label>
+                <label className="block text-sm font-medium text-text-main mb-1">카테고리</label>
                 <select
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-lg border border-[#d9e7d0] bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#64cf17]"
+                  className="w-full px-4 py-2 rounded-lg border border-border-light bg-white focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option>도매정보</option>
                   <option>소매노하우</option>
@@ -143,13 +143,13 @@ export default function CommunityEdit() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#131b0e] mb-1">내용</label>
+              <label className="block text-sm font-medium text-text-main mb-1">내용</label>
               <textarea
                 rows="12"
                 name="content"
                 value={formData.content}
                 onChange={handleChange}
-                className="w-full px-4 py-2 rounded-lg border border-[#d9e7d0] bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#64cf17]"
+                className="w-full px-4 py-2 rounded-lg border border-border-light bg-white focus:outline-none focus:ring-2 focus:ring-primary"
                 required
               />
             </div>
@@ -158,20 +158,20 @@ export default function CommunityEdit() {
               <button
                 type="submit"
                 disabled={loading}
-                className="px-5 h-10 rounded-lg bg-[#64cf17] text-[#131b0e] font-bold hover:bg-opacity-90 disabled:opacity-50"
+                className="px-5 h-10 rounded-lg bg-primary text-white font-bold hover:bg-primary-hover disabled:opacity-50"
               >
                 {loading ? '수정 중...' : '수정 완료'}
               </button>
               <button
                 type="button"
                 onClick={handleDelete}
-                className="px-5 h-10 rounded-lg bg-[#f87171] text-white font-bold hover:bg-[#ef4444]"
+                className="px-5 h-10 rounded-lg bg-red-500 text-white font-bold hover:bg-red-600"
               >
                 글 삭제
               </button>
               <Link
                 to={`/community/${id || ''}/my`}
-                className="px-5 h-10 inline-flex items-center rounded-lg bg-[#ecf3e7] text-[#131b0e] hover:bg-[#d9e7d0]"
+                className="px-5 h-10 inline-flex items-center rounded-lg bg-primary-light text-text-main hover:bg-primary/15"
               >
                 취소
               </Link>
