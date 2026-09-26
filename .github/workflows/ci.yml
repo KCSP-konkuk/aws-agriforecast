@@ -26,7 +26,7 @@ jobs:
       - name: Install deps (서버와 같은 고정 버전)
         run: pip install -r requirements.txt pytest
       - name: Compile pipelines
-        run: python -m py_compile pipeline.py pipeline_onion.py pipeline_redpepper.py
+        run: python -m py_compile pipeline.py pipeline_onion.py pipeline_redpepper.py backtest.py
       - name: Pytest
         run: python -m pytest -q tests
 
@@ -47,7 +47,7 @@ jobs:
       - name: Compile + 외부 의존 없는 테스트
         run: |
           chmod +x gradlew
-          ./gradlew compileJava test --tests 'com.agriforecast.backend.service.NaverDataLabServiceRefreshTest' --tests 'com.agriforecast.backend.service.NaverNewsServiceFilterTest'
+          ./gradlew compileJava test --tests 'com.agriforecast.backend.service.NaverDataLabServiceRefreshTest' --tests 'com.agriforecast.backend.service.NaverNewsServiceFilterTest' --tests 'com.agriforecast.backend.service.PredictionHistoryTest'
 
   frontend:
     runs-on: ubuntu-latest
