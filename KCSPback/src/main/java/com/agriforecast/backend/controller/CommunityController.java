@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -79,28 +80,28 @@ public class CommunityController {
     @PostMapping("/posts")
     public ResponseEntity<?> createPost(
             @RequestBody PostRequest request,
-            @RequestHeader("X-User-Id") Integer userId) {
+            @AuthenticationPrincipal Integer userId) {
         try {
             PostResponse post = postService.createPost(request, userId);
             return ResponseEntity.status(HttpStatus.CREATED).body(post);
         } catch (RuntimeException e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(java.util.Map.of("message", e.getMessage() != null ? e.getMessage() : "게시글 작성에 실패했습니다."));
+                    .body(error(e, "게시글 작성에 실패했습니다."));
         }
     }
     
     // 게시글 수정
     @PutMapping("/posts/{id}")
-    public ResponseEntity<PostResponse> updatePost(
+    public ResponseEntity<?> updatePost(
             @PathVariable Long id,
             @RequestBody PostRequest request,
-            @RequestHeader("X-User-Id") Integer userId) {
+            @AuthenticationPrincipal Integer userId) {
         try {
             PostResponse post = postService.updatePost(id, request, userId);
             return ResponseEntity.ok(post);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error(e, "게시글 수정에 실패했습니다."));
         }
     }
     
@@ -108,7 +109,7 @@ public class CommunityController {
     @DeleteMapping("/posts/{id}")
     public ResponseEntity<Void> deletePost(
             @PathVariable Long id,
-            @RequestHeader("X-User-Id") Integer userId) {
+            @AuthenticationPrincipal Integer userId) {
         try {
             postService.deletePost(id, userId);
             return ResponseEntity.noContent().build();
@@ -126,15 +127,15 @@ public class CommunityController {
     
     // 댓글 작성
     @PostMapping("/posts/{postId}/comments")
-    public ResponseEntity<CommentResponse> createComment(
+    public ResponseEntity<?> createComment(
             @PathVariable Long postId,
             @RequestBody CommentRequest request,
-            @RequestHeader("X-User-Id") Integer userId) {
+            @AuthenticationPrincipal Integer userId) {
         try {
             CommentResponse comment = commentService.createComment(postId, request, userId);
             return ResponseEntity.status(HttpStatus.CREATED).body(comment);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error(e, "댓글 작성에 실패했습니다."));
         }
     }
     
@@ -143,7 +144,7 @@ public class CommunityController {
     public ResponseEntity<CommentResponse> updateComment(
             @PathVariable Long id,
             @RequestBody CommentRequest request,
-            @RequestHeader("X-User-Id") Integer userId) {
+            @AuthenticationPrincipal Integer userId) {
         try {
             CommentResponse comment = commentService.updateComment(id, request, userId);
             return ResponseEntity.ok(comment);
@@ -156,7 +157,7 @@ public class CommunityController {
     @DeleteMapping("/comments/{id}")
     public ResponseEntity<Void> deleteComment(
             @PathVariable Long id,
-            @RequestHeader("X-User-Id") Integer userId) {
+            @AuthenticationPrincipal Integer userId) {
         try {
             commentService.deleteComment(id, userId);
             return ResponseEntity.noContent().build();
@@ -164,5 +165,8 @@ public class CommunityController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
-}
 
+    private static java.util.Map<String, String> error(RuntimeException e, String fallback) {
+        return java.util.Map.of("message", e.getMessage() != null ? e.getMessage() : fallback);
+    }
+}

@@ -14,6 +14,11 @@ public class LoginResponse {
     private boolean success;
     private String message;
     private UserInfo user;
+    private String token;  // 로그인 성공 시 발급하는 JWT
+
+    public LoginResponse(boolean success, String message, UserInfo user) {
+        this(success, message, user, null);
+    }
     
     @Getter
     @Setter
