@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
@@ -6,15 +6,14 @@ import {
 import Layout from '../components/Layout';
 import { api } from '../api/api';
 
-// agri_price 테이블에서 받아온 품목명 순서 고정
-const ITEM_ORDER = ['배추', '양파', '홍고추', '양배추', '당근'];
+// 예측 모델이 있는 품목만 보여준다 (백엔드 PredictionService.ITEM_TABLE 과 맞출 것)
+// agri_price 에는 당근·양배추 가격도 있지만 예측 모델을 채택하지 않았다
+const ITEM_ORDER = ['배추', '양파', '홍고추'];
 
 // 품목별 거래 단위
 const ITEM_UNIT = {
   배추:   '10키로망대',
   양파:   '1키로',
-  양배추: '8키로망대',
-  당근:   '20키로상자',
   홍고추: '10키로상자',
 };
 
@@ -149,10 +148,11 @@ export default function Detail() {
 
   // ITEM_ORDER 기준으로 정렬
   const sortedItems = useMemo(() => {
-    const ordered = ITEM_ORDER.filter((n) => items.includes(n));
-    const rest = items.filter((n) => !ITEM_ORDER.includes(n));
-    return [...ordered, ...rest];
+    return ITEM_ORDER.filter((n) => items.includes(n));
   }, [items]);
+
+  // 필터를 연달아 바꾸면 응답 순서가 뒤바뀔 수 있어 마지막 요청 결과만 반영한다
+  const latestRequest = useRef(0);
 
   const fetchPriceData = useCallback((itemName, currentPeriod, start, end) => {
     if (!itemName) return;
@@ -175,44 +175,43 @@ export default function Detail() {
       endDate = new Date(end);
     }
 
+    const requestId = ++latestRequest.current;
     setLoading(true);
     api.getAgriPriceGraph(itemName, startDate, endDate)
-      .then((data) => setPriceData(data))
+      .then((data) => { if (requestId === latestRequest.current) setPriceData(data); })
       .catch((err) => console.error('가격 데이터 로드 실패:', err))
-      .finally(() => setLoading(false));
+      .finally(() => { if (requestId === latestRequest.current) setLoading(false); });
   }, []);
 
-  // 초기 품목 목록 로드 (agri_price 기반) → 첫 번째 품목 자동 조회
+  // 초기 품목 목록 로드 (agri_price 기반) → 첫 번째 품목 선택
   useEffect(() => {
     api.getAgriItems()
       .then((data) => {
         setItems(data);
-        const ordered = ITEM_ORDER.filter((n) => data.includes(n));
-        const first = ordered.length > 0 ? ordered[0] : data[0];
-        if (first) {
-          setSelectedItemName(first);
-          fetchPriceData(first, '1month', '', '');
-        }
+        const first = ITEM_ORDER.find((n) => data.includes(n));
+        if (first) setSelectedItemName(first);
       })
       .catch((err) => console.error('품목 로드 실패:', err));
-  }, [fetchPriceData]);
+  }, []);
 
-  // 품목 변경 시 자동 재조회
+  // 직접 지정은 시작일·종료일이 모두 있고 순서가 맞을 때만 조회한다
+  const customInvalid = period === 'custom' && customStart && customEnd && customStart > customEnd;
+
+  // 품목·기간이 바뀌면 바로 다시 조회한다 (단위는 받은 데이터를 화면에서 다시 묶기만 한다)
   useEffect(() => {
-    if (selectedItemName) fetchPriceData(selectedItemName, period, customStart, customEnd);
-  }, [selectedItemName]);
+    if (!selectedItemName || customInvalid) return;
+    fetchPriceData(selectedItemName, period, customStart, customEnd);
+  }, [selectedItemName, period, customStart, customEnd, customInvalid, fetchPriceData]);
 
   // 품목 변경 시 예측 데이터 조회
   useEffect(() => {
     if (!selectedItemName) return;
+    let cancelled = false;
     api.getPredictions(selectedItemName)
-      .then((data) => setPredictionData(data.predictions ?? []))
-      .catch(() => setPredictionData([]));
+      .then((data) => { if (!cancelled) setPredictionData(data.predictions ?? []); })
+      .catch(() => { if (!cancelled) setPredictionData([]); });
+    return () => { cancelled = true; };
   }, [selectedItemName]);
-
-  const handleSearch = () => {
-    fetchPriceData(selectedItemName, period, customStart, customEnd);
-  };
 
   const validPrices = useMemo(() => {
     if (!priceData?.priceData) return [];
@@ -367,7 +366,7 @@ export default function Detail() {
 
           {/* 필터 & 컨트롤 패널 */}
           <div className="p-4 bg-surface-light rounded-xl border border-border-light shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
               {/* 품종 선택 */}
               <div className="flex flex-col gap-2">
@@ -406,24 +405,11 @@ export default function Detail() {
                   {unitBtn('monthly', '월별')}
                 </div>
               </div>
-
-              {/* 검색 버튼 */}
-              <div className="flex flex-col gap-2">
-                <p className="text-sm font-semibold text-text-main">조회</p>
-                <button
-                  onClick={handleSearch}
-                  disabled={loading}
-                  className="flex items-center justify-center gap-2 w-full h-10 px-4 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary-hover active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                >
-                  <span className="material-symbols-outlined text-lg">search</span>
-                  검색
-                </button>
-              </div>
             </div>
 
             {/* 날짜 직접 지정 */}
             {period === 'custom' && (
-              <div className="mt-4 flex items-center gap-3">
+              <div className="mt-4 flex flex-wrap items-center gap-3">
                 <input
                   type="date"
                   className="h-10 px-3 text-sm bg-background-light border border-border-light rounded-lg focus:ring-2 focus:ring-primary transition"
@@ -437,6 +423,11 @@ export default function Detail() {
                   value={customEnd}
                   onChange={(e) => setCustomEnd(e.target.value)}
                 />
+                <p className={`text-sm ${customInvalid ? 'text-red-600' : 'text-subtext-light'}`}>
+                  {customInvalid
+                    ? '시작일이 종료일보다 늦습니다.'
+                    : customStart && customEnd ? '' : '시작일과 종료일을 고르면 바로 조회합니다.'}
+                </p>
               </div>
             )}
           </div>
@@ -516,7 +507,7 @@ export default function Detail() {
               <div className="flex flex-col items-center justify-center h-64 bg-background-light rounded-lg border border-dashed border-border-light">
                 <span className="material-symbols-outlined text-5xl text-subtext-light mb-3">bar_chart</span>
                 <p className="text-lg font-semibold text-subtext-light">데이터가 없습니다</p>
-                <p className="text-sm text-subtext-light mt-1">품목 또는 기간을 선택 후 검색해 주세요</p>
+                <p className="text-sm text-subtext-light mt-1">다른 품목이나 기간을 선택해 보세요</p>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
