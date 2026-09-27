@@ -1,4 +1,5 @@
 import { getToken, clearLogin } from '../auth';
+import { toLocalDate } from '../date';
 
 // API 기본 설정
 const API_BASE_URL = '/api';
@@ -292,8 +293,8 @@ export const api = {
 
   // agri_price 테이블 기반 가격 그래프 조회
   getAgriPriceGraph: async (itemName, startDate, endDate) => {
-    const startStr = startDate.toISOString().split('T')[0];
-    const endStr   = endDate.toISOString().split('T')[0];
+    const startStr = toLocalDate(startDate);
+    const endStr   = toLocalDate(endDate);
     const response = await fetch(
       `${API_BASE_URL}/price/agri/graph?itemName=${encodeURIComponent(itemName)}&startDate=${startStr}&endDate=${endStr}`
     );
@@ -303,8 +304,8 @@ export const api = {
 
   // 가격 그래프 데이터 조회
   getPriceGraph: async (itemCode, startDate, endDate, grade = '전체') => {
-    const startStr = startDate.toISOString().split('T')[0];
-    const endStr = endDate.toISOString().split('T')[0];
+    const startStr = toLocalDate(startDate);
+    const endStr = toLocalDate(endDate);
     const response = await fetch(
       `${API_BASE_URL}/price/graph?itemCode=${itemCode}&startDate=${startStr}&endDate=${endStr}&grade=${encodeURIComponent(grade)}`
     );

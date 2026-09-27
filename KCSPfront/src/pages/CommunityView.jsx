@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../api/api';
 import LoginRequired from '../components/LoginRequired';
 import { isLoggedIn, getUser } from '../auth';
+import { toLocalDate } from '../date';
 
 export default function CommunityView() {
   const { id } = useParams();
@@ -79,7 +80,7 @@ export default function CommunityView() {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toISOString().split('T')[0];
+    return toLocalDate(date);
   };
 
   if (loading) {
