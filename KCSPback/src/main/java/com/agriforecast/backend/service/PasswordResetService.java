@@ -132,6 +132,10 @@ public class PasswordResetService {
             pending.remove(username);
             return AccountResponse.fail("계정을 찾을 수 없습니다.", null);
         }
+        // 마이페이지 변경과 같은 규칙: 지금 비밀번호와 같으면 거절 (코드는 남겨 다시 입력할 수 있게)
+        if (accountService.matches(user.get(), newPassword)) {
+            return AccountResponse.fail("지금 쓰는 비밀번호와 다른 비밀번호를 입력해 주세요.", "newPassword");
+        }
         accountService.setPassword(user.get(), newPassword);
         pending.remove(username);
         return AccountResponse.ok("비밀번호를 재설정했습니다. 새 비밀번호로 로그인해 주세요.");

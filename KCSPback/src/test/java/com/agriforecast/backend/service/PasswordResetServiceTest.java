@@ -113,6 +113,16 @@ class PasswordResetServiceTest {
     }
 
     @Test
+    void 지금_비밀번호와_같은_새_비밀번호는_거절하고_코드는_남긴다() {
+        service.request("farmer_01", "kim@example.com");
+        String code = mail.lastCode();
+        AccountResponse same = service.confirm("farmer_01", code, "abcd1234");
+        assertEquals("newPassword", same.getField());
+        assertTrue(service.confirm("farmer_01", code, "newpass123").isSuccess());
+        assertTrue(encoder.matches("newpass123", user.getAuthPassword().getPassword()));
+    }
+
+    @Test
     void 재요청은_1분_뒤부터이고_없는_계정도_똑같다() {
         service.request("farmer_01", "kim@example.com");
         assertFalse(service.request("farmer_01", "kim@example.com").isSuccess());
