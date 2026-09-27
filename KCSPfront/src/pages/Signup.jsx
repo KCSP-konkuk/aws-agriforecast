@@ -3,14 +3,8 @@ import { useState, useEffect } from 'react';
 import { api } from '../api/api';
 import AuthLayout from '../components/AuthLayout';
 import { TextField, PasswordField, FormError, SubmitButton } from '../components/FormField';
+import { RULES, confirmProblem } from '../validation';
 
-// 서버 규칙(KCSPback SignupValidator)과 같게 유지할 것. 서버가 최종 판정한다
-const RULES = {
-  fullname: (v) => (v.trim().length >= 1 && v.trim().length <= 20 ? '' : '이름은 1~20자로 입력해 주세요.'),
-  username: (v) => (/^[a-z0-9_]{4,20}$/.test(v) ? '' : '영문 소문자·숫자·밑줄(_)로 4~20자'),
-  email: (v) => (v.trim().length <= 50 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : '올바른 이메일 주소를 입력해 주세요.'),
-  password: (v) => (v.length >= 8 && v.length <= 64 && /[A-Za-z]/.test(v) && /[0-9]/.test(v) ? '' : '영문과 숫자를 섞어 8자 이상'),
-};
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -29,7 +23,7 @@ export default function Signup() {
     username: RULES.username(formData.username),
     email: RULES.email(formData.email),
     password: RULES.password(formData.password),
-    confirm: formData.confirm && formData.confirm === formData.password ? '' : '비밀번호가 일치하지 않습니다.',
+    confirm: confirmProblem(formData.password, formData.confirm),
   };
 
   // 아이디 규칙이 맞으면 입력을 멈춘 뒤 서버에 사용 가능 여부를 묻는다
