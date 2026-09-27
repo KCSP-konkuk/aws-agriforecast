@@ -6,6 +6,7 @@ import {
 import Layout from '../components/Layout';
 import PredictionHistory from '../components/PredictionHistory';
 import { api } from '../api/api';
+import { toLocalDate } from '../date';
 
 // 예측 모델이 있는 품목만 보여준다 (백엔드 PredictionService.ITEM_TABLE 과 맞출 것)
 // agri_price 에는 당근·양배추 가격도 있지만 예측 모델을 채택하지 않았다
@@ -49,7 +50,7 @@ function aggregateWeekly(data) {
     const day = d.getDay();
     const monday = new Date(d);
     monday.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
-    const key = monday.toISOString().split('T')[0];
+    const key = toLocalDate(monday);
     if (!map.has(key)) map.set(key, { prices: [], predicted: [], predictionLabels: [] });
     if (price != null) map.get(key).prices.push(price);
     if (predictedPrice != null) {
@@ -67,17 +68,22 @@ function aggregateWeekly(data) {
 
 function aggregateMonthly(data) {
   const map = new Map();
-  data.forEach(({ date, price, predictedPrice }) => {
+  data.forEach(({ date, price, predictedPrice, predictionLabel }) => {
     if (!date) return;
     const key = date.substring(0, 7);
-    if (!map.has(key)) map.set(key, { prices: [], predicted: [] });
+    if (!map.has(key)) map.set(key, { prices: [], predicted: [], predictionLabels: [] });
     if (price != null) map.get(key).prices.push(price);
-    if (predictedPrice != null) map.get(key).predicted.push(predictedPrice);
+    if (predictedPrice != null) {
+      map.get(key).predicted.push(predictedPrice);
+      if (predictionLabel) map.get(key).predictionLabels.push(predictionLabel);
+    }
   });
-  return [...map.entries()].map(([date, { prices, predicted }]) => ({
+  return [...map.entries()].map(([date, { prices, predicted, predictionLabels }]) => ({
     date,
     price: prices.length > 0 ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : null,
     predictedPrice: predicted.length > 0 ? Math.round(predicted.reduce((a, b) => a + b, 0) / predicted.length) : null,
+    // 툴팁에 '2026-09' 대신 예측한 순(2026-09-하순)을 보여준다
+    predictionLabel: predictionLabels.length > 0 ? [...new Set(predictionLabels)].join(', ') : null,
   }));
 }
 
@@ -98,7 +104,10 @@ function CustomTooltip({ active, payload, label, unit }) {
   const priceEntry = payload.find((p) => p.dataKey === 'price');
   const predEntry  = payload.find((p) => p.dataKey === 'predictedPrice');
   const isActualBridge = payload[0]?.payload?.isActualBridge;
-  const displayLabel = payload[0]?.payload?.predictionLabel ?? label;
+  // 실거래가가 있는 칸(예: 9월 전체)은 그 기간 이름을, 예측만 있는 칸은 예측한 순을 제목으로
+  const point = payload[0]?.payload ?? {};
+  const hasActual = point.price != null;
+  const displayLabel = hasActual ? label : point.predictionLabel ?? label;
   return (
     <div className="p-3 bg-surface-light border border-border-light rounded-lg shadow-lg text-sm">
       <p className="font-semibold text-text-main mb-1">{displayLabel}</p>
@@ -109,7 +118,7 @@ function CustomTooltip({ active, payload, label, unit }) {
       )}
       {!isActualBridge && predEntry?.value != null && (
         <p style={{ color: '#F59E0B' }}>
-          AI 예측가: {predEntry.value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
+          AI 예측가{hasActual && point.predictionLabel ? ` (${point.predictionLabel})` : ''}: {predEntry.value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
         </p>
       )}
     </div>
@@ -146,6 +155,8 @@ export default function Detail() {
   const [loading, setLoading] = useState(false);
   const [tableSearch, setTableSearch] = useState('');
   const [predictionData, setPredictionData] = useState([]);
+  // 지금 화면 데이터를 받아 온 기간 { start, end } ('YYYY-MM-DD')
+  const [range, setRange] = useState(null);
 
   // ITEM_ORDER 기준으로 정렬
   const sortedItems = useMemo(() => {
@@ -172,14 +183,21 @@ export default function Detail() {
     } else if (currentPeriod === 'all') {
       startDate = new Date('2018-01-01');
     } else if (currentPeriod === 'custom') {
-      startDate = new Date(start);
-      endDate = new Date(end);
+      // 'YYYY-MM-DD' 를 new Date() 로 읽으면 UTC 자정이라, 한국 시간 자정으로 직접 만든다
+      const [sy, sm, sd] = start.split('-').map(Number);
+      const [ey, em, ed] = end.split('-').map(Number);
+      startDate = new Date(sy, sm - 1, sd);
+      endDate = new Date(ey, em - 1, ed);
     }
 
     const requestId = ++latestRequest.current;
     setLoading(true);
     api.getAgriPriceGraph(itemName, startDate, endDate)
-      .then((data) => { if (requestId === latestRequest.current) setPriceData(data); })
+      .then((data) => {
+        if (requestId !== latestRequest.current) return;
+        setPriceData(data);
+        setRange({ start: toLocalDate(startDate), end: toLocalDate(endDate) });
+      })
       .catch((err) => console.error('가격 데이터 로드 실패:', err))
       .finally(() => { if (requestId === latestRequest.current) setLoading(false); });
   }, []);
@@ -224,27 +242,36 @@ export default function Detail() {
     const last = validPrices[validPrices.length - 1];
     const prev = validPrices.length >= 2 ? validPrices[validPrices.length - 2] : null;
     const allPrices = validPrices.map((d) => d.price);
-    const change = prev ? last.price - prev.price : 0;
-    const pct = prev ? ((change / prev.price) * 100).toFixed(1) : '0.0';
+    const change = prev ? last.price - prev.price : null;
+    const pct = prev ? ((change / prev.price) * 100).toFixed(1) : null;
     return {
       current: last.price,
       change,
-      pct: parseFloat(pct),
+      pct: pct === null ? null : parseFloat(pct),
       max: Math.max(...allPrices),
       min: Math.min(...allPrices),
     };
   }, [validPrices]);
 
+  // 다음 순 예측은 조회 기간에 오늘이 들어 있을 때만 그린다.
+  // 예전 기간(예: 2020년)이나 미래 기간을 보면 가격 없이 예측점 하나만 떠 있었다
+  const showPrediction = useMemo(() => {
+    if (!range || predictionData.length === 0) return false;
+    const today = toLocalDate(new Date());
+    return range.start <= today && today <= range.end;
+  }, [range, predictionData.length]);
+
   const chartData = useMemo(() => {
-    if (validPrices.length === 0 && predictionData.length === 0) return [];
+    if (validPrices.length === 0) return [];
 
-    // 오늘 날짜 (로컬 기준 — KST)
     const _t = new Date();
-    const todayStr    = `${_t.getFullYear()}-${String(_t.getMonth()+1).padStart(2,'0')}-${String(_t.getDate()).padStart(2,'0')}`;
+    const todayStr = toLocalDate(_t);
     const _tm = new Date(_t); _tm.setDate(_t.getDate() + 1);
-    const tomorrowStr = `${_tm.getFullYear()}-${String(_tm.getMonth()+1).padStart(2,'0')}-${String(_tm.getDate()).padStart(2,'0')}`;
+    const tomorrowStr = toLocalDate(_tm);
 
-    const validPred = predictionData.filter((p) => p.predictedPrice != null && p.predictedPrice !== 0);
+    const validPred = showPrediction
+      ? predictionData.filter((p) => p.predictedPrice != null && p.predictedPrice !== 0)
+      : [];
     const latestPred = validPred[0];
 
     // 실제 날짜 축에 예측점을 배치하고, 화면에는 순별 라벨을 표시한다.
@@ -298,7 +325,7 @@ export default function Detail() {
     }
 
     return result;
-  }, [validPrices, predictionData, unit]);
+  }, [validPrices, predictionData, unit, showPrediction]);
 
   const tableData = useMemo(() => {
     const daily = [...validPrices].reverse();
@@ -307,7 +334,7 @@ export default function Detail() {
   }, [validPrices, tableSearch]);
 
   const periodLabel = useMemo(() => {
-    if (period === 'custom' && customStart && customEnd) return `${customStart} ~ ${customEnd}`;
+    if (period === 'custom' && customStart && customEnd && customStart <= customEnd) return `${customStart} ~ ${customEnd}`;
     if (validPrices.length === 0) return '-';
     return `${validPrices[0].date} ~ ${validPrices[validPrices.length - 1].date}`;
   }, [period, customStart, customEnd, validPrices]);
@@ -315,12 +342,8 @@ export default function Detail() {
   const selectedItem = selectedItemName;
   const currentUnit = ITEM_UNIT[selectedItemName] ?? 'kg';
 
-  const xAxisInterval = useMemo(() => {
-    if (chartData.length <= 30) return 4;
-    if (chartData.length <= 90) return 14;
-    if (chartData.length <= 365) return 30;
-    return Math.floor(chartData.length / 12);
-  }, [chartData.length]);
+  // 눈금을 8개 안팎으로. 주별·월별처럼 점이 적으면 모두 보여준다
+  const xAxisInterval = useMemo(() => Math.max(0, Math.ceil(chartData.length / 8) - 1), [chartData.length]);
 
   const periodBtn = (p, label, icon) => (
     <button
@@ -444,13 +467,13 @@ export default function Detail() {
             <KpiCard
               label="전일 대비"
               value={
-                kpi
+                kpi && kpi.change !== null
                   ? `${kpi.change > 0 ? '▲' : kpi.change < 0 ? '▼' : '―'} ${Math.abs(kpi.change).toLocaleString()}원`
                   : '-'
               }
-              sub={kpi ? `(${kpi.pct > 0 ? '+' : ''}${kpi.pct}%)` : ''}
+              sub={kpi && kpi.pct !== null ? `(${kpi.pct > 0 ? '+' : ''}${kpi.pct}%)` : ''}
               valueColor={
-                kpi
+                kpi && kpi.change !== null
                   ? kpi.change > 0
                     ? 'text-price-up'
                     : kpi.change < 0
@@ -488,7 +511,7 @@ export default function Detail() {
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#4A90E2' }}></div>
                   <span className="text-subtext-light">실거래가</span>
                 </div>
-                {predictionData.length > 0 && (
+                {showPrediction && (
                   <div className="flex items-center gap-2">
                     <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="#F59E0B" strokeWidth="2" /></svg>
                     <span className="text-subtext-light">AI 예측가</span>
@@ -516,7 +539,7 @@ export default function Detail() {
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" />
                   <XAxis
                     dataKey="date"
-                    tickFormatter={(d, index) => chartData[index]?.predictionLabel ?? formatXTick(d, unit)}
+                    tickFormatter={(d, index) => (chartData[index]?.price == null && chartData[index]?.predictionLabel) || formatXTick(d, unit)}
                     tick={{ fontSize: 11, fill: '#64748B' }}
                     interval={xAxisInterval}
                   />
@@ -535,7 +558,7 @@ export default function Detail() {
                     activeDot={{ r: 5 }}
                     connectNulls={false}
                   />
-                  {predictionData.length > 0 && (
+                  {showPrediction && (
                     <Line
                       type="monotone"
                       dataKey="predictedPrice"
