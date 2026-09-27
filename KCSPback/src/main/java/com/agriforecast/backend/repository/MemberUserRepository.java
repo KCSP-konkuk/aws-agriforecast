@@ -20,5 +20,8 @@ public interface MemberUserRepository extends JpaRepository<MemberUser, Integer>
     // 아이디 존재 여부 확인
     @Query("SELECT COUNT(u) > 0 FROM MemberUser u WHERE u.id = :userId")
     boolean existsByUserId(@Param("userId") String userId);
-}
 
+    // 아이디 찾기: 이름·이메일이 모두 같은 활성 계정 (이메일 중복 가입이 막혀 있지 않아 여러 개일 수 있다)
+    @Query("SELECT u FROM MemberUser u WHERE u.isActive = true AND u.memberProfile.name = :name AND u.memberProfile.email = :email ORDER BY u.seqNoA010")
+    java.util.List<MemberUser> findActiveByNameAndEmail(@Param("name") String name, @Param("email") String email);
+}

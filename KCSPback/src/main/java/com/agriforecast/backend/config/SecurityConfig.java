@@ -2,6 +2,7 @@ package com.agriforecast.backend.config;
 
 import com.agriforecast.backend.security.JwtAuthFilter;
 import com.agriforecast.backend.security.JwtProvider;
+import com.agriforecast.backend.service.AccountService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -26,17 +27,20 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtProvider jwtProvider) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtProvider jwtProvider,
+                                                   AccountService accountService) throws Exception {
         http
             .csrf(csrf -> csrf.disable()) // 쿠키 대신 Authorization 헤더로 인증하므로 CSRF 대상이 아니다
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(new JwtAuthFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(new JwtAuthFilter(jwtProvider, accountService::isActive), UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
                 // 커뮤니티 글·댓글 작성/수정/삭제는 로그인 필요. 조회는 누구나
                 .requestMatchers(HttpMethod.POST, "/api/community/**").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/community/**").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/community/**").authenticated()
+                // 마이페이지(프로필·비밀번호 변경·탈퇴)
+                .requestMatchers("/api/me", "/api/me/**").authenticated()
                 .anyRequest().permitAll()
             )
             .exceptionHandling(e -> e.authenticationEntryPoint((request, response, ex) -> {

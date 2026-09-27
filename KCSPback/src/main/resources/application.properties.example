@@ -19,6 +19,17 @@ spring.jackson.time-zone=Asia/Seoul
 naver.datalab.client-id=YOUR_NAVER_CLIENT_ID
 naver.datalab.client-secret=YOUR_NAVER_CLIENT_SECRET
 
+# Naver 검색 API (홈 뉴스) — 데이터랩과 다른 키
+naver.search.client-id=YOUR_NAVER_SEARCH_CLIENT_ID
+naver.search.client-secret=YOUR_NAVER_SEARCH_CLIENT_SECRET
+
+# 로그인 토큰 서명 키 (32자 이상, openssl rand -base64 48)
+jwt.secret=YOUR_JWT_SECRET
+
+# 비밀번호 재설정 메일 계정 (Gmail 앱 비밀번호). 서버 주소·포트는 application.properties 에 있다
+spring.mail.username=YOUR_GMAIL_ADDRESS
+spring.mail.password=YOUR_GMAIL_APP_PASSWORD
+
 # KAMIS API
 kamis.cert-key=YOUR_KAMIS_CERT_KEY
 kamis.cert-id=YOUR_KAMIS_CERT_ID
