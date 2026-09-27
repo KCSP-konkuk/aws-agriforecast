@@ -55,7 +55,10 @@ jobs:
             --tests 'com.agriforecast.backend.service.PredictionHistoryTest' \
             --tests 'com.agriforecast.backend.service.SignupValidatorTest' \
             --tests 'com.agriforecast.backend.security.JwtProviderTest' \
-            --tests 'com.agriforecast.backend.controller.CommunityAuthTest'
+            --tests 'com.agriforecast.backend.controller.CommunityAuthTest' \
+            --tests 'com.agriforecast.backend.controller.AccountAuthTest' \
+            --tests 'com.agriforecast.backend.service.AccountServiceTest' \
+            --tests 'com.agriforecast.backend.service.PasswordResetServiceTest'
 
   frontend:
     runs-on: ubuntu-latest

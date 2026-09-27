@@ -3,6 +3,7 @@ package com.agriforecast.backend.controller;
 import com.agriforecast.backend.config.SecurityConfig;
 import com.agriforecast.backend.dto.PostResponse;
 import com.agriforecast.backend.security.JwtProvider;
+import com.agriforecast.backend.service.AccountService;
 import com.agriforecast.backend.service.CommentService;
 import com.agriforecast.backend.service.PostService;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,12 @@ class CommunityAuthTest {
     @Autowired JwtProvider jwtProvider;
     @MockitoBean PostService postService;
     @MockitoBean CommentService commentService;
+    @MockitoBean AccountService accountService;
+
+    @org.junit.jupiter.api.BeforeEach
+    void activeUsers() {
+        when(accountService.isActive(any())).thenReturn(true);  // 탈퇴 여부는 AccountAuthTest 에서 본다
+    }
 
     @Test
     void 토큰_없이_글을_쓰면_401과_안내_문구() throws Exception {

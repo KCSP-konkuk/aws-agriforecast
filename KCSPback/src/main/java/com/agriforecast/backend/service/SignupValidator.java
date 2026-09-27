@@ -30,17 +30,29 @@ public final class SignupValidator {
         Optional<Violation> username = usernameProblem(r.getUsername());
         if (username.isPresent()) return username;
 
-        String name = r.getFullname() == null ? "" : r.getFullname().trim();
-        if (name.isEmpty() || name.length() > 20) {
-            return Optional.of(new Violation("fullname", "이름은 1~20자로 입력해 주세요."));
-        }
+        Optional<Violation> name = nameProblem(r.getFullname());
+        if (name.isPresent()) return name;
 
         String email = r.getEmail() == null ? "" : r.getEmail().trim();
         if (email.length() > 50 || !EMAIL.matcher(email).matches()) {
             return Optional.of(new Violation("email", "올바른 이메일 주소를 입력해 주세요."));
         }
 
-        String pw = r.getPassword() == null ? "" : r.getPassword();
+        return passwordProblem(r.getPassword());
+    }
+
+    /** 회원가입·마이페이지 이름 수정 공통 */
+    public static Optional<Violation> nameProblem(String fullname) {
+        String name = fullname == null ? "" : fullname.trim();
+        if (name.isEmpty() || name.length() > 20) {
+            return Optional.of(new Violation("fullname", "이름은 1~20자로 입력해 주세요."));
+        }
+        return Optional.empty();
+    }
+
+    /** 회원가입·비밀번호 변경·재설정 공통 */
+    public static Optional<Violation> passwordProblem(String password) {
+        String pw = password == null ? "" : password;
         if (pw.length() < 8 || pw.length() > 64 || !pw.matches(".*[A-Za-z].*") || !pw.matches(".*[0-9].*")) {
             return Optional.of(new Violation("password", "비밀번호는 영문과 숫자를 섞어 8자 이상이어야 합니다."));
         }

@@ -19,18 +19,35 @@ const authorizedRequest = async (url, options, fallbackMessage) => {
     return response.status === 204 ? null : response.json();
   }
   let message = fallbackMessage;
+  let field;
   try {
     const body = await response.json();
     if (body?.message) message = body.message;
+    field = body?.field;
   } catch {
     // 본문이 없거나 JSON 이 아니면 기본 문구
   }
   const error = new Error(response.status === 401 ? '로그인이 필요합니다. 다시 로그인해 주세요.' : message);
+  error.field = field;
   if (response.status === 401) {
     clearLogin();
     error.needsLogin = true;
   }
   throw error;
+};
+
+// 로그인 없이 쓰는 계정 API. 400 이어도 { success, message, field } 본문을 그대로 돌려준다
+const publicJson = async (url, body, fallbackMessage) => {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  try {
+    return await response.json();
+  } catch {
+    return { success: false, message: fallbackMessage };
+  }
 };
 
 // API 호출 함수
@@ -88,6 +105,36 @@ export const api = {
     if (!response.ok) throw new Error('아이디 확인에 실패했습니다.');
     return response.json();
   },
+
+  // ========== 계정 (아이디 찾기·비밀번호 재설정·마이페이지) ==========
+
+  // { ids: ['fa*****01'] } — 일부를 가린 아이디
+  findId: (name, email) => publicJson(`${API_BASE_URL}/auth/find-id`, { name, email }, '아이디를 찾지 못했습니다.'),
+
+  // 메일 발송 설정이 되어 있는지 { available }
+  passwordResetAvailable: async () => {
+    const response = await fetch(`${API_BASE_URL}/auth/password-reset/available`);
+    if (!response.ok) return { available: false };
+    return response.json();
+  },
+
+  requestPasswordReset: (username, email) =>
+    publicJson(`${API_BASE_URL}/auth/password-reset/request`, { username, email }, '인증 코드를 보내지 못했습니다.'),
+
+  confirmPasswordReset: (username, code, newPassword) =>
+    publicJson(`${API_BASE_URL}/auth/password-reset/confirm`, { username, code, newPassword }, '비밀번호를 재설정하지 못했습니다.'),
+
+  getMe: () => authorizedRequest(`${API_BASE_URL}/me`, { method: 'GET' }, '계정 정보를 불러오지 못했습니다.'),
+
+  updateProfile: (name) =>
+    authorizedRequest(`${API_BASE_URL}/me/profile`, { method: 'PUT', body: JSON.stringify({ name }) }, '이름을 변경하지 못했습니다.'),
+
+  changePassword: (currentPassword, newPassword) =>
+    authorizedRequest(`${API_BASE_URL}/me/password`,
+      { method: 'PUT', body: JSON.stringify({ currentPassword, newPassword }) }, '비밀번호를 변경하지 못했습니다.'),
+
+  withdraw: (password) =>
+    authorizedRequest(`${API_BASE_URL}/me/withdraw`, { method: 'POST', body: JSON.stringify({ password }) }, '탈퇴하지 못했습니다.'),
 
   // ========== 커뮤니티 API ==========
   

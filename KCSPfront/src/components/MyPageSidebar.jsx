@@ -48,13 +48,6 @@ export default function MyPageSidebar({ user, onLogout }) {
           </nav>
         </div>
         <div className="flex flex-col gap-4 mt-auto">
-          <Link
-            to="#"
-            className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-primary-light transition-colors duration-200 text-text-main"
-          >
-            <span className="material-symbols-outlined text-xl">help</span>
-            <p className="text-base font-medium">고객 지원</p>
-          </Link>
           <button
             onClick={handleLogout}
             className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-11 px-4 bg-red-500/10 text-red-500 text-base font-bold transition-colors duration-200 hover:bg-red-500/20 border border-red-500/30"
