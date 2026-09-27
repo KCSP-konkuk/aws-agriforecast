@@ -47,6 +47,14 @@ export function saveLogin(token, user) {
   notify();
 }
 
+// 마이페이지에서 이름을 바꾸면 헤더 표시도 바로 바뀌게
+export function updateStoredUser(patch) {
+  const user = getUser();
+  if (!user) return;
+  localStorage.setItem(USER_KEY, JSON.stringify({ ...user, ...patch }));
+  notify();
+}
+
 export function clearLogin() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);

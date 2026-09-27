@@ -9,7 +9,11 @@ export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const next = searchParams.get('next');
-  const justJoined = searchParams.get('joined') === '1';
+  // 다른 화면에서 넘어오며 알려줄 것 (가입·비밀번호 재설정·탈퇴 완료, 로그인 후 돌아갈 화면)
+  const banner = searchParams.get('joined') === '1' ? '회원가입이 완료됐어요. 가입한 아이디로 로그인해 주세요.'
+    : searchParams.get('reset') === '1' ? '비밀번호를 재설정했어요. 새 비밀번호로 로그인해 주세요.'
+    : searchParams.get('withdrawn') === '1' ? '탈퇴가 완료됐어요. 그동안 이용해 주셔서 감사합니다.'
+    : next ? '로그인하면 보던 화면으로 돌아갑니다.' : '';
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -65,9 +69,9 @@ export default function Login() {
 
   return (
     <AuthLayout title="로그인" subtitle="AgriForecast 계정으로 로그인하세요.">
-      {(justJoined || next) && (
-        <p className="mb-5 rounded-lg border border-primary/20 bg-primary-light px-4 py-3 text-sm text-text-main">
-          {justJoined ? '회원가입이 완료됐어요. 가입한 아이디로 로그인해 주세요.' : '로그인하면 보던 화면으로 돌아갑니다.'}
+      {banner && (
+        <p className="mb-5 rounded-lg border border-primary/20 bg-primary-light px-4 py-3 text-sm text-text-main" role="status">
+          {banner}
         </p>
       )}
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
