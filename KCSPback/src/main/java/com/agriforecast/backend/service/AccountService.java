@@ -106,7 +106,7 @@ public class AccountService {
         auth.setPassword(passwordEncoder.encode(newPassword));
     }
 
-    private boolean matches(MemberUser user, String rawPassword) {
+    boolean matches(MemberUser user, String rawPassword) {
         AuthPassword auth = user.getAuthPassword();
         return auth != null && rawPassword != null && passwordEncoder.matches(rawPassword, auth.getPassword());
     }

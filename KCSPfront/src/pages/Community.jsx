@@ -2,6 +2,7 @@ import Layout from '../components/Layout';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { api } from '../api/api';
+import { toLocalDate } from '../date';
 
 export default function Community() {
   const [selectedCategory, setSelectedCategory] = useState('전체');
@@ -50,7 +51,7 @@ export default function Community() {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toISOString().split('T')[0];
+    return toLocalDate(date);
   };
 
   return (
