@@ -130,4 +130,21 @@ public class PredictionService {
             return 0;
         }
     }
+
+    /** 그 순의 AI 예측가. 운영 예측(_predictions) 우선, 없으면 백테스트(_backtest). 테이블이 없으면 빈 값 */
+    public Optional<Double> predictedPrice(String itemName, String soonCode) {
+        String live = ITEM_TABLE.get(itemName);
+        if (live == null) return Optional.empty();
+        for (String table : List.of(live, live.replace("_predictions", "_backtest"))) {
+            try {
+                List<Double> found = jdbcTemplate.query(
+                        "SELECT predicted_price FROM " + table + " WHERE target_date = ?",
+                        (rs, i) -> rs.getDouble(1), soonCode);
+                if (!found.isEmpty()) return Optional.of(found.get(0));
+            } catch (org.springframework.dao.DataAccessException e) {
+                // 테이블이 아직 없으면 다음 후보로
+            }
+        }
+        return Optional.empty();
+    }
 }
