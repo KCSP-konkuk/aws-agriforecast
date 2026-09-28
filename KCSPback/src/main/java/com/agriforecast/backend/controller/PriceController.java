@@ -8,6 +8,7 @@ import com.agriforecast.backend.repository.AgriPriceRepository;
 import com.agriforecast.backend.service.KamisService;
 import com.agriforecast.backend.service.PredictionService;
 import com.agriforecast.backend.service.PriceService;
+import com.agriforecast.backend.service.RetailPriceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -36,6 +37,26 @@ public class PriceController {
 
     @Autowired
     private PredictionService predictionService;
+
+    @Autowired
+    private RetailPriceService retailPriceService;
+
+    // 홈 '서울 농산물 소매가' 카드 (KAMIS 서울 평균, 상품)
+    @GetMapping("/retail/summary")
+    public ResponseEntity<List<RetailPriceService.Summary>> getRetailSummary() {
+        return ResponseEntity.ok(retailPriceService.summary());
+    }
+
+    // 홈 소매가 추이 차트. unit=daily|soon, 예측은 soon 에만 붙는다
+    @GetMapping("/retail/series")
+    public ResponseEntity<?> getRetailSeries(@RequestParam String itemName,
+                                             @RequestParam(defaultValue = "soon") String unit) {
+        try {
+            return ResponseEntity.ok(retailPriceService.series(itemName, unit));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
     
     // KAMIS 주요 농산물 일일 가격 조회 (쌀·콩·고구마·감자·배추·양배추·상추)
     @GetMapping("/daily")
