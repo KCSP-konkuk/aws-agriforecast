@@ -1,5 +1,7 @@
 package com.agriforecast.backend.repository;
 
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.jpa.repository.Modifying;
 import com.agriforecast.backend.entity.Post;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -37,5 +39,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     
     // 카테고리와 제목으로 검색
     Page<Post> findByCategoryAndTitleContainingOrderByCreatedAtDesc(String category, String title, Pageable pageable);
-}
 
+    boolean existsByCategoryAndTitle(String category, String title);
+
+    // 품목방 개편 전 카테고리(도매정보·소매노하우·구인구직·자유게시판 등) 글은 '자유' 방으로
+    @Modifying
+    @Transactional
+    @Query("UPDATE Post p SET p.category = '자유' WHERE p.category NOT IN ('배추', '양파', '홍고추', '자유')")
+    int moveLegacyCategoriesToFree();
+}
