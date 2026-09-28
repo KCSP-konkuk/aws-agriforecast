@@ -241,6 +241,22 @@ export const api = {
     return await response.json();
   },
 
+  // KAMIS 서울 소매가 요약 (홈 카드)
+  getRetailSummary: async () => {
+    const response = await fetch(`${API_BASE_URL}/price/retail/summary`);
+    if (!response.ok) throw new Error('소매가 데이터를 불러오는데 실패했습니다.');
+    return await response.json();
+  },
+
+  // KAMIS 서울 소매가 추이 (unit: 'daily' | 'soon')
+  getRetailSeries: async (itemName, unit) => {
+    const response = await fetch(
+      `${API_BASE_URL}/price/retail/series?itemName=${encodeURIComponent(itemName)}&unit=${unit}`
+    );
+    if (!response.ok) throw new Error('소매가 추이를 불러오는데 실패했습니다.');
+    return await response.json();
+  },
+
   // 모든 품목 목록 조회
   getItems: async () => {
     const response = await fetch(`${API_BASE_URL}/price/items`);

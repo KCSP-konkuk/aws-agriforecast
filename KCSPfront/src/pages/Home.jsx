@@ -1,6 +1,7 @@
 import Layout from '../components/Layout';
 import { useState, useEffect } from 'react';
 import StatusMessage from '../components/StatusMessage';
+import RetailPriceSection from '../components/RetailPriceSection';
 import { api } from '../api/api';
 
 const DIRECTION_CONFIG = {
@@ -8,39 +9,6 @@ const DIRECTION_CONFIG = {
   '0': { symbol: '▼', colorClass: 'text-price-down' },
   '2': { symbol: '―', colorClass: 'text-text-main' },
 };
-
-// 품목별 사용 데이터는 KCSPmodel/batch/pipeline*.py 기준. 모델 입력이 바뀌면 여기도 맞출 것
-const DATA_SOURCES = [
-  { icon: 'price_change',      label: '도매 가격',        desc: '농넷 가락시장 · 전 품목' },
-  { icon: 'local_shipping',    label: '시장 반입량',      desc: '배추 · 양파' },
-  { icon: 'wb_sunny',          label: '산지 기상',        desc: '기상청 ASOS · 배추 · 양파' },
-  { icon: 'search',            label: '검색량',           desc: '네이버 데이터랩 · 배추 · 홍고추' },
-  { icon: 'currency_exchange', label: '환율',             desc: 'USD · CNY · 양파' },
-  { icon: 'shopping_cart',     label: '물가지수',         desc: 'CPI · PPI · 양파' },
-  { icon: 'history',           label: '평년 · 전년 가격', desc: '양파 · 홍고추' },
-  { icon: 'nutrition',         label: '연관 품목 가격',   desc: '풋고추 · 청피망 · 홍고추' },
-];
-
-const PIPELINE_STEPS = [
-  { step: '01', icon: 'database',       title: '데이터 수집',      desc: '시세·기상·환율·물가·검색량을 순별로 정렬' },
-  { step: '02', icon: 'auto_awesome',   title: '피처 엔지니어링',  desc: '가격 래그·이동평균·계절성·기상 지표' },
-  { step: '03', icon: 'model_training', title: 'XGBoost 학습',     desc: '품목별 모델을 최신 데이터로 매일 재학습' },
-  { step: '04', icon: 'trending_up',    title: '순별 가격 예측',   desc: '다음 순 도매가 예측 후 실제가와 오차 기록' },
-];
-
-const MODEL_FEATURES = [
-  '품목별 XGBoost 모델을 따로 학습',
-  '배추: 여름(7~9월)엔 고랭지 산지 기상으로 전환',
-  '양파: 보릿고개(1~4월) 구간 가중 학습',
-  '홍고추: 직전 순 대비 변화율 예측 + 12개 모델 평균',
-];
-
-const KEY_VARIABLES = [
-  '과거 가격 추이 (최대 36순 래그 · 이동평균)',
-  '반입량 변화 · 가격 대비 공급 비율',
-  '산지 기상 (기온·강수·일사 · 집중호우)',
-  '환율·물가지수 시차 영향 · 검색량 추이',
-];
 
 // 화면 폭에 따라 캐러셀에 동시에 보이는 카드 수 (Tailwind sm·lg 기준)
 function useVisibleCount() {
@@ -200,119 +168,7 @@ export default function Home() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            <section>
-              <h2 className="text-text-main text-[22px] font-bold leading-tight pb-3 pt-5">
-                AI 농산물 가격 예측 모델
-              </h2>
-
-              {/* 개요 카드 */}
-              <div className="rounded-xl bg-primary-light border border-primary/20 p-5 mb-4">
-                <div className="flex items-start gap-4">
-                  <span className="hidden sm:block material-symbols-outlined text-primary text-4xl mt-0.5">model_training</span>
-                  <div>
-                    <h3 className="font-bold text-lg text-text-main mb-1">
-                      XGBoost 기반 순별(10일) 도매가격 예측
-                    </h3>
-                    <p className="text-sm text-text-main/75 leading-relaxed">
-                      품목마다 가격을 움직이는 요인이 달라 <strong className="text-text-main">배추·양파·홍고추 모델을 각각 따로</strong> 설계했습니다.
-                      가격·반입량·기상·환율·물가지수·검색량 중 품목에 맞는 데이터로 매일 새벽 다시 학습해
-                      <strong className="text-text-main"> 다음 순(상순·중순·하순)</strong> 도매가격을 예측합니다.
-                    </p>
-                    <div className="flex flex-wrap gap-x-6 gap-y-3 mt-3">
-                      {[
-                        { label: '예측 품목', value: '배추·양파·홍고추' },
-                        { label: '예측 단위', value: '순별 (10일)' },
-                        { label: '알고리즘',  value: 'XGBoost' },
-                        { label: '갱신 주기', value: '매일 새벽' },
-                      ].map(({ label, value }) => (
-                        <div key={label} className="text-center">
-                          <p className="text-xs text-text-main/50">{label}</p>
-                          <p className="text-sm font-bold text-primary">{value}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 예측 파이프라인 */}
-              <div className="mb-4">
-                <p className="text-xs font-bold text-text-main/50 uppercase tracking-wider mb-3">
-                  예측 파이프라인
-                </p>
-                <div className="grid grid-cols-2 gap-2 lg:flex lg:items-stretch">
-                  {PIPELINE_STEPS.map((s, i) => (
-                    <div key={s.step} className="flex items-center gap-2 flex-1">
-                      <div className="flex-1 rounded-xl p-4 bg-white border border-gray-200 text-center">
-                        <p className="text-xs font-bold text-primary mb-1">STEP {s.step}</p>
-                        <span className="material-symbols-outlined text-primary text-2xl block">{s.icon}</span>
-                        <p className="text-xs font-bold text-text-main mt-1.5">{s.title}</p>
-                        <p className="text-xs text-text-main/55 mt-0.5 leading-tight">{s.desc}</p>
-                      </div>
-                      {i < PIPELINE_STEPS.length - 1 && (
-                        <span className="hidden lg:inline material-symbols-outlined text-gray-300 text-xl flex-shrink-0">
-                          arrow_forward
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 학습 데이터 소스 */}
-              <div className="mb-4">
-                <p className="text-xs font-bold text-text-main/50 uppercase tracking-wider mb-3">
-                  학습 데이터 소스 ({DATA_SOURCES.length}종)
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                  {DATA_SOURCES.map((src) => (
-                    <div
-                      key={src.label}
-                      className="flex items-center gap-2.5 rounded-xl p-3 bg-white border border-gray-200"
-                    >
-                      <span className="material-symbols-outlined text-primary text-xl flex-shrink-0">{src.icon}</span>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-text-main truncate">{src.label}</p>
-                        <p className="text-xs text-text-main/55 truncate">{src.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 모델 특징 & 주요 예측 변수 */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="rounded-xl p-4 bg-primary-light border border-primary/20">
-                  <h4 className="font-bold text-text-main mb-3 flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-primary text-lg">psychology</span>
-                    모델 특징
-                  </h4>
-                  <ul className="space-y-1.5 text-sm text-text-main/80">
-                  {MODEL_FEATURES.map((text) => (
-                    <li key={text} className="flex items-start gap-2">
-                      <span className="material-symbols-outlined text-primary text-base mt-0.5">check_circle</span>
-                      {text}
-                    </li>
-                  ))}
-                </ul>
-                </div>
-
-                <div className="rounded-xl p-4 bg-primary-light border border-primary/20">
-                  <h4 className="font-bold text-text-main mb-3 flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-primary text-lg">insights</span>
-                    주요 예측 변수
-                  </h4>
-                  <ul className="space-y-1.5 text-sm text-text-main/80">
-                  {KEY_VARIABLES.map((text) => (
-                    <li key={text} className="flex items-start gap-2">
-                      <span className="material-symbols-outlined text-primary text-base mt-0.5">bar_chart</span>
-                      {text}
-                    </li>
-                  ))}
-                </ul>
-                </div>
-              </div>
-            </section>
+            <RetailPriceSection />
           </div>
 
           <aside className="lg:col-span-1">
