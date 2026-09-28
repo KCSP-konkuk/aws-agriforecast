@@ -127,7 +127,7 @@ export default function Home() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-text-main text-lg font-bold">주요 농산물 소매가격</h2>
-              <p className="text-xs text-subtext-light mt-0.5">KAMIS 농산물유통정보 · 전일 대비</p>
+              <p className="text-xs text-subtext-light mt-0.5">KAMIS 전국 평균 소매가 · 전일 대비</p>
             </div>
             {rotates && (
               <div className="flex gap-1.5">

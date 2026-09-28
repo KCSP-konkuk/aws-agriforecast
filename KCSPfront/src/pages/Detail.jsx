@@ -113,7 +113,7 @@ function CustomTooltip({ active, payload, label, unit }) {
       <p className="font-semibold text-text-main mb-1">{displayLabel}</p>
       {priceEntry?.value != null && (
         <p style={{ color: '#4A90E2' }}>
-          실거래가: {priceEntry.value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
+          경매가: {priceEntry.value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
         </p>
       )}
       {!isActualBridge && predEntry?.value != null && (
@@ -385,6 +385,9 @@ export default function Detail() {
               <p className="text-base font-normal text-subtext-light">
                 과거, 현재, 그리고 AI 예측 가격 데이터를 시각적으로 분석하세요.
               </p>
+              <p className="text-sm text-subtext-light">
+                가격 기준: 서울 가락시장 도매 경매가 · 상 등급 · 출처 농넷(서울시농수산식품공사). AI 예측도 같은 기준입니다.
+              </p>
             </div>
           </div>
 
@@ -459,7 +462,7 @@ export default function Detail() {
           {/* KPI 카드 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <KpiCard
-              label="현재 평균 도매가"
+              label="최근 경매가 (상 등급)"
               value={kpi ? `${kpi.current.toLocaleString()}원` : '-'}
               sub={`/ ${currentUnit}`}
               loading={loading}
@@ -504,12 +507,12 @@ export default function Detail() {
                 <h3 className="text-lg font-bold text-text-main">
                   {selectedItem ?? '품목'} 가격 추이
                 </h3>
-                <p className="text-sm text-subtext-light">기간: {periodLabel}</p>
+                <p className="text-sm text-subtext-light">기간: {periodLabel} · 서울 가락시장 경매가(상 등급)</p>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#4A90E2' }}></div>
-                  <span className="text-subtext-light">실거래가</span>
+                  <span className="text-subtext-light">경매가</span>
                 </div>
                 {showPrediction && (
                   <div className="flex items-center gap-2">
@@ -604,7 +607,7 @@ export default function Detail() {
                 <thead className="text-xs text-subtext-light uppercase bg-background-light">
                   <tr>
                     <th className="px-6 py-3 rounded-l-lg" scope="col">날짜</th>
-                    <th className="px-6 py-3" scope="col">가격 (원 / {currentUnit})</th>
+                    <th className="px-6 py-3" scope="col">가락시장 경매가 (원 / {currentUnit})</th>
                     <th className="px-6 py-3" scope="col">등급</th>
                     <th className="px-6 py-3 rounded-r-lg" scope="col">등락률</th>
                   </tr>
