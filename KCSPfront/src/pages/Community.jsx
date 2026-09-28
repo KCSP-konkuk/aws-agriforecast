@@ -1,205 +1,119 @@
 import Layout from '../components/Layout';
-import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { api } from '../api/api';
-import { toLocalDate } from '../date';
+import VoteCard from '../components/VoteCard';
+import { ROOMS, VOTE_ROOMS } from '../community';
+
+// "2시간 전" · "어제" · "09.21"
+function when(dateString) {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  const diffMin = Math.floor((Date.now() - d.getTime()) / 60000);
+  if (diffMin < 1) return '방금';
+  if (diffMin < 60) return `${diffMin}분 전`;
+  if (diffMin < 60 * 24) return `${Math.floor(diffMin / 60)}시간 전`;
+  if (diffMin < 60 * 48) return '어제';
+  return `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+}
 
 export default function Community() {
-  const [selectedCategory, setSelectedCategory] = useState('전체');
+  const [params, setParams] = useSearchParams();
+  const room = ROOMS.includes(params.get('room')) ? params.get('room') : ROOMS[0];
   const [posts, setPosts] = useState([]);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [status, setStatus] = useState('loading');
 
-  const categories = ['전체', '도매정보', '소매노하우', '구인구직', '자유게시판'];
+  useEffect(() => { setPage(0); }, [room]);
 
   useEffect(() => {
-    loadPosts();
-  }, [selectedCategory, currentPage]);
+    let cancelled = false;
+    setStatus('loading');
+    api.getPostsByCategory(room, page, 10)
+      .then((res) => {
+        if (cancelled) return;
+        setPosts(res.content || []);
+        setTotalPages(res.totalPages || 1);
+        setStatus('ready');
+      })
+      .catch(() => { if (!cancelled) { setPosts([]); setStatus('error'); } });
+    return () => { cancelled = true; };
+  }, [room, page]);
 
-  const loadPosts = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      
-      let response;
-      if (selectedCategory === '전체') {
-        response = await api.getPosts(currentPage, 10);
-      } else {
-        response = await api.getPostsByCategory(selectedCategory, currentPage, 10);
-      }
-      
-      setPosts(response.content || []);
-      setTotalPages(response.totalPages || 1);
-    } catch (err) {
-      console.error('게시글 로드 실패:', err);
-      console.error('에러 상세:', err.message, err.stack);
-      // 네트워크 에러인 경우와 서버 에러를 구분
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        setError('서버에 연결할 수 없습니다. BackEnd 서버가 실행 중인지 확인해주세요.');
-      } else {
-        setError('게시글을 불러오는데 실패했습니다: ' + err.message);
-      }
-      setPosts([]);
-      setTotalPages(1);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return toLocalDate(date);
-  };
+  // 최신 브리핑 1개만 맨 위로, 나머지 브리핑은 목록에서 일반 글처럼
+  const briefIndex = page === 0 ? posts.findIndex((p) => p.kind === 'BRIEF') : -1;
+  const ordered = briefIndex > 0 ? [posts[briefIndex], ...posts.filter((_, i) => i !== briefIndex)] : posts;
 
   return (
     <Layout>
-      <main className="flex flex-1 justify-center px-0 sm:px-6 lg:px-10 py-5">
-        <div className="flex flex-col max-w-[960px] flex-1 min-w-0">
-          {/* PageHeading Start */}
-          <div className="flex flex-wrap justify-between gap-3 p-4">
-            <div className="flex flex-col gap-3">
-              <h1 className="text-text-main text-3xl sm:text-4xl font-black leading-tight tracking-[-0.033em]">커뮤니티 게시판</h1>
-              <p className="text-subtext-light text-base font-normal leading-normal">농산물 도소매상들을 위한 정보 공유 및 소통 공간입니다.</p>
-            </div>
-          </div>
-          {/* PageHeading End */}
-          
-          {/* Chips Start */}
-          <div className="flex gap-3 p-3 overflow-x-auto border-b border-solid border-b-border-light">
-            {categories.map((category) => (
+      <main className="flex flex-1 justify-center px-4 sm:px-6 lg:px-10 py-8">
+        <div className="flex flex-col max-w-[880px] flex-1 min-w-0">
+          <h1 className="text-text-main text-3xl sm:text-4xl font-bold tracking-[-0.02em] mb-6">커뮤니티</h1>
+
+          <div className="flex gap-2 mb-6 overflow-x-auto">
+            {ROOMS.map((r) => (
               <button
-                key={category}
-                onClick={() => {
-                  setSelectedCategory(category);
-                  setCurrentPage(0);
-                }}
-                className={`flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg pl-4 pr-4 ${
-                  selectedCategory === category
-                    ? 'bg-primary text-white'
-                    : 'bg-primary-light text-text-main hover:bg-primary/15'
-                }`}
+                key={r}
+                type="button"
+                onClick={() => setParams({ room: r })}
+                className={`h-9 shrink-0 rounded-lg px-4 text-sm ${r === room ? 'bg-primary text-white font-semibold' : 'bg-primary-light text-text-main font-medium hover:bg-primary/15'}`}
               >
-                <p className={`text-sm ${
-                  selectedCategory === category ? 'font-bold' : 'font-medium'
-                } leading-normal`}>
-                  {category}
-                </p>
+                {r}
               </button>
             ))}
           </div>
-          {/* Chips End */}
-          
-          {/* ToolBar Start */}
-          <div className="flex justify-between gap-2 px-4 py-3">
-            <div className="flex gap-2">
-              <button className="p-2 text-text-main rounded-lg hover:bg-primary-light">
-                <span className="material-symbols-outlined" style={{fontSize: '24px'}}>sort</span>
-              </button>
-            </div>
-            <Link to="/community/write" className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-primary text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-4 hover:bg-primary-hover">
-              <span className="material-symbols-outlined" style={{fontSize: '20px'}}>edit</span>
-              <span className="truncate">글쓰기</span>
+
+          {VOTE_ROOMS.includes(room) && <VoteCard itemName={room} />}
+
+          <div className="flex items-center justify-between mt-8 mb-3">
+            <h2 className="text-lg font-semibold text-text-main">{room === '자유' ? '자유 이야기' : `${room} 이야기`}</h2>
+            <Link to={`/community/write?category=${encodeURIComponent(room)}`} className="h-9 inline-flex items-center rounded-lg bg-primary px-4 text-sm font-medium text-white hover:bg-primary-hover">
+              글쓰기
             </Link>
           </div>
-          {/* ToolBar End */}
-          
-          {/* Error Message */}
-          {error && (
-            <div className="px-4 py-2 mx-4 bg-red-100 border border-red-400 text-red-700 rounded">
-              {error}
-            </div>
-          )}
-          
-          {/* Table Start */}
-          <div className="px-4 py-3 @container">
-            {loading ? (
-              <div className="text-center py-10 text-subtext-light">로딩 중...</div>
-            ) : posts.length === 0 ? (
-              <div className="text-center py-10 text-subtext-light">게시글이 없습니다.</div>
+
+          <div className="rounded-xl border border-border-light bg-white overflow-hidden">
+            {status === 'loading' ? (
+              <div className="h-40 animate-pulse" />
+            ) : status === 'error' ? (
+              <p className="px-5 py-10 text-center text-text-main/80">글을 불러오지 못했습니다.</p>
+            ) : ordered.length === 0 ? (
+              <p className="px-5 py-10 text-center text-text-main/80">아직 글이 없어요. 첫 이야기를 남겨 보세요.</p>
             ) : (
-              <div className="flex overflow-hidden rounded-lg border border-border-light bg-white">
-                <table className="flex-1">
-                  <thead>
-                    <tr className="bg-white">
-                      <th className="px-4 py-3 text-left text-text-main w-[45%] text-sm font-medium leading-normal">제목</th>
-                      <th className="hidden sm:table-cell px-4 py-3 text-left text-text-main w-[15%] text-sm font-medium leading-normal">작성자</th>
-                      <th className="hidden sm:table-cell px-4 py-3 text-left text-text-main w-[15%] text-sm font-medium leading-normal">작성일</th>
-                      <th className="hidden sm:table-cell px-4 py-3 text-left text-text-main w-[10%] text-sm font-medium leading-normal">조회수</th>
-                      <th className="hidden sm:table-cell px-4 py-3 text-left text-text-main w-[15%] text-sm font-medium leading-normal">댓글 수</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {posts.map((post) => (
-                      <tr key={post.id} className="border-t border-t-border-light hover:bg-primary-light cursor-pointer">
-                        <td className="h-[72px] px-4 py-2 w-[45%] text-text-main text-sm font-normal leading-normal">
-                          <Link to={`/community/${post.id}`} className="block">
-                            {post.title}
-                            <span className="sm:hidden block mt-1 text-xs text-subtext-light">
-                              {post.authorName || '익명'} · {formatDate(post.createdAt)} · 댓글 {post.commentCount || 0}
-                            </span>
-                          </Link>
-                        </td>
-                        <td className="hidden sm:table-cell h-[72px] px-4 py-2 w-[15%] text-subtext-light text-sm font-normal leading-normal">
-                          {post.authorName || '익명'}
-                        </td>
-                        <td className="hidden sm:table-cell h-[72px] px-4 py-2 w-[15%] text-subtext-light text-sm font-normal leading-normal">
-                          {formatDate(post.createdAt)}
-                        </td>
-                        <td className="hidden sm:table-cell h-[72px] px-4 py-2 w-[10%] text-subtext-light text-sm font-normal leading-normal">
-                          {post.viewCount || 0}
-                        </td>
-                        <td className="hidden sm:table-cell h-[72px] px-4 py-2 w-[15%] text-subtext-light text-sm font-normal leading-normal">
-                          {post.commentCount || 0}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              ordered.map((post, i) => {
+                const pinned = i === 0 && post.kind === 'BRIEF' && page === 0;
+                return (
+                  <Link
+                    key={post.id}
+                    to={`/community/${post.id}`}
+                    className={`flex items-center justify-between gap-4 px-5 py-4 text-[15px] ${i > 0 ? 'border-t border-border-light' : ''} ${pinned ? 'bg-primary-light' : 'hover:bg-background-light'}`}
+                  >
+                    <span className="min-w-0 truncate">
+                      <span className={pinned ? 'font-medium text-primary' : 'text-text-main'}>{post.title}</span>
+                      {post.commentCount > 0 && <span className="ml-2 font-medium text-primary">{post.commentCount}</span>}
+                    </span>
+                    <span className="shrink-0 text-sm text-text-main/60">{when(post.createdAt)}</span>
+                  </Link>
+                );
+              })
             )}
           </div>
-          {/* Table End */}
-          
-          {/* Pagination Start */}
+
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-4 p-4 mt-4">
-              <button
-                onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                disabled={currentPage === 0}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-text-main hover:bg-primary-light disabled:opacity-50"
-              >
-                <span className="material-symbols-outlined text-base">chevron_left</span>
-              </button>
-              {Array.from({ length: Math.min(10, totalPages) }, (_, i) => {
-                const pageNum = i;
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm ${
-                      currentPage === pageNum
-                        ? 'bg-primary text-white font-bold'
-                        : 'text-text-main hover:bg-primary-light'
-                    }`}
-                  >
-                    {pageNum + 1}
-                  </button>
-                );
-              })}
-              {totalPages > 10 && <span className="text-subtext-light">...</span>}
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
-                disabled={currentPage >= totalPages - 1}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-text-main hover:bg-primary-light disabled:opacity-50"
-              >
-                <span className="material-symbols-outlined text-base">chevron_right</span>
-              </button>
+            <div className="flex items-center justify-center gap-2 mt-6">
+              {Array.from({ length: Math.min(10, totalPages) }, (_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setPage(i)}
+                  className={`h-8 w-8 rounded-lg text-sm ${page === i ? 'bg-primary text-white font-semibold' : 'text-text-main hover:bg-primary-light'}`}
+                >
+                  {i + 1}
+                </button>
+              ))}
             </div>
           )}
-          {/* Pagination End */}
         </div>
       </main>
     </Layout>
