@@ -13,4 +13,6 @@ public interface RetailPriceRepository extends JpaRepository<RetailPrice, Intege
 
     List<RetailPrice> findByItemNameAndPriceDateBetweenOrderByPriceDateAsc(
             String itemName, LocalDate startDate, LocalDate endDate);
+
+    List<RetailPrice> findByItemNameOrderByPriceDateAsc(String itemName);
 }
