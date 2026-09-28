@@ -143,6 +143,10 @@ export default function RetailPriceSection() {
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
               <h3 className="font-bold text-text-main">{selected} 소매가 추이</h3>
               <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1.5 text-xs text-subtext-light">
+                  <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke={COLOR_ACTUAL} strokeWidth="2" /></svg>
+                  실제
+                </span>
                 {isSoon && predictions.length > 0 && (
                   <span className="flex items-center gap-1.5 text-xs text-subtext-light">
                     <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke={COLOR_PRED} strokeWidth="2" strokeDasharray="4 3" /></svg>
