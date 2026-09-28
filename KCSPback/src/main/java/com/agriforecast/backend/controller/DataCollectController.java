@@ -25,19 +25,22 @@ public class DataCollectController {
     private final KosisService kosisService;
     private final ExchangeRateCollectService exchangeRateCollectService;
     private final StationWeatherCollectService stationWeatherCollectService;
+    private final KamisRetailService kamisRetailService;
 
     public DataCollectController(NongnetService nongnetService,
                                   SupplyCollectService supplyCollectService,
                                   OilPriceCollectService oilPriceCollectService,
                                   KosisService kosisService,
                                   ExchangeRateCollectService exchangeRateCollectService,
-                                  StationWeatherCollectService stationWeatherCollectService) {
+                                  StationWeatherCollectService stationWeatherCollectService,
+                                  KamisRetailService kamisRetailService) {
         this.nongnetService = nongnetService;
         this.supplyCollectService = supplyCollectService;
         this.oilPriceCollectService = oilPriceCollectService;
         this.kosisService = kosisService;
         this.exchangeRateCollectService = exchangeRateCollectService;
         this.stationWeatherCollectService = stationWeatherCollectService;
+        this.kamisRetailService = kamisRetailService;
     }
 
     /**
@@ -213,6 +216,18 @@ public class DataCollectController {
             @RequestParam int startYear, @RequestParam int endYear) {
         int saved = kosisService.collectPpi(startYear, endYear);
         return ResponseEntity.ok(Map.of("saved", saved, "startYear", startYear, "endYear", endYear));
+    }
+
+    /**
+     * KAMIS 서울 소매가 수집 (기간, 2025-01-01 이후만 조회된다)
+     * POST /api/collect/kamis/retail?startDate=2025-01-01&endDate=2026-09-28
+     */
+    @PostMapping("/kamis/retail")
+    public ResponseEntity<Map<String, Object>> collectKamisRetail(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        int changed = kamisRetailService.collect(startDate, endDate);
+        return ResponseEntity.ok(Map.of("changed", changed, "startDate", startDate, "endDate", endDate));
     }
 
 }
