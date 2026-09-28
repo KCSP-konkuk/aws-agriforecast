@@ -74,7 +74,7 @@ export default function PredictionHistory({ itemName, unit }) {
       <div className="mb-4">
         <h3 className="text-lg font-bold text-text-main">{itemName} 예측 적중 이력</h3>
         <p className="text-sm text-subtext-light">
-          2026년 각 순을 그 직전까지의 데이터로만 학습해 예측하고, 실제 순 평균 가격과 비교했습니다.
+          2026년 각 순을 그 직전까지의 데이터로만 학습해 예측하고, 실제 순 평균 가격(가락시장 경매가 · 상 등급)과 비교했습니다.
         </p>
       </div>
 
