@@ -46,6 +46,7 @@ export default function VoteCard({ itemName }) {
     if (!isLoggedIn()) { setNeedsLogin(true); return; }
     if (sending || status?.myChoice === key) return;
     setSending(true);
+    setError('');
     try {
       setStatus(await api.vote(itemName, key));
     } catch (err) {
@@ -92,6 +93,7 @@ export default function VoteCard({ itemName }) {
         })}
       </div>
       {total === 0 && <p className="mt-3 text-sm text-text-main/70">첫 표를 기다려요</p>}
+      {error && <p className="mt-3 text-sm text-price-up">{error}</p>}
       {needsLogin && (
         <p className="mt-3 text-sm text-text-main/80">
           투표는 로그인 후 할 수 있어요. <Link to={loginPath(location.pathname + location.search)} className="font-semibold text-primary hover:underline">로그인하기</Link>

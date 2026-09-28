@@ -39,8 +39,8 @@ public class MarketBriefService {
     /** today 가 속한 순의 브리핑을 품목마다 쓴다. 이미 있으면 건너뛴다. 새로 쓴 글 수 */
     public int publish(LocalDate today) {
         var author = memberUserRepository.findByUserId(CommunitySetup.SYSTEM_ID).orElse(null);
-        if (author == null) {
-            logger.warn("시스템 계정이 없어 시세 브리핑을 건너뜀");
+        if (!CommunitySetup.isSystemAccount(author)) {
+            logger.warn("시스템 계정이 없거나 같은 아이디의 일반 회원이라 시세 브리핑을 건너뜀");
             return 0;
         }
         Soon now = Soon.of(today);
@@ -48,7 +48,9 @@ public class MarketBriefService {
         int written = 0;
         for (String item : CommunityVoteService.VOTE_ITEMS) {
             String title = title(now, item);
-            if (postRepository.existsByCategoryAndTitle(item, title)) continue;
+            // 같은 순에 이미 쓴 브리핑이 있으면 건너뛴다 (제목엔 연도가 없어 기간으로 판별)
+            if (postRepository.existsByCategoryAndKindAndCreatedAtBetween(item, "BRIEF",
+                    now.start().atStartOfDay(), now.end().plusDays(1).atStartOfDay())) continue;
             Double prevPrev = voteService.soonAverage(item, prev.previous());
             Double prevAvg = voteService.soonAverage(item, prev);
             Double ai = predictionService.predictedPrice(item, now.code()).orElse(null);

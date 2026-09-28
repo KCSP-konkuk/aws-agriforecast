@@ -64,7 +64,8 @@ export default function Community() {
             ))}
           </div>
 
-          {VOTE_ROOMS.includes(room) && <VoteCard itemName={room} />}
+          {/* key: 방을 바꾸면 카드를 새로 만들어 이전 방의 늦은 투표 응답이 섞이지 않게 */}
+          {VOTE_ROOMS.includes(room) && <VoteCard key={room} itemName={room} />}
 
           <div className="flex items-center justify-between mt-8 mb-3">
             <h2 className="text-lg font-semibold text-text-main">{room === '자유' ? '자유 이야기' : `${room} 이야기`}</h2>

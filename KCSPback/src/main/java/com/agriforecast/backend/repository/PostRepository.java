@@ -40,11 +40,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     // 카테고리와 제목으로 검색
     Page<Post> findByCategoryAndTitleContainingOrderByCreatedAtDesc(String category, String title, Pageable pageable);
 
-    boolean existsByCategoryAndTitle(String category, String title);
+    /** 그 기간에 이미 쓴 글(브리핑 중복 방지 — 순마다 한 번) */
+    boolean existsByCategoryAndKindAndCreatedAtBetween(String category, String kind, java.time.LocalDateTime from, java.time.LocalDateTime to);
 
-    // 품목방 개편 전 카테고리(도매정보·소매노하우·구인구직·자유게시판 등) 글은 '자유' 방으로
+    // 방 목록(rooms) 밖 카테고리 글은 '자유' 방으로 — 목록은 CommunitySetup.ROOMS 하나만 쓴다(방을 늘리면 거기만 고친다)
     @Modifying
     @Transactional
-    @Query("UPDATE Post p SET p.category = '자유' WHERE p.category NOT IN ('배추', '양파', '홍고추', '자유')")
-    int moveLegacyCategoriesToFree();
+    @Query("UPDATE Post p SET p.category = '자유' WHERE p.category NOT IN :rooms")
+    int moveLegacyCategoriesToFree(@Param("rooms") java.util.List<String> rooms);
 }

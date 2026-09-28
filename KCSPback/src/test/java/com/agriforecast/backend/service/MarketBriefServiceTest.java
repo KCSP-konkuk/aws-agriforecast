@@ -2,7 +2,18 @@ package com.agriforecast.backend.service;
 
 import com.agriforecast.backend.service.CommunityVoteService.Choice;
 import com.agriforecast.backend.util.Soon;
+import com.agriforecast.backend.entity.MemberProfile;
+import com.agriforecast.backend.entity.MemberUser;
+import com.agriforecast.backend.repository.MemberUserRepository;
+import com.agriforecast.backend.repository.PostRepository;
 import org.junit.jupiter.api.Test;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,5 +43,44 @@ class MarketBriefServiceTest {
     void 없는_값의_문장은_뺀다() {
         String body = MarketBriefService.body(NOW, "양파", "1키로", null, 1140.0, null, null);
         assertEquals("지난 순(9월 하순) 가락시장 양파 경매가는 평균 1,140원(상, 1키로)입니다.", body);
+    }
+
+    private static MemberUser account(String name, String email) {
+        MemberUser u = new MemberUser();
+        u.setId("agriforecast");
+        MemberProfile p = new MemberProfile();
+        p.setName(name);
+        p.setEmail(email);
+        u.setMemberProfile(p);
+        return u;
+    }
+
+    private static MarketBriefService service(PostRepository posts, MemberUser author) {
+        MemberUserRepository members = mock(MemberUserRepository.class);
+        when(members.findByUserId("agriforecast")).thenReturn(Optional.ofNullable(author));
+        CommunityVoteService votes = mock(CommunityVoteService.class);
+        when(votes.soonAverage(any(), any())).thenReturn(1000.0);
+        PredictionService prediction = mock(PredictionService.class);
+        when(prediction.predictedPrice(any(), any())).thenReturn(Optional.empty());
+        return new MarketBriefService(posts, members, votes, prediction);
+    }
+
+    @Test
+    void 같은_순_브리핑_판별은_제목이_아니라_그_순_기간의_BRIEF_글로_한다() {
+        PostRepository posts = mock(PostRepository.class);
+        // 2027-10-01 에 배추 브리핑만 이미 있다 → 제목이 2026 년과 같아도 양파·홍고추는 새로 쓴다
+        when(posts.existsByCategoryAndKindAndCreatedAtBetween(eq("배추"), eq("BRIEF"),
+                eq(LocalDateTime.of(2027, 10, 1, 0, 0)), eq(LocalDateTime.of(2027, 10, 11, 0, 0)))).thenReturn(true);
+        int written = service(posts, account("AgriForecast", null)).publish(LocalDate.of(2027, 10, 1));
+        assertEquals(2, written);
+        verify(posts, times(2)).save(any());
+    }
+
+    @Test
+    void 시스템_계정이_아닌_같은_아이디_회원이면_쓰지_않는다() {
+        PostRepository posts = mock(PostRepository.class);
+        int written = service(posts, account("김농부", "kim@example.com")).publish(LocalDate.of(2027, 10, 1));
+        assertEquals(0, written);
+        verify(posts, never()).save(any());
     }
 }
