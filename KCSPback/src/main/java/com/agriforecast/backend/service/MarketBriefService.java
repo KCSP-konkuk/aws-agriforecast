@@ -98,10 +98,18 @@ public class MarketBriefService {
         }
         if (last != null && last.actual() != null) {
             lines.add(String.format("지난 순 투표: %s · %s · 실제 '%s'.",
-                    last.crowd() == null ? "참여자 없음" : "참여자 다수 '" + WORD.get(last.crowd()) + "'",
+                    crowdText(last),
                     last.ai() == null ? "AI 예측 없음" : "AI '" + WORD.get(last.ai()) + "'",
                     WORD.get(last.actual())));
         }
         return String.join("\n", lines);
+    }
+
+    /** 다수 → "참여자 다수 '오른다'", 동률 → "참여자 '오른다'·'내린다' 동률", 표 없음 → "참여자 없음" */
+    static String crowdText(CommunityVoteService.Last last) {
+        if (last.crowd() != null) return "참여자 다수 '" + WORD.get(last.crowd()) + "'";
+        if (last.crowdTied().isEmpty()) return "참여자 없음";
+        return "참여자 " + last.crowdTied().stream().map(c -> "'" + WORD.get(c) + "'")
+                .collect(java.util.stream.Collectors.joining("·")) + " 동률";
     }
 }

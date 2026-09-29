@@ -117,6 +117,16 @@ public class CommunityVoteService {
         return tie ? null : best;
     }
 
+    /** 최다 득표가 둘 이상이면 그 선택지들(순서: UP·SAME·DOWN), 아니면 빈 목록 */
+    static List<Choice> tied(Map<Choice, Long> counts) {
+        long max = counts.values().stream().mapToLong(Long::longValue).max().orElse(0);
+        if (max == 0) return List.of();
+        List<Choice> top = Arrays.stream(Choice.values())
+                .filter(c -> counts.getOrDefault(c, 0L) == max)
+                .toList();
+        return top.size() > 1 ? top : List.of();
+    }
+
     static Target target(LocalDate today) {
         Soon now = Soon.of(today);
         Soon next = now.next();
@@ -129,7 +139,7 @@ public class CommunityVoteService {
         Choice crowd = majority(counts);
         Boolean crowdHit = actualDir != null && crowd != null ? crowd == actualDir : null;
         Boolean aiHit = actualDir != null && aiDir != null ? aiDir == actualDir : null;
-        return new Last(code, Soon.parse(code).label(), crowd, aiDir,
+        return new Last(code, Soon.parse(code).label(), crowd, crowd == null ? tied(counts) : List.of(), aiDir,
                 ai == null ? null : (int) Math.round(ai), actualDir,
                 actual == null ? null : (int) Math.round(actual), crowdHit, aiHit);
     }
@@ -157,7 +167,8 @@ public class CommunityVoteService {
 
     public record Target(String code, String label, LocalDate closesOn, long dday) {}
 
-    public record Last(String code, String label, Choice crowd, Choice ai, Integer aiPrice,
+    /** crowd: 동률이거나 표가 없으면 null — 동률이면 crowdTied 에 맞선 선택지들, 표가 없으면 빈 목록 */
+    public record Last(String code, String label, Choice crowd, List<Choice> crowdTied, Choice ai, Integer aiPrice,
                        Choice actual, Integer actualPrice, Boolean crowdHit, Boolean aiHit) {}
 
     public record Status(String itemName, Target target, Map<Choice, Long> counts, long total,
