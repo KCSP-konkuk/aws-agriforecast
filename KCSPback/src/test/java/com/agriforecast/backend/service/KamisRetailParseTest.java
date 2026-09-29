@@ -54,9 +54,21 @@ class KamisRetailParseTest {
     }
 
     @Test
+    void 판매처별_행을_읽고_값이_없는_판매처는_버린다() throws Exception {
+        List<KamisRetailService.MarketRetail> rows =
+                KamisRetailService.parseMarkets(BODY, LocalDate.of(2026, 9, 22), LocalDate.of(2026, 9, 23));
+
+        assertEquals(List.of(
+                new KamisRetailService.MarketRetail(LocalDate.of(2026, 9, 22), "경동", 4000),
+                new KamisRetailService.MarketRetail(LocalDate.of(2026, 9, 22), "B-유통", 2080),
+                new KamisRetailService.MarketRetail(LocalDate.of(2026, 9, 23), "경동", 4000)), rows);
+    }
+
+    @Test
     void 데이터가_없으면_빈_목록() throws Exception {
         String noData = "{\"condition\":[{\"p_startday\":\"2026-09-21\"}],\"data\":[\"001\"]}";
         assertTrue(KamisRetailService.parse(noData, LocalDate.of(2026, 9, 21), LocalDate.of(2026, 9, 23)).isEmpty());
+        assertTrue(KamisRetailService.parseMarkets(noData, LocalDate.of(2026, 9, 21), LocalDate.of(2026, 9, 23)).isEmpty());
     }
 
     @Test

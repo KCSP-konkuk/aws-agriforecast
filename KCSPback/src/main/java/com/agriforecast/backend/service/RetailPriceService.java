@@ -6,6 +6,7 @@ import com.agriforecast.backend.util.Soon;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 
 /**
@@ -15,8 +16,16 @@ import java.util.*;
 @Service
 public class RetailPriceService {
 
+    /**
+     * 홈 차트에 보이는 기간 — 수집은 2014~ 이지만 홈은 최근만 (이전 동작: 2025-01~ 만 있었음).
+     * 카드 증감(직전 순 평균)은 이 기간 안에서 계산해도 같다
+     */
+    static final int CHART_YEARS = 2;
+
     /** 조사 단위 — 데이터가 없는 품목에도 카드에 단위를 보이려고 고정해 둔다 */
     static final Map<String, String> UNITS = Map.of("양파", "1kg", "붉은고추", "100g", "양배추", "1포기");
+
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
     private final RetailPriceRepository retailPriceRepository;
 
@@ -27,7 +36,7 @@ public class RetailPriceService {
     public List<Summary> summary() {
         List<Summary> out = new ArrayList<>();
         for (String item : KamisRetailService.TARGET_ITEMS.keySet()) {
-            out.add(summarize(item, UNITS.get(item), retailPriceRepository.findByItemNameOrderByPriceDateAsc(item)));
+            out.add(summarize(item, UNITS.get(item), recentRows(item)));
         }
         return out;
     }
@@ -36,7 +45,7 @@ public class RetailPriceService {
         if (!KamisRetailService.TARGET_ITEMS.containsKey(itemName)) {
             throw new IllegalArgumentException("소매가 대상이 아닌 품목: " + itemName);
         }
-        List<RetailPrice> rows = retailPriceRepository.findByItemNameOrderByPriceDateAsc(itemName);
+        List<RetailPrice> rows = recentRows(itemName);
         List<Point> points = switch (unit) {
             case "daily" -> rows.stream()
                     .map(r -> new Point(r.getPriceDate(), r.getPriceDate().toString(), r.getPrice(), 1))
@@ -45,6 +54,16 @@ public class RetailPriceService {
             default -> throw new IllegalArgumentException("unit 은 daily 또는 soon: " + unit);
         };
         return new Series(itemName, UNITS.get(itemName), points, List.of());
+    }
+
+    private List<RetailPrice> recentRows(String itemName) {
+        return retailPriceRepository.findByItemNameAndPriceDateGreaterThanEqualOrderByPriceDateAsc(
+                itemName, chartFrom(LocalDate.now(KST)));
+    }
+
+    /** 오늘로부터 CHART_YEARS 년 전 달의 1일 — 순 평균이 잘리지 않게 달 첫날로 맞춘다 */
+    static LocalDate chartFrom(LocalDate today) {
+        return today.minusYears(CHART_YEARS).withDayOfMonth(1);
     }
 
     static Summary summarize(String itemName, String unit, List<RetailPrice> rows) {

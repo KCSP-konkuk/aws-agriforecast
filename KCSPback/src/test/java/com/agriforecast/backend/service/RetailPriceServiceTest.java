@@ -74,4 +74,10 @@ class RetailPriceServiceTest {
         assertNull(s.latestPrice());
         assertNull(s.changePct());
     }
+
+    @Test
+    void 홈_차트는_2년_전_달_1일부터() {
+        assertEquals(LocalDate.of(2024, 9, 1), RetailPriceService.chartFrom(LocalDate.of(2026, 9, 29)));
+        assertEquals(LocalDate.of(2024, 2, 1), RetailPriceService.chartFrom(LocalDate.of(2026, 2, 28)));
+    }
 }

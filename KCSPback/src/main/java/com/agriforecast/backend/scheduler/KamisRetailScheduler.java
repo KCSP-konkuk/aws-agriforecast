@@ -15,7 +15,8 @@ import java.time.ZoneId;
 /**
  * KAMIS 서울 소매가 적재 스케줄러
  *
- * [앱 시작 시 - 비동기] API 가 주는 가장 이른 날(2025-01-01) ~ 오늘. 품목당 연 1회 요청이라 몇 번 안 된다
+ * [앱 시작 시 - 비동기] 2014-01-01 ~ 오늘. 품목당 연 1회 요청. 판매처별 값이 이미 있는 지난 해는 건너뛰어
+ *   첫 적재만 품목 3 × 13년 = 39회, 그 뒤 재시작은 올해분 3회
  * [매일 09:30 / 17:30 KST] 최근 14일을 다시 받는다 (당일 조사분 반영 + 늦게 올라온 값 보정)
  */
 @Component
@@ -24,8 +25,11 @@ public class KamisRetailScheduler {
     private static final Logger logger = LoggerFactory.getLogger(KamisRetailScheduler.class);
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
-    /** API 로 조회되는 가장 이른 날. 그 이전을 요청하면 응답이 오지 않는다 (2026-09-28 확인) */
-    static final LocalDate API_START = LocalDate.of(2025, 1, 1);
+    /**
+     * 적재 시작일. 서울 판매처 중 경동은 세 품목 모두 2014-01~, 복조리는 2014-07~ 빈틈없이 있다 (2026-09-28 확인).
+     * 소매 모델 목표 = 경동·복조리 평균
+     */
+    static final LocalDate API_START = LocalDate.of(2014, 1, 1);
 
     private static final int RECENT_DAYS = 14;
 
@@ -40,7 +44,7 @@ public class KamisRetailScheduler {
     public void initialLoad() {
         LocalDate today = LocalDate.now(KST);
         logger.info("=== [KAMIS 소매 초기 적재] {} ~ {} ===", API_START, today);
-        int changed = kamisRetailService.collect(API_START, today);
+        int changed = kamisRetailService.collect(API_START, today, true);
         logger.info("=== [KAMIS 소매 초기 적재] 완료: {}건 저장·수정 ===", changed);
     }
 
