@@ -60,6 +60,12 @@ function ItemCard({ item, selected, onSelect }) {
   );
 }
 
+// 예측 칸에만 점. 예측선 시작점(bridge — 직전 실측과 같은 값)에는 그리지 않는다
+function PredDot({ cx, cy, payload }) {
+  if (cx == null || cy == null || payload?.bridge || payload?.predicted == null) return null;
+  return <circle cx={cx} cy={cy} r={5} fill={COLOR_PRED} stroke="#fff" strokeWidth={1.5} />;
+}
+
 function SeriesTooltip({ active, payload, unit, isSoon }) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
@@ -200,7 +206,7 @@ export default function RetailPriceSection() {
                         dot={isSoon ? { r: 2.5, fill: COLOR_ACTUAL } : false} activeDot={{ r: 4 }} connectNulls={false} />
                   {predictions.length > 0 && (
                     <Line type="monotone" dataKey="predicted" stroke={COLOR_PRED} strokeWidth={2}
-                          strokeDasharray="5 4" dot={false} connectNulls={false} />
+                          strokeDasharray="5 4" dot={<PredDot />} activeDot={{ r: 6, fill: COLOR_PRED }} connectNulls={false} />
                   )}
                 </LineChart>
               </ResponsiveContainer>
