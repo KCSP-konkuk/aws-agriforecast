@@ -10,7 +10,7 @@
 
 systemd 타이머로 매일 실행. 순이 바뀌면 예측 대상이 자동으로 다음 순이 된다.
 """
-import os, sys, json, logging
+import os, sys, json, logging, time
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 import numpy as np
@@ -48,15 +48,27 @@ def props():
 P = props()
 
 
+DB_TRY, DB_WAIT = 3, 30   # DB 접속 재시도 횟수 · 간격(초)
+
+
 def db():
     url = P['spring.datasource.url']              # jdbc:mysql://host:port/db?params
     after = url.split('//', 1)[1]
     hostport, _, rest = after.partition('/')
     host = hostport.split(':')[0]
     name = rest.split('?')[0]
-    return pymysql.connect(host=host, user=P['spring.datasource.username'],
-                           password=P['spring.datasource.password'], database=name,
-                           charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor)
+    kw = dict(host=host, user=P['spring.datasource.username'], password=P['spring.datasource.password'],
+              database=name, charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor)
+    # MySQL 이 잠깐 재시작되는 동안(Ubuntu 자동 업데이트가 라이브러리를 올리면 재시작된다 —
+    # 2026-09-29 06:09 UTC 약 8초) 접속이 거부된다 → DB_WAIT 초 간격으로 DB_TRY 번까지
+    for attempt in range(1, DB_TRY + 1):
+        try:
+            return pymysql.connect(**kw)
+        except pymysql.err.OperationalError as e:
+            if attempt == DB_TRY:
+                raise
+            log.warning('DB 접속 실패 %d/%d (%s) — %d초 뒤 재시도', attempt, DB_TRY, e.args[0], DB_WAIT)
+            time.sleep(DB_WAIT)
 
 
 def per(day):

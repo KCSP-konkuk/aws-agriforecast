@@ -134,3 +134,27 @@ def test_품목마다_가락_과거분_파일이_있다():
     for item, (csv_name, _) in pr.ITEMS.items():
         h = pd.read_csv(os.path.join(pr.DATA, csv_name), parse_dates=['date'])
         assert '상' in h.columns and h.date.min() <= pd.Timestamp('2014-01-10'), item
+
+
+def test_DB_접속은_거부되면_재시도한다(monkeypatch):
+    """MySQL 재시작(자동 업데이트) 중 접속 거부 → 두 번 실패 후 붙으면 그 연결을 돌려준다. 끝내 실패하면 예외"""
+    import pymysql
+    calls = []
+
+    def fake_connect(**kw):
+        calls.append(kw)
+        if len(calls) < 3:
+            raise pymysql.err.OperationalError(2003, "Can't connect to MySQL server")
+        return 'conn'
+    monkeypatch.setattr(pymysql, 'connect', fake_connect)
+    monkeypatch.setattr(pr, 'DB_WAIT', 0)
+    P = {'spring.datasource.url': 'jdbc:mysql://localhost:3306/agriforecast?serverTimezone=Asia/Seoul',
+         'spring.datasource.username': 'u', 'spring.datasource.password': 'p'}
+    assert pr.db(P) == 'conn' and len(calls) == 3
+    assert calls[0]['database'] == 'agriforecast' and calls[0]['host'] == 'localhost'
+
+    calls.clear()
+    monkeypatch.setattr(pr, 'DB_TRY', 2)
+    with pytest.raises(pymysql.err.OperationalError):
+        pr.db(P)
+    assert len(calls) == 2
