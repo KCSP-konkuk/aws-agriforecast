@@ -40,11 +40,11 @@ class MarketBriefServiceTest {
     }
 
     @Test
-    void 투표가_없으면_다수_의견_없음() {
+    void 투표가_없으면_참여자_없음() {
         java.util.Map<Choice, Long> votes = new java.util.EnumMap<>(Choice.class);
         CommunityVoteService.Last last = CommunityVoteService.judge("202609하순", 13986.0, 13210.0, 13939.0, votes);
         String body = MarketBriefService.body(NOW, "배추", "10키로망대", 13986.0, 13210.0, 13900.0, last);
-        assertTrue(body.endsWith("지난 순 투표: 참여자 다수 의견 없음 · AI '비슷' · 실제 '내린다'."), body);
+        assertTrue(body.endsWith("지난 순 투표: 참여자 없음 · AI '비슷' · 실제 '내린다'."), body);
     }
 
     @Test
