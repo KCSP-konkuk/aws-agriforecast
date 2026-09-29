@@ -358,14 +358,26 @@ def props():
     return d
 
 
+DB_TRY, DB_WAIT = 3, 30   # DB 접속 재시도 횟수 · 간격(초)
+
+
 def db(P):
     import pymysql
     url = P['spring.datasource.url']              # jdbc:mysql://host:port/db?params
     after = url.split('//', 1)[1]
     hostport, _, rest = after.partition('/')      # split('/')[-1] 은 Asia/Seoul 에 걸린다
-    return pymysql.connect(host=hostport.split(':')[0], user=P['spring.datasource.username'],
-                           password=P['spring.datasource.password'], database=rest.split('?')[0],
-                           charset='utf8mb4')
+    kw = dict(host=hostport.split(':')[0], user=P['spring.datasource.username'],
+              password=P['spring.datasource.password'], database=rest.split('?')[0], charset='utf8mb4')
+    # MySQL 이 잠깐 재시작되는 동안(Ubuntu 자동 업데이트가 라이브러리를 올리면 재시작된다 —
+    # 2026-09-29 06:09 UTC 약 8초) 접속이 거부된다 → DB_WAIT 초 간격으로 DB_TRY 번까지
+    for attempt in range(1, DB_TRY + 1):
+        try:
+            return pymysql.connect(**kw)
+        except pymysql.err.OperationalError as e:
+            if attempt == DB_TRY:
+                raise
+            log.warning('DB 접속 실패 %d/%d (%s) — %d초 뒤 재시도', attempt, DB_TRY, e.args[0], DB_WAIT)
+            time.sleep(DB_WAIT)
 
 
 def load_hist():
