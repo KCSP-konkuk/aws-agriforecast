@@ -100,9 +100,10 @@ def test_대상_행의_필수_피쳐가_있다(built):
 
 
 def test_모델_설정은_검증에서_고른_상위_5개():
-    assert set(pr.MODELS) == set(pr.ITEMS) == {'붉은고추', '양배추'} and pr.SEEDS == 12
+    assert set(pr.MODELS) == set(pr.ITEMS) == {'붉은고추', '양배추', '양파'} and pr.SEEDS == 12
     assert [k for k, _ in pr.MODELS['붉은고추']] == [None, None, 15, None, None]
     assert [k for k, _ in pr.MODELS['양배추']] == [15, 15, 15, None, 15]
+    assert [k for k, _ in pr.MODELS['양파']] == [15, None, 15, 15, 15]
     assert pr.BASE_PARAMS['objective'] == 'reg:absoluteerror'
 
 
