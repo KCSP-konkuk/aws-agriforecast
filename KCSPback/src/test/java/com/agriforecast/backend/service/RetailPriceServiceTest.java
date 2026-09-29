@@ -80,4 +80,26 @@ class RetailPriceServiceTest {
         assertEquals(LocalDate.of(2024, 9, 1), RetailPriceService.chartFrom(LocalDate.of(2026, 9, 29)));
         assertEquals(LocalDate.of(2024, 2, 1), RetailPriceService.chartFrom(LocalDate.of(2026, 2, 28)));
     }
+
+    private static com.agriforecast.backend.entity.RetailMarketPrice mp(String date, String market, int price) {
+        com.agriforecast.backend.entity.RetailMarketPrice r = new com.agriforecast.backend.entity.RetailMarketPrice();
+        r.setItemName("붉은고추");
+        r.setPriceDate(LocalDate.parse(date));
+        r.setMarketName(market);
+        r.setPrice(price);
+        return r;
+    }
+
+    @Test
+    void 전통시장_일별은_있는_판매처만_평균() {
+        List<RetailPrice> d = RetailPriceService.dailyAverage("붉은고추", List.of(
+                mp("2026-09-01", "경동", 1000), mp("2026-09-01", "복조리", 1101),
+                mp("2026-09-02", "경동", 1200)));
+        assertEquals(2, d.size());
+        assertEquals(1051, d.get(0).getPrice());      // 1050.5 → 반올림
+        assertEquals(2, d.get(0).getMarketCount());
+        assertEquals(1200, d.get(1).getPrice());      // 복조리 없는 날은 경동만
+        assertEquals(1, d.get(1).getMarketCount());
+        assertEquals("100g", d.get(0).getUnit());
+    }
 }

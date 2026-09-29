@@ -53,7 +53,7 @@ function ItemCard({ item, selected, onSelect }) {
       )}
       <p className="text-xs text-subtext-light mt-3 pt-2 border-t border-gray-100">
         {item.prediction
-          ? <>다음 순({targetLabel(item.prediction.target)}) 예측 <span className="font-semibold" style={{ color: COLOR_PRED }}>{won(item.prediction.price)}</span></>
+          ? <>{targetLabel(item.prediction.target)} 예측 <span className="font-semibold" style={{ color: COLOR_PRED }}>{won(item.prediction.price)}</span></>
           : '다음 순 예측 · 준비 중'}
       </p>
     </button>
@@ -116,8 +116,8 @@ export default function RetailPriceSection() {
   return (
     <section>
       <div className="pb-3 pt-5">
-        <h2 className="text-text-main text-[22px] font-bold leading-tight">서울 농산물 소매가</h2>
-        <p className="text-xs text-subtext-light mt-1">KAMIS Open API · 서울 평균 · 상품 등급 · 매일 갱신</p>
+        <h2 className="text-text-main text-[22px] font-bold leading-tight">서울 전통시장 소매가</h2>
+        <p className="text-xs text-subtext-light mt-1">KAMIS Open API · 경동·복조리 평균 · 상품 등급 · 매일 갱신</p>
       </div>
 
       {summary.status === 'loading' ? (
