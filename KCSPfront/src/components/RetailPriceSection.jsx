@@ -48,7 +48,7 @@ function ItemCard({ item, selected, onSelect }) {
         <>
           <p className="text-2xl font-bold text-text-main mt-1">{won(item.latestPrice)}</p>
           <p className="text-xs mt-1"><ChangeText pct={item.changePct} /></p>
-          <p className="text-xs text-subtext-light mt-0.5">{shortDate(item.latestDate)} 조사</p>
+          <p className="text-xs text-subtext-light mt-0.5">{shortDate(item.latestDate)} 기준</p>
         </>
       )}
       <p className="text-xs text-subtext-light mt-3 pt-2 border-t border-gray-100">

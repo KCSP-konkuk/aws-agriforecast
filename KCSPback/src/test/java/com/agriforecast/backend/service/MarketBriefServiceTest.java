@@ -40,6 +40,14 @@ class MarketBriefServiceTest {
     }
 
     @Test
+    void 투표가_없으면_다수_의견_없음() {
+        java.util.Map<Choice, Long> votes = new java.util.EnumMap<>(Choice.class);
+        CommunityVoteService.Last last = CommunityVoteService.judge("202609하순", 13986.0, 13210.0, 13939.0, votes);
+        String body = MarketBriefService.body(NOW, "배추", "10키로망대", 13986.0, 13210.0, 13900.0, last);
+        assertTrue(body.endsWith("지난 순 투표: 참여자 다수 의견 없음 · AI '비슷' · 실제 '내린다'."), body);
+    }
+
+    @Test
     void 없는_값의_문장은_뺀다() {
         String body = MarketBriefService.body(NOW, "양파", "1키로", null, 1140.0, null, null);
         assertEquals("지난 순(9월 하순) 가락시장 양파 경매가는 평균 1,140원(상, 1키로)입니다.", body);
