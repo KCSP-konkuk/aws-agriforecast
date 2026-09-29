@@ -66,7 +66,7 @@ function SeriesTooltip({ active, payload, unit, isSoon }) {
   return (
     <div className="rounded-lg bg-white border border-gray-200 shadow px-3 py-2 text-xs">
       <p className="font-semibold text-text-main mb-1">{p.label}</p>
-      {p.price != null && <p className="text-text-main"><span style={{ color: COLOR_ACTUAL }}>●</span> {won(p.price)} / {unit}</p>}
+      {p.price != null && <p className="text-text-main"><span style={{ color: COLOR_ACTUAL }}>●</span> {won(p.price)} / {unit}{p.predicted != null && !p.bridge ? ' (진행 중)' : ''}</p>}
       {p.predicted != null && !p.bridge && <p className="text-text-main"><span style={{ color: COLOR_PRED }}>●</span> 예측 {won(p.predicted)}</p>}
       {isSoon && p.days != null && <p className="text-subtext-light mt-1">조사 {p.days}일</p>}
     </div>
@@ -101,14 +101,24 @@ export default function RetailPriceSection() {
   const isSoon = unit === 'soon';
   const predictions = isSoon ? (series.data?.predictions ?? []) : [];
 
-  // 실제값 점 + (순별이면) 예측 점. 마지막 실제 점을 예측선 시작점으로 잇는다
+  // 실제값 점 + (순별이면) 예측 점. 예측 대상 직전의 실제 점을 예측선 시작점으로 잇는다.
+  // 예측 대상이 진행 중인 순이면 그 칸에 실제(진행 중)와 예측을 같이 둔다 — 같은 라벨을 두 번 붙이지 않는다
   const chartData = useMemo(() => {
     const points = (series.data?.points ?? []).map((p) => ({ label: p.label, price: p.price, days: p.days }));
     if (predictions.length === 0 || points.length === 0) return points;
-    const last = points[points.length - 1];
-    last.predicted = last.price;
-    last.bridge = true;
-    return [...points, ...predictions.map((p) => ({ label: p.label, predicted: p.price }))];
+    const extra = [];
+    predictions.forEach((p) => {
+      const same = points.find((x) => x.label === p.label);
+      if (same) same.predicted = p.price;
+      else extra.push({ label: p.label, predicted: p.price });
+    });
+    const firstPred = points.findIndex((x) => x.predicted != null);
+    const bridge = points[(firstPred === -1 ? points.length : firstPred) - 1];
+    if (bridge) {
+      bridge.predicted = bridge.price;
+      bridge.bridge = true;
+    }
+    return [...points, ...extra];
   }, [series.data, predictions]);
 
   const unitLabel = series.data?.unit ?? '';
