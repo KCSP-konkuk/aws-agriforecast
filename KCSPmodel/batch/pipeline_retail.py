@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""서울 전통시장 소매가 순별 예측 파이프라인 (배치 실행) — 붉은고추·양배추
+"""서울 전통시장 소매가 순별 예측 파이프라인 (배치 실행) — 붉은고추·양배추·양파
 
 모델 근거는 KCSP-konkuk/redpepper 의 docs/RETAIL.md. 1순 뒤, 시험 2022~2025
-  붉은고추 MASE 0.620 / MAPE 5.65% (5절), 양배추 MASE 0.663 / MAPE 4.54% (6절). 피쳐 구성은 두 품목이 같고 파라미터만 다르다
+  붉은고추 MASE 0.620 / MAPE 5.65% (5절), 양배추 0.663 / 4.54% (6절), 양파 0.684 / 1.67% (8절).
+  피쳐 구성은 세 품목이 같고 파라미터만 다르다
 
   1. DB retail_market_price 에서 경동·복조리 일별 소매가 (백엔드 KamisRetailService 가 09:30·17:30 KST 수집)
   2. 가락 일별 상 가격 = 레포 hist_daily_*.csv + DB agri_price (백엔드가 11:00 KST 에 전날분)
-     붉은고추 ← 홍고추 hist_daily_redpepper.csv(2001~), 양배추 ← hist_daily_headcabbage.csv(2013-12~, 2018 이전은 농넷 백필)
+     붉은고추 ← 홍고추 hist_daily_redpepper.csv(2001~), 양배추·양파 ← hist_daily_headcabbage.csv·hist_daily_onion.csv
+     (2013-12~, 2018 이전은 농넷 백필)
   3. 순 단위 표 → 피쳐(소매 자기이력 + 가락 + 소매 막판) → XGBoost 비율 타깃, 파라미터 5개 × 시드 12 평균
   4. retail_predictions upsert + 지난 순의 actual_price/error_pct 갱신
 
@@ -41,7 +43,8 @@ KST = ZoneInfo('Asia/Seoul')
 
 # 소매 품목 → 가락 일별 (레포 과거분 CSV, DB agri_price 품목명)
 ITEMS = {'붉은고추': ('hist_daily_redpepper.csv', '홍고추'),
-         '양배추': ('hist_daily_headcabbage.csv', '양배추')}
+         '양배추': ('hist_daily_headcabbage.csv', '양배추'),
+         '양파': ('hist_daily_onion.csv', '양파')}
 
 # 품목별 redpepper experiments/retail/best_{품목}5.json h=1 'top' — 검증 2017~2021 에서 고른 상위 5개. K=None 은 피쳐 전부
 BASE_PARAMS = dict(objective='reg:absoluteerror')
@@ -69,7 +72,19 @@ MODELS_CABBAGE = [
     (15, dict(max_depth=2, n_estimators=600, learning_rate=0.02, subsample=0.8, colsample_bytree=0.7,
               min_child_weight=1, reg_lambda=0.5)),
 ]
-MODELS = {'붉은고추': MODELS_PEPPER, '양배추': MODELS_CABBAGE}
+MODELS_ONION = [
+    (15, dict(max_depth=4, n_estimators=300, learning_rate=0.02, subsample=1.0, colsample_bytree=0.9,
+              min_child_weight=1, reg_lambda=1.0)),
+    (None, dict(max_depth=2, n_estimators=300, learning_rate=0.03, subsample=1.0, colsample_bytree=0.5,
+                min_child_weight=1, reg_lambda=0.5)),
+    (15, dict(max_depth=2, n_estimators=300, learning_rate=0.03, subsample=1.0, colsample_bytree=0.5,
+              min_child_weight=1, reg_lambda=0.5)),
+    (15, dict(max_depth=2, n_estimators=300, learning_rate=0.03, subsample=0.8, colsample_bytree=0.9,
+              min_child_weight=1, reg_lambda=1.0)),
+    (15, dict(max_depth=5, n_estimators=1000, learning_rate=0.05, subsample=1.0, colsample_bytree=0.5,
+              min_child_weight=3, reg_lambda=1.0)),
+]
+MODELS = {'붉은고추': MODELS_PEPPER, '양배추': MODELS_CABBAGE, '양파': MODELS_ONION}
 SEEDS = 12
 MIN_TRAIN = 300       # 학습 행이 이보다 적으면(소매 적재 전) 예측하지 않는다
 REQUIRED = ['r_chg1', 'g_chg1', 'r_last_vs_mean', 'margin']

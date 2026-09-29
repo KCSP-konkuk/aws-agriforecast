@@ -5,7 +5,7 @@
 | 배추 | `pipeline.py` | `cabbage_predictions` | 05:30 (+최대 10분) | `journalctl -u agriforecast-predict` |
 | 양파 | `pipeline_onion.py` | `onion_predictions` | 05:50 (+최대 10분) | `journalctl -u agriforecast-predict-onion` |
 | 홍고추 | `pipeline_redpepper.py` | `redpepper_predictions` | 06:10 (+최대 10분) | `journalctl -u agriforecast-predict-redpepper` |
-| 소매 (붉은고추·양배추) | `pipeline_retail.py` | `retail_predictions` (품목·순) | 12:10 (+최대 5분) | `journalctl -u agriforecast-predict-retail` |
+| 소매 (붉은고추·양배추·양파) | `pipeline_retail.py` | `retail_predictions` (품목·순) | 12:10 (+최대 5분) | `journalctl -u agriforecast-predict-retail` |
 
 - 품목마다 입력·모델이 다르다. 차이는 각 파이프라인 파일 맨 위 설명에 적혀 있다 — **다른 품목 코드를 복사해 쓰기 전에 읽을 것**
   - 홍고추는 가격을 직접 맞히지 않고 비율을 맞힌다, DB 대신 농넷·데이터랩을 직접 받는다, 서버 캐시(`data/cache_*.csv`)를 쓴다
