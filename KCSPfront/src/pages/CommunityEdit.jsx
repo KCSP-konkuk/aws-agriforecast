@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react';
 import { api } from '../api/api';
 import LoginRequired from '../components/LoginRequired';
 import { isLoggedIn, getUser } from '../auth';
+import { ROOMS, DEFAULT_ROOM } from '../community';
 
 export default function CommunityEdit() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [formData, setFormData] = useState({
     title: '',
-    category: '도매정보',
+    category: DEFAULT_ROOM,
     content: '',
   });
   const [loading, setLoading] = useState(false);
@@ -37,7 +38,8 @@ export default function CommunityEdit() {
       
       setFormData({
         title: postData.title,
-        category: postData.category,
+        // 개편 전 카테고리 글은 '자유'로 보인다 (서버도 기동 때 옮긴다)
+        category: ROOMS.includes(postData.category) ? postData.category : DEFAULT_ROOM,
         content: postData.content,
       });
     } catch (err) {
@@ -147,10 +149,7 @@ export default function CommunityEdit() {
                   onChange={handleChange}
                   className="w-full px-4 py-2 rounded-lg border border-border-light bg-white focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                  <option>도매정보</option>
-                  <option>소매노하우</option>
-                  <option>구인구직</option>
-                  <option>자유게시판</option>
+                  {ROOMS.map((r) => <option key={r}>{r}</option>)}
                 </select>
               </div>
             </div>

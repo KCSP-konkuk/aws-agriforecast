@@ -16,6 +16,7 @@ public class PostResponse {
     private Long id;
     private String title;
     private String category;
+    private String kind;  // USER · BRIEF
     private String content;
     private Integer viewCount;
     private LocalDateTime createdAt;

@@ -175,6 +175,21 @@ export const api = {
     }
   },
 
+  // 품목방 '다음 순 오를까' 투표 현황 (로그인했으면 내 선택 포함)
+  getVoteStatus: async (itemName) => {
+    const response = await fetch(`${API_BASE_URL}/community/votes/${encodeURIComponent(itemName)}`, { headers: getHeaders() });
+    if (!response.ok) throw new Error('투표 현황을 불러오지 못했습니다.');
+    return await response.json();
+  },
+
+  // 투표 (로그인 필요 — 401 이면 needsLogin 오류)
+  vote: (itemName, choice) =>
+    authorizedRequest(
+      `${API_BASE_URL}/community/votes/${encodeURIComponent(itemName)}`,
+      { method: 'POST', body: JSON.stringify({ choice }) },
+      '투표하지 못했습니다.'
+    ),
+
   // 게시글 상세 조회
   getPost: async (id) => {
     const response = await fetch(`${API_BASE_URL}/community/posts/${id}`);

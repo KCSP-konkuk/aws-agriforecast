@@ -38,6 +38,10 @@ public class Post {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
     
+    /** null·USER = 사용자 글, BRIEF = 순마다 자동으로 올라오는 시세 브리핑 */
+    @Column(name = "KIND", length = 10)
+    private String kind;
+
     @Column(nullable = false, name = "view_count")
     private Integer viewCount = 0;
     

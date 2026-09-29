@@ -12,6 +12,8 @@ import java.util.regex.Pattern;
 public final class SignupValidator {
 
     private static final Pattern USERNAME = Pattern.compile("^[a-z0-9_]{4,20}$");
+    /** 시세 브리핑을 쓰는 시스템 계정(CommunitySetup.SYSTEM_ID) — 일반 가입 불가 */
+    private static final java.util.Set<String> RESERVED = java.util.Set.of("agriforecast");
     private static final Pattern EMAIL = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
     /** 문제가 있는 입력 칸과 안내 문구 */
@@ -22,6 +24,9 @@ public final class SignupValidator {
     public static Optional<Violation> usernameProblem(String username) {
         if (username == null || !USERNAME.matcher(username).matches()) {
             return Optional.of(new Violation("username", "아이디는 영문 소문자·숫자·밑줄(_)로 4~20자여야 합니다."));
+        }
+        if (RESERVED.contains(username)) {
+            return Optional.of(new Violation("username", "사용할 수 없는 아이디입니다."));
         }
         return Optional.empty();
     }

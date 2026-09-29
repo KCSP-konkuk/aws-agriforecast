@@ -2,6 +2,7 @@ package com.agriforecast.backend.service;
 
 import com.agriforecast.backend.entity.RetailPrice;
 import com.agriforecast.backend.repository.RetailPriceRepository;
+import com.agriforecast.backend.util.Soon;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -75,23 +76,17 @@ public class RetailPriceService {
     }
 
     static LocalDate soonStart(LocalDate d) {
-        int day = d.getDayOfMonth() <= 10 ? 1 : d.getDayOfMonth() <= 20 ? 11 : 21;
-        return d.withDayOfMonth(day);
+        return Soon.of(d).start();
     }
 
     static LocalDate previousSoonStart(LocalDate d) {
-        LocalDate start = soonStart(d);
-        return switch (start.getDayOfMonth()) {
-            case 1 -> start.minusMonths(1).withDayOfMonth(21);
-            case 11 -> start.withDayOfMonth(1);
-            default -> start.withDayOfMonth(11);
-        };
+        return Soon.of(d).previous().start();
     }
 
+    /** 차트 라벨 "2026-09 상순" (Soon.label 은 "9월 상순" — 연도가 필요해 따로 둔다) */
     static String soonLabel(LocalDate d) {
-        int day = soonStart(d).getDayOfMonth();
-        String name = day == 1 ? "상순" : day == 11 ? "중순" : "하순";
-        return String.format("%d-%02d %s", d.getYear(), d.getMonthValue(), name);
+        Soon s = Soon.of(d);
+        return String.format("%d-%02d %s", s.year(), s.month(), s.code().substring(6));
     }
 
     public record Point(LocalDate date, String label, int price, int days) {}
