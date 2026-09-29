@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -56,6 +57,19 @@ class CommunityVoteServiceTest {
         assertTrue(last.aiHit());
         assertEquals(13986, last.actualPrice());
         assertEquals("9월 중순", last.label());
+    }
+
+    @Test
+    void 동률이면_맞선_선택지() {
+        assertEquals(List.of(Choice.UP, Choice.DOWN), CommunityVoteService.tied(counts(2, 1, 2)));
+        assertEquals(List.of(Choice.UP, Choice.SAME, Choice.DOWN), CommunityVoteService.tied(counts(1, 1, 1)));
+        assertEquals(List.of(), CommunityVoteService.tied(counts(3, 1, 0)));
+        assertEquals(List.of(), CommunityVoteService.tied(counts(0, 0, 0)));
+
+        CommunityVoteService.Last tie = CommunityVoteService.judge("202609중순", 11384.0, 13986.0, 12882.0, counts(2, 0, 2));
+        assertNull(tie.crowd());
+        assertEquals(List.of(Choice.UP, Choice.DOWN), tie.crowdTied());
+        assertEquals(List.of(), CommunityVoteService.judge("202609중순", 11384.0, 13986.0, 12882.0, counts(3, 0, 1)).crowdTied());
     }
 
     @Test
