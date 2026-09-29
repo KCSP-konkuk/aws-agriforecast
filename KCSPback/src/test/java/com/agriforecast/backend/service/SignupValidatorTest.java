@@ -43,4 +43,9 @@ class SignupValidatorTest {
         assertEquals("email", problemField(req("farmer", "abcd1234", "김농부", "kim.example.com")));
         assertEquals("email", problemField(req("farmer", "abcd1234", "김농부", "a".repeat(45) + "@b.com")));
     }
+
+    @Test
+    void 브리핑_작성용_시스템_계정_아이디는_가입할_수_없다() {
+        assertEquals("username", problemField(req("agriforecast", "abcd1234", "김농부", "kim@example.com")));
+    }
 }

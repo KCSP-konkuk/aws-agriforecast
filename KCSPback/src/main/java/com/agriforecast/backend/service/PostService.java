@@ -132,6 +132,7 @@ public class PostService {
             response.setId(post.getSeqNoA030());
             response.setTitle(post.getTitle());
             response.setCategory(post.getCategory());
+            response.setKind(post.getKind() == null ? "USER" : post.getKind());
             response.setContent(post.getContent());
             response.setViewCount(post.getViewCount());
             response.setCreatedAt(post.getCreatedAt());

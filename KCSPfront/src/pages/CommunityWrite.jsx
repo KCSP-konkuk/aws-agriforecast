@@ -1,15 +1,19 @@
 import Layout from '../components/Layout';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { api } from '../api/api';
 import LoginRequired from '../components/LoginRequired';
 import { isLoggedIn } from '../auth';
+import { ROOMS, DEFAULT_ROOM } from '../community';
 
 export default function CommunityWrite() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  // 방에서 누른 글쓰기면 그 방이 기본값
+  const initialRoom = ROOMS.includes(params.get('category')) ? params.get('category') : DEFAULT_ROOM;
   const [formData, setFormData] = useState({
     title: '',
-    category: '도매정보',
+    category: initialRoom,
     content: '',
   });
   const [loading, setLoading] = useState(false);
@@ -90,10 +94,7 @@ export default function CommunityWrite() {
                   onChange={handleChange}
                   className="w-full px-4 py-2 rounded-lg border border-border-light bg-white focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                  <option>도매정보</option>
-                  <option>소매노하우</option>
-                  <option>구인구직</option>
-                  <option>자유게시판</option>
+                  {ROOMS.map((r) => <option key={r}>{r}</option>)}
                 </select>
               </div>
             </div>

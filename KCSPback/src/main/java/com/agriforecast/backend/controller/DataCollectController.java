@@ -26,6 +26,7 @@ public class DataCollectController {
     private final ExchangeRateCollectService exchangeRateCollectService;
     private final StationWeatherCollectService stationWeatherCollectService;
     private final KamisRetailService kamisRetailService;
+    private final MarketBriefService marketBriefService;
 
     public DataCollectController(NongnetService nongnetService,
                                   SupplyCollectService supplyCollectService,
@@ -33,7 +34,8 @@ public class DataCollectController {
                                   KosisService kosisService,
                                   ExchangeRateCollectService exchangeRateCollectService,
                                   StationWeatherCollectService stationWeatherCollectService,
-                                  KamisRetailService kamisRetailService) {
+                                  KamisRetailService kamisRetailService,
+                                  MarketBriefService marketBriefService) {
         this.nongnetService = nongnetService;
         this.supplyCollectService = supplyCollectService;
         this.oilPriceCollectService = oilPriceCollectService;
@@ -41,6 +43,7 @@ public class DataCollectController {
         this.exchangeRateCollectService = exchangeRateCollectService;
         this.stationWeatherCollectService = stationWeatherCollectService;
         this.kamisRetailService = kamisRetailService;
+        this.marketBriefService = marketBriefService;
     }
 
     /**
@@ -228,6 +231,16 @@ public class DataCollectController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         int changed = kamisRetailService.collect(startDate, endDate);
         return ResponseEntity.ok(Map.of("changed", changed, "startDate", startDate, "endDate", endDate));
+    }
+
+    /**
+     * 시세 브리핑 수동 작성 (오늘 순, 이미 있으면 건너뜀)
+     * POST /api/collect/community/brief
+     */
+    @PostMapping("/community/brief")
+    public ResponseEntity<Map<String, Object>> publishBrief() {
+        int written = marketBriefService.publish(LocalDate.now(java.time.ZoneId.of("Asia/Seoul")));
+        return ResponseEntity.ok(Map.of("written", written));
     }
 
 }
