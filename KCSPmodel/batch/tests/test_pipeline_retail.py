@@ -100,8 +100,9 @@ def test_대상_행의_필수_피쳐가_있다(built):
 
 
 def test_모델_설정은_검증에서_고른_상위_5개():
-    assert len(pr.MODELS) == 5 and pr.SEEDS == 12
-    assert [k for k, _ in pr.MODELS] == [None, None, 15, None, None]
+    assert set(pr.MODELS) == set(pr.ITEMS) == {'붉은고추', '양배추'} and pr.SEEDS == 12
+    assert [k for k, _ in pr.MODELS['붉은고추']] == [None, None, 15, None, None]
+    assert [k for k, _ in pr.MODELS['양배추']] == [15, 15, 15, None, 15]
     assert pr.BASE_PARAMS['objective'] == 'reg:absoluteerror'
 
 
@@ -109,7 +110,7 @@ def test_예측은_비율_곱하기_직전_순(built):
     df, X = built
     k = pr.soon_index(TARGET)
     light = [(None, dict(max_depth=2, n_estimators=20, learning_rate=0.1))]
-    pred, n = pr.fit_predict(df, X, k, models=light, seeds=1)
+    pred, n = pr.fit_predict(df, X, k, light, seeds=1)
     assert n == int(((df.y / df.y.shift(1)).notna() & (df.index < k)).sum())
     assert 0.5 < pred / df.y[k - 1] < 2.0
 
@@ -127,3 +128,9 @@ def test_직전_순_소매가_없으면_건너뛴다(garak):
         assert pr.run_item(Conn(), '붉은고추', TARGET) is None
     finally:
         pr.load_retail, pr.load_garak = pr_load
+
+
+def test_품목마다_가락_과거분_파일이_있다():
+    for item, (csv_name, _) in pr.ITEMS.items():
+        h = pd.read_csv(os.path.join(pr.DATA, csv_name), parse_dates=['date'])
+        assert '상' in h.columns and h.date.min() <= pd.Timestamp('2014-01-10'), item
