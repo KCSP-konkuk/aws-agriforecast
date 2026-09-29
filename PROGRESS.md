@@ -154,7 +154,7 @@
 - [x] 가락 경매가 백필: 양파·양배추 2013-12-30 ~ 2018-01-10 (농넷 7일 간격, 품목당 221회, 겹침 불일치 0). **실험 CSV(redpepper `data/retail/`)로만 저장, `agri_price` 적재는 아직**
 - [x] 소매 예측 모델 — 붉은고추 (redpepper #10, `docs/RETAIL.md`): 소매 + 가락 + 소매 막판, 검증 2017~2021 에서 선택, **시험 2022~2025 MASE 0.620 / MAPE 5.65% / NMAE 6.09%**, 나이브 대비 DM p=1.8e-7. 양배추·양파는 다음
 - [x] 소매 예측 모델 — 양배추 (redpepper #14): 구성 붉은고추와 같음(소매 + 가락 + 소매 막판), **시험 2022~2025 MASE 0.663 / MAPE 4.54%**, DM p=5.2e-9. 산지 전환·기상·KAMIS 대형유통·도매는 효과 없음. 배치에 추가(`hist_daily_headcabbage.csv` = 농넷 백필 2013-12~ + DB)
-- [ ] 소매 예측 모델 — 양파
+- [x] 소매 예측 모델 — 양파 (redpepper #20): 구성 같음, **시험 2022~2025 MASE 0.684 / MAPE 1.67%**, DM p=8.6e-5 (2026 은 p=0.12). 배치에 추가(`hist_daily_onion.csv`). **세 품목 모두 홈 카드 예측 칸이 채워진다**
 - [x] 배치 `pipeline_retail.py`(#36): DB `retail_market_price`·`agri_price` + `hist_daily_redpepper.csv` → `retail_predictions`(품목·순), 매일 12:10 KST. 피쳐·설정이 실험 코드와 같은지 로컬에서 대조(3개 시점 전 행 일치)
 - [x] 결과 테이블 → `RetailPriceService` `prediction`·`predictions`. **홈 카드·차트 기준을 경동·복조리 평균으로 바꿈**(세 품목 모두). 섹션 이름 "서울 전통시장 소매가", 부제에 "경동·복조리 평균"
 - [x] 배포 워크플로 복사 목록·타이머·검증 루프에 추가. 소매는 백엔드 첫 적재 전이면 경고만 남기고 성공
