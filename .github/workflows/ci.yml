@@ -26,7 +26,7 @@ jobs:
       - name: Install deps (서버와 같은 고정 버전)
         run: pip install -r requirements.txt pytest
       - name: Compile pipelines
-        run: python -m py_compile pipeline.py pipeline_onion.py pipeline_redpepper.py backtest.py
+        run: python -m py_compile pipeline.py pipeline_onion.py pipeline_redpepper.py pipeline_retail.py backtest.py
       - name: Pytest
         run: python -m pytest -q tests
 
@@ -53,6 +53,7 @@ jobs:
             --tests 'com.agriforecast.backend.service.NaverNewsServiceFilterTest' \
             --tests 'com.agriforecast.backend.service.KamisServiceTargetTest' \
             --tests 'com.agriforecast.backend.service.KamisRetailParseTest' \
+            --tests 'com.agriforecast.backend.service.KamisRetailSkipTest' \
             --tests 'com.agriforecast.backend.service.RetailPriceServiceTest' \
             --tests 'com.agriforecast.backend.util.SoonTest' \
             --tests 'com.agriforecast.backend.service.CommunityVoteServiceTest' \

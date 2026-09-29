@@ -1,0 +1,11 @@
+[Unit]
+Description=AgriForecast 소매가 예측 파이프라인 매일 실행
+
+[Timer]
+# 12:10 KST. 백엔드 소매 수집(09:30)·가락 전날분(11:00) 뒤라 순 첫날에도 직전 순 마지막 날까지 들어와 있다.
+OnCalendar=*-*-* 03:10:00 UTC
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

@@ -12,12 +12,12 @@ const WORD = { UP: '▲ 오른다', SAME: '― 비슷', DOWN: '▼ 내린다' };
 const TONE = { UP: 'text-price-up', SAME: 'text-text-main', DOWN: 'text-price-down' };
 const won = (v) => `${Math.round(v).toLocaleString()}원`;
 
-function ResultRow({ label, dir, price, hit }) {
+function ResultRow({ label, dir, price, hit, empty = '-' }) {
   return (
     <tr>
       <td className="py-1.5 text-text-main/80">{label}</td>
       <td className="py-1.5 text-right">
-        {dir ? <span className={TONE[dir]}>{price != null ? `${WORD[dir].slice(0, 1)} ${won(price)}` : WORD[dir]}</span> : <span className="text-subtext-light">-</span>}
+        {dir ? <span className={TONE[dir]}>{price != null ? `${WORD[dir].slice(0, 1)} ${won(price)}` : WORD[dir]}</span> : <span className="text-subtext-light">{empty}</span>}
         {hit === true && <span className="ml-2 font-semibold text-primary">적중</span>}
       </td>
     </tr>
@@ -105,7 +105,8 @@ export default function VoteCard({ itemName }) {
           <h3 className="text-base font-semibold text-text-main">{last.label} 결과</h3>
           <table className="mt-2 w-full text-[15px]">
             <tbody>
-              <ResultRow label="참여자 예측" dir={last.crowd} hit={last.crowdHit} />
+              <ResultRow label="참여자 예측" dir={last.crowd} hit={last.crowdHit}
+                empty={last.crowdTied?.length ? `${last.crowdTied.map((c) => WORD[c]).join('·')} 동률` : '참여자 없음'} />
               <ResultRow label="AI 예측" dir={last.ai} price={last.aiPrice} hit={last.aiHit} />
               <ResultRow label="실제" dir={last.actual} price={last.actualPrice} />
             </tbody>
