@@ -68,6 +68,7 @@ export default function PredictionHistory({ itemName, unit }) {
   }, [history]);
 
   const mape = rows.length ? rows.reduce((sum, r) => sum + r.errorPct, 0) / rows.length : null;
+  const latest = rows[rows.length - 1];
 
   return (
     <div className="p-6 bg-surface-light rounded-xl border border-border-light shadow-sm">
@@ -89,8 +90,9 @@ export default function PredictionHistory({ itemName, unit }) {
         </div>
       ) : (
         <>
-          <div className="mb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
             <Stat label="평균 오차율" value={`${mape.toFixed(1)}%`} sub={`2026년 ${rows.length}개 순`} />
+            <Stat label="최근 순 오차율" value={`${latest.errorPct.toFixed(1)}%`} sub={latest.label} />
           </div>
 
           <div className="flex flex-wrap items-center gap-4 text-sm text-subtext-light mb-2">
