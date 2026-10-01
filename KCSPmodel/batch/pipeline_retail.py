@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-"""서울 전통시장 소매가 순별 예측 파이프라인 (배치 실행) — 붉은고추·양배추·양파
+"""서울 전통시장 소매가 순별 예측 파이프라인 (배치 실행) — 붉은고추·양배추·양파·애호박·시금치
 
 모델 근거는 KCSP-konkuk/redpepper 의 docs/RETAIL.md. 1순 뒤, 시험 2022~2025
-  붉은고추 MASE 0.620 / MAPE 5.65% (5절), 양배추 0.663 / 4.54% (6절), 양파 0.684 / 1.67% (8절).
-  피쳐 구성은 세 품목이 같고 파라미터만 다르다
+  붉은고추 MASE 0.620 / MAPE 5.65% (5절), 양배추 0.663 / 4.54% (6절), 양파 0.684 / 1.67% (8절),
+  애호박 0.639 / 6.31%, 시금치 0.591 / 6.43% (12절). 운영 모델 한눈에: 레포 docs/MODELS.md
+  피쳐 구성은 다섯 품목이 같고(시금치만 달력 3개가 더 붙는다) 파라미터만 다르다
 
   1. DB retail_market_price 에서 경동·복조리 일별 소매가 (백엔드 KamisRetailService 가 09:30·17:30 KST 수집)
-  2. 가락 일별 상 가격 = 레포 hist_daily_*.csv + DB agri_price (백엔드가 11:00 KST 에 전날분)
-     붉은고추 ← 홍고추 hist_daily_redpepper.csv(2001~), 양배추·양파 ← hist_daily_headcabbage.csv·hist_daily_onion.csv
-     (2013-12~, 2018 이전은 농넷 백필)
+  2. 가락 일별 가격 g
+     - 붉은고추·양배추·양파: 농넷 가락 경매가(상) = 레포 hist_daily_*.csv + DB agri_price (백엔드가 11:00 KST 에 전날분)
+       붉은고추 ← 홍고추 hist_daily_redpepper.csv(2001~), 양배추·양파 ← hist_daily_headcabbage.csv·hist_daily_onion.csv
+       (2013-12~, 2018 이전은 농넷 백필)
+     - 애호박·시금치: KAMIS 16번 도매 '가락도매'(중도매인 판매가) = DB wholesale_market_price 만
+       (백엔드 KamisWholesaleService 가 2014~ 적재, 09:30·17:30 KST 최근 14일). 농넷 백필 대신 쓴다(RETAIL.md 12.1)
   3. 순 단위 표 → 피쳐(소매 자기이력 + 가락 + 소매 막판) → XGBoost 비율 타깃, 파라미터 5개 × 시드 12 평균
   4. retail_predictions upsert + 지난 순의 actual_price/error_pct 갱신
 
@@ -41,10 +45,14 @@ MARKETS = ('경동', '복조리')
 START = '201407상순'
 KST = ZoneInfo('Asia/Seoul')
 
-# 소매 품목 → 가락 일별 (레포 과거분 CSV, DB agri_price 품목명)
-ITEMS = {'붉은고추': ('hist_daily_redpepper.csv', '홍고추'),
+# 소매 품목 → 가락 경매가 일별 (레포 과거분 CSV, DB agri_price 품목명)
+GARAK = {'붉은고추': ('hist_daily_redpepper.csv', '홍고추'),
          '양배추': ('hist_daily_headcabbage.csv', '양배추'),
          '양파': ('hist_daily_onion.csv', '양파')}
+# g 를 KAMIS 도매(DB wholesale_market_price, 가락도매)로 쓰는 품목
+KAMIS_G = ('애호박', '시금치')
+WHOLESALE_MARKET = '가락도매'
+ITEMS = (*GARAK, *KAMIS_G)
 
 # 품목별 redpepper experiments/retail/best_{품목}5.json h=1 'top' — 검증 2017~2021 에서 고른 상위 5개. K=None 은 피쳐 전부
 BASE_PARAMS = dict(objective='reg:absoluteerror')
@@ -84,7 +92,35 @@ MODELS_ONION = [
     (15, dict(max_depth=5, n_estimators=1000, learning_rate=0.05, subsample=1.0, colsample_bytree=0.5,
               min_child_weight=3, reg_lambda=1.0)),
 ]
-MODELS = {'붉은고추': MODELS_PEPPER, '양배추': MODELS_CABBAGE, '양파': MODELS_ONION}
+MODELS_ZUCCHINI = [
+    (None, dict(max_depth=2, n_estimators=1000, learning_rate=0.05, subsample=0.8, colsample_bytree=0.5,
+                min_child_weight=1, reg_lambda=0.5)),
+    (None, dict(max_depth=2, n_estimators=1000, learning_rate=0.08, subsample=0.8, colsample_bytree=0.9,
+                min_child_weight=1, reg_lambda=3.0)),
+    (15, dict(max_depth=5, n_estimators=600, learning_rate=0.03, subsample=1.0, colsample_bytree=0.9,
+              min_child_weight=3, reg_lambda=1.0)),
+    (None, dict(max_depth=5, n_estimators=600, learning_rate=0.03, subsample=1.0, colsample_bytree=0.9,
+                min_child_weight=3, reg_lambda=1.0)),
+    (15, dict(max_depth=5, n_estimators=1000, learning_rate=0.08, subsample=0.8, colsample_bytree=0.9,
+              min_child_weight=3, reg_lambda=3.0)),
+]
+MODELS_SPINACH = [
+    (15, dict(max_depth=2, n_estimators=600, learning_rate=0.05, subsample=0.8, colsample_bytree=0.9,
+              min_child_weight=1, reg_lambda=3.0)),
+    (None, dict(max_depth=2, n_estimators=1000, learning_rate=0.05, subsample=0.8, colsample_bytree=0.5,
+                min_child_weight=1, reg_lambda=0.5)),
+    # 실험의 기본 파라미터(redpepper experiments/retail/common.PARAMS) — best_시금치5.json 에 params {} 로 들어 있다
+    (None, dict(max_depth=3, n_estimators=400, learning_rate=0.05, subsample=0.8, colsample_bytree=0.8,
+                min_child_weight=3, reg_lambda=1.0)),
+    (None, dict(max_depth=5, n_estimators=1000, learning_rate=0.05, subsample=1.0, colsample_bytree=0.5,
+                min_child_weight=3, reg_lambda=1.0)),
+    (None, dict(max_depth=3, n_estimators=1000, learning_rate=0.03, subsample=0.6, colsample_bytree=0.9,
+                min_child_weight=3, reg_lambda=3.0)),
+]
+MODELS = {'붉은고추': MODELS_PEPPER, '양배추': MODELS_CABBAGE, '양파': MODELS_ONION,
+          '애호박': MODELS_ZUCCHINI, '시금치': MODELS_SPINACH}
+# 기본 피쳐(소매 + 가락 + 소매 막판) 뒤에 붙는 그룹 — best_{품목}5.json 의 groups
+EXTRA_FEATURES = {'시금치': ('cal',)}
 SEEDS = 12
 MIN_TRAIN = 300       # 학습 행이 이보다 적으면(소매 적재 전) 예측하지 않는다
 REQUIRED = ['r_chg1', 'g_chg1', 'r_last_vs_mean', 'margin']
@@ -203,9 +239,21 @@ def f_retail_last(df):
     return f
 
 
-def features(df):
-    return pd.concat([f_retail(df), f_garak(df), f_retail_last(df)], axis=1).astype(float).replace(
-        [np.inf, -np.inf], np.nan)
+def f_calendar(df):
+    f = pd.DataFrame(index=df.index)
+    f['month'] = df.month
+    f['pidx'] = df.pidx
+    f['soon36'] = (df.month - 1) * 3 + df.pidx
+    return f
+
+
+EXTRA = {'cal': f_calendar}
+
+
+def features(df, extra=()):
+    """extra: EXTRA_FEATURES[품목]. 열 순서가 실험과 같아야 colsample·상위 K 선택이 같아진다"""
+    parts = [f_retail(df), f_garak(df), f_retail_last(df)] + [EXTRA[g](df) for g in extra]
+    return pd.concat(parts, axis=1).astype(float).replace([np.inf, -np.inf], np.nan)
 
 
 # ---------------------------------------------------------------- 모델
@@ -282,6 +330,21 @@ def load_garak(conn, csv_name, garak_item):
     return pd.concat([h, d]).sort_index()
 
 
+def load_wholesale(conn, item):
+    """KAMIS 도매 가락도매 일별. 백엔드 첫 적재 전이면 빈 Series"""
+    with conn.cursor() as cur:
+        cur.execute("""SELECT price_date, price FROM wholesale_market_price
+                       WHERE item_name = %s AND market_name = %s""", (item, WHOLESALE_MARKET))
+        rows = cur.fetchall()
+    return pd.Series({pd.Timestamp(d): float(v) for d, v in rows}, dtype=float).sort_index()
+
+
+def load_g(conn, item):
+    if item in KAMIS_G:
+        return load_wholesale(conn, item)
+    return load_garak(conn, *GARAK[item])
+
+
 def save(conn, item, target, pred, df):
     with conn.cursor() as cur:
         cur.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE} (
@@ -308,11 +371,10 @@ def save(conn, item, target, pred, df):
 
 
 def run_item(conn, item, target):
-    csv_name, garak_item = ITEMS[item]
     retail = load_retail(conn, item)
-    garak = load_garak(conn, csv_name, garak_item)
+    garak = load_g(conn, item)
     df = build_frame(retail, garak, target)
-    X = features(df)
+    X = features(df, EXTRA_FEATURES.get(item, ()))
     tk = soon_index(target)
     n_train = int((df.y / df.y.shift(1)).notna().sum())
     if n_train < MIN_TRAIN:
@@ -322,6 +384,10 @@ def run_item(conn, item, target):
         # 첫 적재가 도는 중(연도 순으로 쌓인다)이거나 직전 순 조사가 아직 없다 — 틀린 예측을 쓰느니 건너뛴다
         log.warning('%s: 직전 순 %s 소매가 아직 없음(최근 %s) — 건너뜀', item, code_of(tk - 1),
                     df.soon[df.y.notna()].iloc[-1] if df.y.notna().any() else '-')
+        return None
+    if item in KAMIS_G and pd.isna(df.g[tk - 1]):
+        # KAMIS 도매 첫 적재가 소매 적재 뒤에 돈다(연도 순) — 끝나기 전 실행이면 건너뛴다
+        log.warning('%s: 직전 순 %s KAMIS 도매가 아직 없음 — 건너뜀', item, code_of(tk - 1))
         return None
     miss = [c for c in REQUIRED if pd.isna(X.loc[tk, c])]
     if miss:
