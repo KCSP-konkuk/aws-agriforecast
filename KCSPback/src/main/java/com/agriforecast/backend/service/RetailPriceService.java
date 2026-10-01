@@ -33,7 +33,8 @@ public class RetailPriceService {
     static final String PREDICTION_TABLE = "retail_predictions";
 
     /** 조사 단위 — 데이터가 없는 품목에도 카드에 단위를 보이려고 고정해 둔다 */
-    static final Map<String, String> UNITS = Map.of("양파", "1kg", "붉은고추", "100g", "양배추", "1포기");
+    static final Map<String, String> UNITS = Map.of("양파", "1kg", "붉은고추", "100g", "양배추", "1포기",
+            "애호박", "1개", "시금치", "100g");
 
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 

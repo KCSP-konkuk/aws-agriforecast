@@ -308,6 +308,8 @@ public class KamisRetailService {
         items.put("양파", new String[]{"200", "245", "00"});
         items.put("붉은고추", new String[]{"200", "243", "00"});
         items.put("양배추", new String[]{"200", "212", "00"});
+        items.put("애호박", new String[]{"200", "224", "01"});
+        items.put("시금치", new String[]{"200", "213", "00"});
         return Collections.unmodifiableMap(items);
     }
 
