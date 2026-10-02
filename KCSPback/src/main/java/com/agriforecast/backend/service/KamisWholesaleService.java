@@ -19,7 +19,7 @@ import java.util.*;
  *
  * 서울(1101) · 상품(04) 등급. 서울은 '가락도매' 한 곳(가락시장 중도매인 판매가)이고 응답 모양은 소매(17번)와 같다
  * ('평균'·'평년' 행 + 시장별 행) → 파싱·연 단위 조회는 KamisRetailService 것을 그대로 쓴다.
- * 소매 예측(pipeline_retail.py)에서 농넷 가락 경매가가 없는 품목의 가락 자리에 쓴다 (redpepper docs/RETAIL.md 12절)
+ * 소매 예측(pipeline_retail.py)에서 농넷 가락 경매가가 없는 품목의 가락 자리에 쓴다 (model-research docs/RETAIL.md 12절)
  * 게시 시각: 9/30 값이 당일 15:25~15:55 KST 사이에 올라왔다(1회 관측) → 17:30 수집이면 다음 날 12:10 예측에 들어간다
  */
 @Service
@@ -34,7 +34,7 @@ public class KamisWholesaleService {
     private static final int MAX_ATTEMPTS = 3;
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
-    /** 품목명 → {부류코드, 품목코드, 품종코드}. 소매 품목과 같은 코드(redpepper collect/kamis_retail.py) */
+    /** 품목명 → {부류코드, 품목코드, 품종코드}. 소매 품목과 같은 코드(model-research collect/kamis_retail.py) */
     static final Map<String, String[]> TARGET_ITEMS = createTargetItems();
 
     @Value("${kamis.cert-key:test}")
@@ -159,6 +159,7 @@ public class KamisWholesaleService {
         Map<String, String[]> items = new LinkedHashMap<>();
         items.put("애호박", new String[]{"200", "224", "01"});
         items.put("시금치", new String[]{"200", "213", "00"});
+        items.put("오이", new String[]{"200", "223", "02"});
         return Collections.unmodifiableMap(items);
     }
 }

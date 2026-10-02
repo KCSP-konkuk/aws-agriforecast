@@ -9,8 +9,8 @@ import java.time.LocalDate;
 
 /**
  * KAMIS 도매가격 (일별, 서울 시장별, 상품 등급) — 16번 periodWholesaleProductList
- * 서울은 '가락도매'(가락시장 중도매인 판매가) 한 곳이다. 소매 모델에서 농넷 가락 경매가가 없는 품목(애호박·시금치)의
- * 가락 자리에 쓴다 (redpepper docs/RETAIL.md 12절 — 기존 3품목에서 경매가 대신 넣어도 검증 MASE ±0.03 안)
+ * 서울은 '가락도매'(가락시장 중도매인 판매가) 한 곳이다. 소매 모델에서 농넷 가락 경매가가 없는 품목(애호박·시금치·오이)의
+ * 가락 자리에 쓴다 (model-research docs/RETAIL.md 12절 — 기존 3품목에서 경매가 대신 넣어도 검증 MASE ±0.03 안)
  */
 @Entity
 @Table(name = "wholesale_market_price", uniqueConstraints = {
