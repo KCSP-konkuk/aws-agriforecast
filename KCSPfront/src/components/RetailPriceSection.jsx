@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { api } from '../api/api';
 import StatusMessage from './StatusMessage';
@@ -35,7 +35,7 @@ function ItemCard({ item, selected, onSelect }) {
     <button
       type="button"
       onClick={onSelect}
-      className={`text-left rounded-xl p-4 bg-white border transition ${
+      className={`${CARD_WIDTH} shrink-0 snap-start text-left rounded-xl p-4 bg-white border transition ${
         selected ? 'border-primary ring-2 ring-primary/30' : 'border-gray-200 hover:border-primary/50'
       }`}
     >
@@ -57,6 +57,60 @@ function ItemCard({ item, selected, onSelect }) {
           : '다음 순 예측 · 준비 중'}
       </p>
     </button>
+  );
+}
+
+// 한 줄에 보이는 카드: 모바일 2장 · sm 이상 3장, 다음 카드가 살짝 보여 넘길 게 있다는 걸 알린다
+const CARD_WIDTH = 'w-[44%] sm:w-[31%]';
+
+// 품목 카드 한 줄. 자동으로 넘기지 않는다 — 고른 카드가 밀려나면 아래 차트와 어긋난다.
+// 모바일은 손으로 밀고(카드 단위로 멈춤), sm 이상은 좌우 화살표. 넘칠 때만 화살표를 보인다
+function CardRow({ children }) {
+  const ref = useRef(null);
+  const [edge, setEdge] = useState({ left: false, right: false });
+
+  const update = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    setEdge({ left: el.scrollLeft > 4, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 });
+  }, []);
+
+  useEffect(() => {
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [update, children]);
+
+  const step = (dir) => {
+    const el = ref.current;
+    const card = el?.firstElementChild;
+    if (!card) return;
+    el.scrollBy({ left: dir * (card.getBoundingClientRect().width + 12), behavior: 'smooth' });
+  };
+
+  const arrow = (dir, show) => show && (
+    <button
+      type="button"
+      onClick={() => step(dir)}
+      aria-label={dir < 0 ? '이전 품목' : '다음 품목'}
+      className={`hidden sm:flex absolute top-1/2 -translate-y-1/2 ${dir < 0 ? '-left-3' : '-right-3'} z-10 w-8 h-8 items-center justify-center rounded-full bg-white border border-gray-200 shadow text-text-main hover:border-primary/50`}
+    >
+      <span className="material-symbols-outlined text-xl">{dir < 0 ? 'chevron_left' : 'chevron_right'}</span>
+    </button>
+  );
+
+  return (
+    <div className="relative mb-4">
+      {arrow(-1, edge.left)}
+      <div
+        ref={ref}
+        onScroll={update}
+        className="flex gap-3 overflow-x-auto snap-x snap-mandatory p-1 -m-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {children}
+      </div>
+      {arrow(1, edge.right)}
+    </div>
   );
 }
 
@@ -137,14 +191,14 @@ export default function RetailPriceSection() {
       </div>
 
       {summary.status === 'loading' ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-          {[0, 1, 2].map((i) => <div key={i} className="h-40 rounded-xl bg-background-light animate-pulse" />)}
+        <div className="flex gap-3 overflow-hidden mb-4">
+          {[0, 1, 2, 3].map((i) => <div key={i} className={`${CARD_WIDTH} shrink-0 h-40 rounded-xl bg-background-light animate-pulse`} />)}
         </div>
       ) : summary.status === 'error' ? (
         <StatusMessage status="error" errorText="소매가 데이터를 불러오지 못했습니다." />
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <CardRow>
             {summary.data.map((item) => (
               <ItemCard
                 key={item.itemName}
@@ -153,7 +207,7 @@ export default function RetailPriceSection() {
                 onSelect={() => setSelected(item.itemName)}
               />
             ))}
-          </div>
+          </CardRow>
 
           <div className="rounded-xl p-4 sm:p-5 bg-white border border-gray-200">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
