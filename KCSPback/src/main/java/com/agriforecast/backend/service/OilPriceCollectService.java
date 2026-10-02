@@ -1,5 +1,6 @@
 package com.agriforecast.backend.service;
 
+import com.agriforecast.backend.config.RestTemplateConfig;
 import com.agriforecast.backend.entity.OilPrice;
 import com.agriforecast.backend.repository.OilPriceRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -34,7 +35,7 @@ public class OilPriceCollectService {
 
     private final OilPriceRepository oilPriceRepository;
     private final ObjectMapper objectMapper;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate = RestTemplateConfig.withTimeouts();
 
     public OilPriceCollectService(OilPriceRepository oilPriceRepository, ObjectMapper objectMapper) {
         this.oilPriceRepository = oilPriceRepository;

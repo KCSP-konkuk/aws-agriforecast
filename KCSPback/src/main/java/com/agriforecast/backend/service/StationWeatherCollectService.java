@@ -1,5 +1,6 @@
 package com.agriforecast.backend.service;
 
+import com.agriforecast.backend.config.RestTemplateConfig;
 import com.agriforecast.backend.entity.StationWeatherData;
 import com.agriforecast.backend.repository.StationWeatherDataRepository;
 import org.slf4j.Logger;
@@ -60,7 +61,7 @@ public class StationWeatherCollectService {
     private String authKey;
 
     private final StationWeatherDataRepository repository;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate = RestTemplateConfig.withTimeouts();
 
     // self-injection: collectByDateRange → collectByDate 호출 시 @Transactional 프록시 적용
     @Lazy
