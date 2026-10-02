@@ -167,7 +167,8 @@ export default function Home() {
         </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
+          {/* min-w-0: 소매가 카드 줄(가로 스크롤)이 그리드 칸을 화면보다 넓히지 않게 */}
+          <div className="lg:col-span-2 space-y-6 min-w-0">
             <RetailPriceSection />
           </div>
 

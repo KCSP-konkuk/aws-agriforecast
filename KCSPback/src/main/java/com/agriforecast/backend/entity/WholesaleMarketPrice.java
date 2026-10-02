@@ -8,18 +8,18 @@ import lombok.Setter;
 import java.time.LocalDate;
 
 /**
- * KAMIS 소매가격 (일별, 서울 판매처별, 상품 등급)
- * 서울 평균(retail_price)은 판매처 구성이 바뀌면 가격 변화 없이 출렁여서, 소매 모델은 판매처별 값
- * (경동·복조리 등 전통시장)으로 목표를 만든다. 대형유통은 KAMIS 가 'A-유통' 처럼 익명으로 준다
+ * KAMIS 도매가격 (일별, 서울 시장별, 상품 등급) — 16번 periodWholesaleProductList
+ * 서울은 '가락도매'(가락시장 중도매인 판매가) 한 곳이다. 소매 모델에서 농넷 가락 경매가가 없는 품목(애호박·시금치)의
+ * 가락 자리에 쓴다 (redpepper docs/RETAIL.md 12절 — 기존 3품목에서 경매가 대신 넣어도 검증 MASE ±0.03 안)
  */
 @Entity
-@Table(name = "retail_market_price", uniqueConstraints = {
+@Table(name = "wholesale_market_price", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"ITEM_NAME", "PRICE_DATE", "MARKET_NAME"})
 })
 @Getter
 @Setter
 @NoArgsConstructor
-public class RetailMarketPrice {
+public class WholesaleMarketPrice {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,11 +31,11 @@ public class RetailMarketPrice {
     @Column(name = "PRICE_DATE", nullable = false)
     private LocalDate priceDate;
 
-    /** KAMIS marketname 그대로 (경동, 복조리, A-유통 …) */
+    /** KAMIS marketname 그대로 (가락도매) */
     @Column(name = "MARKET_NAME", nullable = false, length = 30)
     private String marketName;
 
-    /** 소매가 (원, 조사 단위 기준 — 양파 1kg / 붉은고추 100g / 양배추 1포기 / 애호박 1개 / 시금치 100g) */
+    /** 도매가 (원, KAMIS 도매 거래 단위 기준). 소매 모델은 변화율·비율로만 써서 단위에 영향받지 않는다 */
     @Column(name = "PRICE", nullable = false)
     private Integer price;
 }
