@@ -18,6 +18,12 @@ const shortDate = (iso) => {
 // "202610상순" → "10월 상순"
 const targetLabel = (code) => (code ? `${Number(code.slice(4, 6))}월 ${code.slice(6)}` : '');
 
+// 순 첫날(1·11·21일) 정오 전엔 이번 순 예측이 아직 없다 — 예측 배치가 12:10 KST 에 돈다(직전 순 가락값이 11:00 에 들어온 뒤)
+const beforeFirstDayBatch = (now = new Date()) => {
+  const kst = new Date(now.getTime() + 9 * 3600 * 1000);   // KST = UTC+9, 기기 시간대와 무관하게
+  return [1, 11, 21].includes(kst.getUTCDate()) && kst.getUTCHours() < 13;
+};
+
 function ChangeText({ pct }) {
   if (pct == null) return <span className="text-subtext-light">지난 순 평균 대비 -</span>;
   const color = pct > 0 ? 'text-price-up' : pct < 0 ? 'text-price-down' : 'text-text-main';
@@ -54,7 +60,7 @@ function ItemCard({ item, selected, onSelect }) {
       <p className="text-xs text-subtext-light mt-3 pt-2 border-t border-gray-100">
         {item.prediction
           ? <>{targetLabel(item.prediction.target)} 예측 <span className="font-semibold" style={{ color: COLOR_PRED }}>{won(item.prediction.price)}</span></>
-          : '다음 순 예측 · 준비 중'}
+          : `다음 순 예측 · ${beforeFirstDayBatch() ? '오늘 12시 공개' : '준비 중'}`}
       </p>
     </button>
   );
