@@ -1,5 +1,6 @@
 package com.agriforecast.backend.service;
 
+import com.agriforecast.backend.config.RestTemplateConfig;
 import com.agriforecast.backend.dto.NaverDataLabResponse;
 import com.agriforecast.backend.entity.SearchTrend;
 import com.agriforecast.backend.repository.SearchTrendRepository;
@@ -35,7 +36,7 @@ public class NaverDataLabService {
     private String clientSecret;
 
     private final SearchTrendRepository searchTrendRepository;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate = RestTemplateConfig.withTimeouts();
 
     public NaverDataLabService(SearchTrendRepository searchTrendRepository) {
         this.searchTrendRepository = searchTrendRepository;

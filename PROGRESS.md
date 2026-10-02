@@ -5,7 +5,7 @@
 - PR 을 머지하거나 새 작업을 시작하면 이 문서도 같이 고친다 (`docs:` 커밋)
 - 서버 주소·키 값은 적지 않는다 (CONTRIBUTING 3·6절)
 
-마지막 갱신: 2026-10-02 (릴리스 #54 배포, 오이 소매 예측 연결)
+마지막 갱신: 2026-10-02 (릴리스 #56 오이 배포, 수집 트리거 차단·외부 API 타임아웃)
 
 ---
 
@@ -91,11 +91,15 @@
 - #52 애호박·시금치 소매 예측 — KAMIS 도매 수집기(`wholesale_market_price`, 초기 적재 6,238건), 홈 카드 한 줄 가로 스와이프, 운영 모델 문서 `docs/MODELS.md`. #53 이 문서 현행화
 - 배포 확인: 세 워크플로 success, 소매 초기 적재 51,722건, `agriforecast-predict-retail` 수동 1회 → 다섯 품목 202610상순 예측(양파 2,303 · 붉은고추 1,863 · 양배추 4,416 · 애호박 1,332 · 시금치 1,060원)
 
+### 2026-10-02 배포 (릴리스 #56)
+- #55 오이 다다기 소매 예측 — KAMIS 소매·도매 수집 품목에 오이(223/02), `pipeline_retail.py` 품목별 피쳐 그룹(`GROUPS`, 오이는 소매 + 도매만). 실험 레포 이름 변경(redpepper → model-research) 반영
+- 배포 확인: 오이 소매 28,007건·도매 3,126건 첫 적재, 배포 워크플로 검증 실행에서 여섯 품목 모두 예측(오이 202610상순 7,812원/10개)
+
 ## 3. 진행 중
 
 | PR | 내용 | 남은 일 |
 |---|---|---|
-| 이 PR | 오이 다다기 소매 예측 운영 연결 — KAMIS 소매·도매 수집 품목에 오이(223/02), `pipeline_retail.py` 오이(소매 + 도매, 소매 막판 없음 → 품목별 `GROUPS`), 실험과 202601상순 예측 일치. 실험 레포 이름 변경(redpepper → model-research) 반영 | 머지 → 릴리스 → 백엔드 오이 첫 적재(소매·도매 각 13회) 확인 → `systemctl start agriforecast-predict-retail` 수동 1회 → 홈 여섯 품목 확인 |
+| 이 PR | 수집 트리거(`/api/collect/**`) 외부 차단, 외부 API RestTemplate 타임아웃(연결 10초·읽기 60초), 순 첫날 정오 전 홈 카드 '오늘 12시 공개' 문구, 이 문서 갱신 | 머지 → 릴리스 → 외부에서 `POST /api/collect/...` 403 · 서버 안 `curl localhost:8080/...` 동작 확인 |
 
 ---
 
@@ -185,9 +189,9 @@
 - [ ] 커뮤니티 보상(뱃지·칭호 등) — 투표·결과 비교만 먼저 하고 필요하면 나중에 (사용자 결정 2026-09-28)
 - [ ] 홈에서 걷어낸 농넷 도매 모델 설명(파이프라인·데이터 소스 8종·모델 특징·주요 변수)의 새 자리 — 문서로는 [`docs/MODELS.md`](docs/MODELS.md) 2절에 정리했다. 화면(페이지)으로도 보여줄지는 미정. 옛 문구는 `Home.jsx` 의 git 이력(릴리스 #31 시점)에 있다
 - [ ] 상세 가격 차트의 AI 예측은 다음 순 한 점만 표시
-- [ ] `/api/collect/**` 수집 트리거(POST)가 인증 없이 열려 있음 — 4.1 백필 전에 막을지 결정
-- [ ] EC2 보안 그룹 SSH(22)가 전체 공개 — 배포 경로와 함께 좁히기
-- [ ] 공용 `RestTemplate` 에 연결·읽기 타임아웃이 없다 — 외부 API 가 응답을 안 주면 수집 스레드가 멈춘다 (#29 의 KAMIS 소매 수집기만 자체 타임아웃)
+- [x] `/api/collect/**` 수집 트리거(POST)가 인증 없이 열려 있음 → nginx 를 거친 외부 요청 403, 서버 안 8080 직접 요청만 허용(`CollectLocalOnlyFilter`, 수동 실행은 CONTRIBUTING 3절)
+- [x] EC2 보안 그룹 SSH(22)가 전체 공개 — **의도적으로 유지**(2026-10-02). GitHub Actions 배포가 매번 다른 IP 로 붙어서 IP 를 좁히면 배포가 깨진다. 키 인증 전용 + fail2ban. 줄이려면 배포를 SSM·self-hosted runner 로 바꿔야 한다
+- [x] 공용 `RestTemplate` 에 연결·읽기 타임아웃이 없다 → 빈과 직접 만들던 3곳(네이버 데이터랩·오피넷·기상) 모두 연결 10초·읽기 60초(`RestTemplateConfig`)
 - [ ] 프론트 lint 기존 오류(prop-types 등) 정리 후 CI 에 lint 추가
 - [ ] `pipeline_onion.py` 의 pandas 경고(FutureWarning·PerformanceWarning) 정리
 - [ ] 예전 문서 정리: `KCSPfront/FUNCTIONAL_REQUIREMENTS.md`·`TEAM_NOTICE.md`·`KCSPback/README.md` 는 초기(2026-05) 계획 기준이라 지금 구현과 다르다

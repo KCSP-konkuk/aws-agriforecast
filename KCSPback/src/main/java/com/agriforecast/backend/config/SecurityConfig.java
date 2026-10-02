@@ -1,5 +1,6 @@
 package com.agriforecast.backend.config;
 
+import com.agriforecast.backend.security.CollectLocalOnlyFilter;
 import com.agriforecast.backend.security.JwtAuthFilter;
 import com.agriforecast.backend.security.JwtProvider;
 import com.agriforecast.backend.service.AccountService;
@@ -34,6 +35,8 @@ public class SecurityConfig {
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .addFilterBefore(new JwtAuthFilter(jwtProvider, accountService::isActive), UsernamePasswordAuthenticationFilter.class)
+            // 수집 트리거는 서버 안(8080 직접)에서만 — nginx 를 거친 외부 요청은 403
+            .addFilterBefore(new CollectLocalOnlyFilter(), UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
                 // 커뮤니티 글·댓글 작성/수정/삭제는 로그인 필요. 조회는 누구나
                 .requestMatchers(HttpMethod.POST, "/api/community/**").authenticated()

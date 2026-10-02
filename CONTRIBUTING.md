@@ -82,6 +82,11 @@ flowchart LR
 
 타이머 파일의 `OnCalendar` 는 **UTC** 로 적혀 있다(서버 TZ 가 UTC). KST 로 착각하지 말 것.
 
+**수집 트리거 수동 실행** — `/api/collect/**` 는 nginx 를 거친 외부 요청을 403 으로 막는다(`CollectLocalOnlyFilter`, nginx 가 붙이는 `X-Real-IP` 로 구분). 서버에 SSH 로 들어가 8080 에 직접 보낸다:
+```bash
+ssh ubuntu@<서버> 'curl -s -X POST localhost:8080/api/collect/community/brief'
+```
+
 Ubuntu 자동 업데이트(`apt-daily-upgrade`)가 매일 **06:00\~07:00 UTC(15\~16시 KST)** 에 돌고, MySQL 이 쓰는 라이브러리를 올리면 MySQL 이 몇 초 재시작된다(2026-09-29 `libevent` 업데이트로 약 8초). 이때 배포 검증 실행이 겹치면 DB 접속이 거부된다 — 파이프라인은 DB 접속을 30초 간격 3번까지 다시 시도한다(`DB_TRY`·`DB_WAIT`).
 
 ## 4. PR
