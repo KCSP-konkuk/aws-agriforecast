@@ -3,9 +3,9 @@
 지키려는 것
   - 예측 대상 순과 그 뒤의 값(소매·가락)이 표·피쳐에 새지 않는다
   - 목표는 경동·복조리의 그날 평균(있는 곳만) → 순 평균이다
-  - 피쳐 목록이 실험(redpepper experiments/retail features.py: 소매+가락+소매막판)과 같다 — 바꾸면 이 테스트부터 고칠 것
-  - 모델 설정이 redpepper best_pepper5.json·best_{품목}5.json h=1 상위 5개와 같다
-  - 애호박·시금치는 g 를 KAMIS 도매(DB)로 받고, 도매 적재 전이면 건너뛴다
+  - 피쳐 목록이 실험(model-research experiments/retail features.py: 소매+가락+소매막판, 품목별 groups)과 같다 — 바꾸면 이 테스트부터 고칠 것
+  - 모델 설정이 model-research best_pepper5.json·best_{품목}5.json h=1 상위 5개와 같다
+  - 애호박·시금치·오이는 g 를 KAMIS 도매(DB)로 받고, 도매 적재 전이면 건너뛴다
 """
 import os
 import sys
@@ -101,12 +101,13 @@ def test_대상_행의_필수_피쳐가_있다(built):
 
 
 def test_모델_설정은_검증에서_고른_상위_5개():
-    assert set(pr.MODELS) == set(pr.ITEMS) == {'붉은고추', '양배추', '양파', '애호박', '시금치'} and pr.SEEDS == 12
+    assert set(pr.MODELS) == set(pr.ITEMS) == {'붉은고추', '양배추', '양파', '애호박', '시금치', '오이'} and pr.SEEDS == 12
     assert [k for k, _ in pr.MODELS['붉은고추']] == [None, None, 15, None, None]
     assert [k for k, _ in pr.MODELS['양배추']] == [15, 15, 15, None, 15]
     assert [k for k, _ in pr.MODELS['양파']] == [15, None, 15, 15, 15]
     assert [k for k, _ in pr.MODELS['애호박']] == [None, None, 15, None, 15]
     assert [k for k, _ in pr.MODELS['시금치']] == [15, None, None, None, None]
+    assert [k for k, _ in pr.MODELS['오이']] == [15, 15, None, None, None]
     for item, models in pr.MODELS.items():
         assert len(models) == 5 and all(len(p) == 7 for _, p in models), item   # 파라미터 7개를 모두 적는다
     assert pr.BASE_PARAMS['objective'] == 'reg:absoluteerror'
@@ -138,11 +139,18 @@ def test_직전_순_소매가_없으면_건너뛴다(garak):
 
 def test_시금치는_달력_피쳐가_뒤에_붙는다(built):
     df, _ = built
-    X = pr.features(df, pr.EXTRA_FEATURES['시금치'])
+    X = pr.features(df, pr.GROUPS['시금치'])
     assert list(X.columns) == EXPECTED_COLUMNS + ['month', 'pidx', 'soon36']
     k = pr.soon_index(TARGET)
     assert X.loc[k, ['month', 'pidx', 'soon36']].tolist() == [9, 2, 26]
-    assert pr.EXTRA_FEATURES.get('애호박', ()) == ()
+    assert pr.GROUPS.get('애호박', pr.DEFAULT_GROUPS) == pr.DEFAULT_GROUPS
+
+
+def test_오이는_소매_막판이_빠진다(built):
+    df, _ = built
+    X = pr.features(df, pr.GROUPS['오이'])
+    assert list(X.columns) == EXPECTED_COLUMNS[:-2]
+    assert 'r_last_vs_mean' not in X.columns     # REQUIRED 검사는 있는 피쳐만 본다
 
 
 def test_KAMIS_도매_품목은_도매를_읽고_나머지는_가락():
@@ -152,10 +160,11 @@ def test_KAMIS_도매_품목은_도매를_읽고_나머지는_가락():
     pr.load_garak = lambda conn, csv, it: calls.append(('g', csv, it))
     try:
         pr.load_g(None, '애호박')
+        pr.load_g(None, '오이')
         pr.load_g(None, '양파')
     finally:
         pr.load_wholesale, pr.load_garak = saved
-    assert calls == [('w', '애호박'), ('g', 'hist_daily_onion.csv', '양파')]
+    assert calls == [('w', '애호박'), ('w', '오이'), ('g', 'hist_daily_onion.csv', '양파')]
 
 
 def test_KAMIS_도매가_아직_없으면_건너뛴다(garak):

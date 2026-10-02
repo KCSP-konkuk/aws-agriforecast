@@ -35,7 +35,7 @@ public class RetailMarketPrice {
     @Column(name = "MARKET_NAME", nullable = false, length = 30)
     private String marketName;
 
-    /** 소매가 (원, 조사 단위 기준 — 양파 1kg / 붉은고추 100g / 양배추 1포기 / 애호박 1개 / 시금치 100g) */
+    /** 소매가 (원, 조사 단위 기준 — 양파 1kg / 붉은고추 100g / 양배추 1포기 / 애호박 1개 / 시금치 100g / 오이 10개) */
     @Column(name = "PRICE", nullable = false)
     private Integer price;
 }

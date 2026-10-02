@@ -12,7 +12,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * KAMIS 도매(16번) 수집. 응답 모양은 소매와 같다('평균'·'평년' + 시장별 행, 서울 시장 = 가락도매 —
- * redpepper data/retail/wholesale_seoul_2014.csv 가 이 모양에서 나왔다). 외부 요청 없음
+ * model-research data/retail/wholesale_seoul_2014.csv 가 이 모양에서 나왔다). 외부 요청 없음
  */
 class KamisWholesaleServiceTest {
 
