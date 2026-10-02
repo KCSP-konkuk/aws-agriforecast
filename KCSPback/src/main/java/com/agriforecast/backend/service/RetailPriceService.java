@@ -15,7 +15,7 @@ import java.util.*;
 /**
  * 홈 '서울 전통시장 소매가' 섹션 조회 (retail_market_price · retail_predictions 읽기 전용)
  * 가격 = 경동·복조리 두 전통시장의 그날 값 평균(있는 곳만). 소매 예측 모델의 목표와 같은 기준이다.
- *   서울 평균(retail_price)은 대형유통이 섞여 판매처 구성이 바뀔 때 출렁여서 쓰지 않는다 (redpepper docs/RETAIL.md)
+ *   서울 평균(retail_price)은 대형유통이 섞여 판매처 구성이 바뀔 때 출렁여서 쓰지 않는다 (model-research docs/RETAIL.md)
  * 순: 1~10일 상순 / 11~20일 중순 / 21일~ 하순 — 예측 모델과 같은 규칙
  */
 @Service
@@ -34,7 +34,7 @@ public class RetailPriceService {
 
     /** 조사 단위 — 데이터가 없는 품목에도 카드에 단위를 보이려고 고정해 둔다 */
     static final Map<String, String> UNITS = Map.of("양파", "1kg", "붉은고추", "100g", "양배추", "1포기",
-            "애호박", "1개", "시금치", "100g");
+            "애호박", "1개", "시금치", "100g", "오이", "10개");
 
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
