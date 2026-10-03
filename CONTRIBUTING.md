@@ -77,6 +77,7 @@ flowchart LR
 | 양파 예측 | 매일 05:50 (+최대 10분) | `KCSPmodel/batch/agriforecast-predict-onion.timer` |
 | 홍고추 예측 | 매일 06:10 (+최대 10분) | `KCSPmodel/batch/agriforecast-predict-redpepper.timer` |
 | 소매가 예측 (붉은고추·양배추·양파·애호박·시금치·오이) | 매일 12:10 (+최대 5분) | `KCSPmodel/batch/agriforecast-predict-retail.timer` — 백엔드 소매·KAMIS 도매(09:30·17:30)·가락(11:00) 수집 뒤 |
+| 대시보드 인사이트 (소매 예측 품목) | 매일 12:40 (+최대 2분) | `KCSPmodel/batch/agriforecast-insight.timer` — 소매 예측(12:10) 뒤. 품목은 `pipeline_retail.ITEMS` 를 따른다 |
 | 검색량 전체 갱신 | 매일 10:30 | `KCSPback` `SearchTrendScheduler` — 2016-01-01\~어제를 한 번에 다시 받는다 |
 | 가격·반입량 등 그 밖의 수집 | 백엔드 스케줄러 | `KCSPback` 의 `@Scheduled` |
 

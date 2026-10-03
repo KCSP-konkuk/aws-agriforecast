@@ -1,0 +1,11 @@
+[Unit]
+Description=AgriForecast 대시보드 인사이트 매일 실행
+
+[Timer]
+# 12:40 KST. 소매 예측(12:10, 최대 5분 지연) 뒤라 그날 예측을 결론 문장에 쓴다.
+OnCalendar=*-*-* 03:40:00 UTC
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

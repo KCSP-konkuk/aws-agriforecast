@@ -26,7 +26,7 @@ jobs:
       - name: Install deps (서버와 같은 고정 버전)
         run: pip install -r requirements.txt pytest
       - name: Compile pipelines
-        run: python -m py_compile pipeline.py pipeline_onion.py pipeline_redpepper.py pipeline_retail.py backtest.py
+        run: python -m py_compile pipeline.py pipeline_onion.py pipeline_redpepper.py pipeline_retail.py backtest.py pipeline_insight.py
       - name: Pytest
         run: python -m pytest -q tests
 
@@ -68,7 +68,9 @@ jobs:
             --tests 'com.agriforecast.backend.controller.AccountAuthTest' \
             --tests 'com.agriforecast.backend.controller.CollectGuardTest' \
             --tests 'com.agriforecast.backend.service.AccountServiceTest' \
-            --tests 'com.agriforecast.backend.service.PasswordResetServiceTest'
+            --tests 'com.agriforecast.backend.service.PasswordResetServiceTest' \
+            --tests 'com.agriforecast.backend.service.DashboardServiceTest' \
+            --tests 'com.agriforecast.backend.controller.DashboardControllerTest'
 
   frontend:
     runs-on: ubuntu-latest
