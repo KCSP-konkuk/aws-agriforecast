@@ -272,6 +272,21 @@ export const api = {
     return await response.json();
   },
 
+  // 대시보드 — 인사이트가 계산된 품목 목록 (배치가 매일 12:40 KST 계산)
+  getDashboardItems: async () => {
+    const response = await fetch(`${API_BASE_URL}/dashboard/items`);
+    if (!response.ok) throw new Error('대시보드 품목을 불러오는데 실패했습니다.');
+    return await response.json();
+  },
+
+  // 대시보드 — 품목 인사이트. 아직 계산 전이면 null
+  getDashboard: async (itemName) => {
+    const response = await fetch(`${API_BASE_URL}/dashboard?item=${encodeURIComponent(itemName)}`);
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error('대시보드를 불러오는데 실패했습니다.');
+    return await response.json();
+  },
+
   // 모든 품목 목록 조회
   getItems: async () => {
     const response = await fetch(`${API_BASE_URL}/price/items`);
