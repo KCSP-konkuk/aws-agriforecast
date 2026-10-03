@@ -11,6 +11,7 @@ import CommunityView from './pages/CommunityView';
 import CommunityViewMy from './pages/CommunityViewMy';
 import Detail from './pages/Detail';
 import MyPage from './pages/MyPage';
+import Dashboard from './pages/Dashboard';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route path="/community/:id" element={<CommunityView />} />
         <Route path="/detail" element={<Detail />} />
         <Route path="/mypage" element={<MyPage />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </Router>
   );
