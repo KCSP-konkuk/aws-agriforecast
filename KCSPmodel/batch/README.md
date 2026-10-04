@@ -7,7 +7,9 @@
 | 홍고추 | `pipeline_redpepper.py` | `redpepper_predictions` | 06:10 (+최대 10분) | `journalctl -u agriforecast-predict-redpepper` |
 | 소매 (붉은고추·양배추·양파·애호박·시금치·오이) | `pipeline_retail.py` | `retail_predictions` (품목·순) | 12:10 (+최대 5분) | `journalctl -u agriforecast-predict-retail` |
 | 대시보드 인사이트 (소매 품목 전부) | `pipeline_insight.py` | `item_insight` (품목당 JSON) | 12:40 (+최대 2분) | `journalctl -u agriforecast-insight` |
+| 분석 작업대 통합 시계열 | `pipeline_series.py` | `series_catalog` · `series_value` | 12:50 (+최대 2분) | `journalctl -u agriforecast-series` |
 
+- 통합 시계열은 흩어진 지표(KAMIS 소매·도매, 가락 경매가·반입량, 기상, 환율, 유가, 물가, 검색량)를 지표 · 날짜 · 값 한 모양으로 모은다. 품목·지점·검색어는 원본 테이블과 레포 CSV 에서 찾는다. 설계는 `docs/superpowers/specs/2026-10-04-analysis-workbench-design.md`
 - 인사이트는 예측이 아니라 대시보드 화면용 요약이다. `pipeline_retail` 의 품목·데이터 읽기·피쳐·모델 설정을 import 해 요인 기여도를 계산하므로(시드만 2개) 소매 품목이 늘면 다음 실행부터 따라온다. 파일에 품목 이름이 없다는 것을 테스트가 지킨다
 - 품목마다 입력·모델이 다르다. 차이는 각 파이프라인 파일 맨 위 설명에 적혀 있다 — **다른 품목 코드를 복사해 쓰기 전에 읽을 것**
   - 홍고추는 가격을 직접 맞히지 않고 비율을 맞힌다, DB 대신 농넷·데이터랩을 직접 받는다, 서버 캐시(`data/cache_*.csv`)를 쓴다
