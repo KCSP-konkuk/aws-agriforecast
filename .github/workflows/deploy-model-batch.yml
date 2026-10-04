@@ -47,6 +47,7 @@ jobs:
             cp /home/ubuntu/deploy/model/pipeline_retail.py $APP/pipeline_retail.py   # 소매가(DB 입력, hist_daily_redpepper 사용)
             cp /home/ubuntu/deploy/model/backtest.py       $APP/backtest.py   # 세 파이프라인이 import 한다
             cp /home/ubuntu/deploy/model/pipeline_insight.py $APP/pipeline_insight.py   # 대시보드 인사이트(pipeline_retail 을 import)
+            cp /home/ubuntu/deploy/model/pipeline_series.py $APP/pipeline_series.py     # 분석 작업대 통합 시계열(pipeline_retail 을 import)
             cp /home/ubuntu/deploy/model/data/hist_*.csv $APP/data/
             for f in weather_haenam weather_taebak weather_miryang; do
               [ -f "$APP/data/$f.csv" ] || cp /home/ubuntu/deploy/model/data/$f.csv $APP/data/
@@ -62,6 +63,8 @@ jobs:
             sudo cp /home/ubuntu/deploy/model/agriforecast-predict-retail.timer   /etc/systemd/system/
             sudo cp /home/ubuntu/deploy/model/agriforecast-insight.service /etc/systemd/system/
             sudo cp /home/ubuntu/deploy/model/agriforecast-insight.timer   /etc/systemd/system/
+            sudo cp /home/ubuntu/deploy/model/agriforecast-series.service /etc/systemd/system/
+            sudo cp /home/ubuntu/deploy/model/agriforecast-series.timer   /etc/systemd/system/
             sudo systemctl daemon-reload
             # --now 가 있어야 지금 바로 뜬다. enable 만 하면 다음 부팅까지 inactive 다.
             sudo systemctl enable --now agriforecast-predict.timer
@@ -69,12 +72,13 @@ jobs:
             sudo systemctl enable --now agriforecast-predict-redpepper.timer
             sudo systemctl enable --now agriforecast-predict-retail.timer
             sudo systemctl enable --now agriforecast-insight.timer
+            sudo systemctl enable --now agriforecast-series.timer
 
             # 품목별로 한 번씩 돌려 실제로 동작하는지 확인. 하나라도 실패하면 배포 실패다.
             FAILED=""
             # 소매는 백엔드 첫 적재(2014~) 전이면 경고만 남기고 성공으로 끝난다(다음 타이머 실행에서 예측)
             # 인사이트는 소매 예측 뒤에 돌려야 그날 예측을 쓴다 — 순서 유지
-            for u in agriforecast-predict agriforecast-predict-onion agriforecast-predict-redpepper agriforecast-predict-retail agriforecast-insight; do
+            for u in agriforecast-predict agriforecast-predict-onion agriforecast-predict-redpepper agriforecast-predict-retail agriforecast-insight agriforecast-series; do
               sudo systemctl start $u.service || true
               RESULT=$(systemctl show $u.service -p Result --value)
               echo "--- $u (Result=$RESULT)"

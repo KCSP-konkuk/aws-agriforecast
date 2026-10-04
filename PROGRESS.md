@@ -5,7 +5,7 @@
 - PR 을 머지하거나 새 작업을 시작하면 이 문서도 같이 고친다 (`docs:` 커밋)
 - 서버 주소·키 값은 적지 않는다 (CONTRIBUTING 3·6절)
 
-마지막 갱신: 2026-10-02 (릴리스 #56 오이 배포, 수집 트리거 차단·외부 API 타임아웃)
+마지막 갱신: 2026-10-04 (릴리스 #60 대시보드, 분석 작업대 설계·1단계 착수)
 
 ---
 
@@ -96,11 +96,15 @@
 - #55 오이 다다기 소매 예측 — KAMIS 소매·도매 수집 품목에 오이(223/02), `pipeline_retail.py` 품목별 피쳐 그룹(`GROUPS`, 오이는 소매 + 도매만). 실험 레포 이름 변경(redpepper → model-research) 반영
 - 배포 확인: 오이 소매 28,007건·도매 3,126건 첫 적재, 배포 워크플로 검증 실행에서 여섯 품목 모두 예측(오이 202610상순 7,812원/10개)
 
+### 2026-10-03 배포 (릴리스 #60)
+- #59 **대시보드 탭** — 소매 예측 6품목의 한 줄 결론 · 가격을 움직이는 요인(올림·내림 저울) · 지금 상황판(레이더) · 무슨 일이 있었나(사건 타임라인) · 비슷했던 과거 · 앞으로의 흐름(도매→소매 반영 시차, 1년 가격 달력). 배치 `pipeline_insight.py`(매일 12:40 KST, `item_insight`), API `GET /api/dashboard/items` · `GET /api/dashboard?item=`
+- 배포 확인: 배치 배포 검증에서 `agriforecast-insight` Result=success, 6품목 모두 저장(약 1분 30초). 백엔드 헬스체크·프론트 배포 성공
+
 ## 3. 진행 중
 
 | PR | 내용 | 남은 일 |
 |---|---|---|
-| 이 PR | **대시보드 탭** 추가 — 소매 예측 6품목의 가격 인사이트를 쉬운 문장과 그림으로(한 줄 결론 · 요인 저울 · 상황판 · 사건 타임라인 · 비슷했던 과거 · 앞으로의 흐름). 배치 `pipeline_insight.py`(매일 12:40 KST, `item_insight`), API `GET /api/dashboard/items` · `GET /api/dashboard?item=` | 머지 → 릴리스 → 배치 배포 검증에서 `agriforecast-insight` Result=success → `/dashboard` 화면 확인 → 각 기능을 어디에 둘지 결정 |
+| 이 PR | **분석 작업대 1단계 — 통합 시계열**. 흩어진 지표(KAMIS 소매·도매, 가락 경매가·반입량, 관측소·산지 기상, 환율, 유가, 물가, 검색량)를 `series_catalog`·`series_value` 로 모으는 배치 `pipeline_series.py`(매일 12:50 KST). 설계 `docs/superpowers/specs/2026-10-04-analysis-workbench-design.md` | 머지 → 릴리스 → 배치 배포 검증에서 `agriforecast-series` Result=success → 다음 PR(시계열 API) |
 | #57 | 수집 트리거(`/api/collect/**`) 외부 차단, 외부 API RestTemplate 타임아웃(연결 10초·읽기 60초), 순 첫날 정오 전 홈 카드 '오늘 12시 공개' 문구, 이 문서 갱신 | 머지 → 릴리스 → 외부에서 `POST /api/collect/...` 403 · 서버 안 `curl localhost:8080/...` 동작 확인 |
 
 ---

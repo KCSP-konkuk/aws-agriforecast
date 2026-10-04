@@ -1,0 +1,11 @@
+[Unit]
+Description=AgriForecast 분석 작업대 통합 시계열 매일 적재
+
+[Timer]
+# 12:50 KST. 백엔드 수집(09:30~12:00)·소매 예측(12:10)·인사이트(12:40) 뒤.
+OnCalendar=*-*-* 03:50:00 UTC
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target
