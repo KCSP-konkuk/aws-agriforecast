@@ -6,7 +6,7 @@ import { getUser } from '../auth';
 
 const NAV_ITEMS = [
   { to: '/', label: '홈', end: true },
-  { to: '/detail', label: '상세검색' },
+  { to: '/detail', label: '도매 예측' },
   { to: '/community', label: '커뮤니티' },
   { to: '/analysis', label: '분석' },
 ];

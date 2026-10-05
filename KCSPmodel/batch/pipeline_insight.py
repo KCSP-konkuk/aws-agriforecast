@@ -45,6 +45,8 @@ TIMELINE_SOONS = 72        # 무슨 일이 있었나: 최근 2년
 MAX_EVENTS = 10
 ANALOGS = 3
 LAG_DAYS = 28
+TRACK_N = 12               # 예측 기록: 실제가 나온 최근 12순으로 정확도를 말한다
+TRACK_FLAT = 0.01          # 예측 기록의 방향: ±1% 안은 '비슷' (한 줄 결론과 같은 기준)
 FLAT = 0.005              # ±0.5% 안의 변화는 '거의 그대로'
 
 log = logging.getLogger('pipeline_insight')
@@ -625,6 +627,29 @@ def transmission(retail, garak, today, item):
     return dict(lagDays=best, linked=bool(lags[best] >= 0.15), lags=lags, text=text, signal=signal)
 
 
+# ---------------------------------------------------------------- 예측 기록
+def direction_of(chg):
+    return 'flat' if abs(chg) < TRACK_FLAT else 'up' if chg > 0 else 'down'
+
+
+def track_record(rows, df):
+    """지난 운영 예측이 얼마나 맞았나 — rows: [(대상 순, 예측가, 실제가)].
+    평균 오차 %와, 직전 순 실제가 대비 방향(오름·내림·비슷)을 맞힌 순 수. 기록이 없으면 None"""
+    errs, hits, judged, first = [], 0, 0, None
+    for target, pred, actual in sorted((str(t), p, a) for t, p, a in rows):
+        if pred is None or not actual:
+            continue
+        errs.append(abs(pred - actual) / actual * 100)
+        first = first or target
+        prev = df.y.get(pr.soon_index(target) - 1)
+        if prev is not None and np.isfinite(prev) and prev:
+            judged += 1
+            hits += int(direction_of(pred / prev - 1) == direction_of(actual / prev - 1))
+    if not errs:
+        return None
+    return dict(n=len(errs), mape=round(sum(errs) / len(errs), 1), hits=hits, judged=judged, since=soon_label(first))
+
+
 # ---------------------------------------------------------------- 한 줄 결론 · 묶기
 def headline(item, target, pred, prev, factors, source):
     chg = pred / prev - 1
@@ -642,7 +667,7 @@ def headline(item, target, pred, prev, factors, source):
 
 
 def build_insight(item, retail, garak, target, extras, prediction=None, unit='', today=None, models=None,
-                  seeds=EXPLAIN_SEEDS):
+                  seeds=EXPLAIN_SEEDS, track_rows=None):
     """DB 없이 도는 본체. 학습 표본이 모자라거나 직전 순 소매·도매 값이 없으면 None (운영 예측과 같은 기준)"""
     df = pr.build_frame(retail, garak, target)
     X = pr.features(df, pr.GROUPS.get(item, pr.DEFAULT_GROUPS))
@@ -666,6 +691,7 @@ def build_insight(item, retail, garak, target, extras, prediction=None, unit='',
         priceLabel='서울 전통시장 소매가 (경동·복조리 평균, KAMIS)', wholesaleName=wholesale_name(item),
         wholesaleLabel=wholesale_source(item), generatedAt=datetime.now(pr.KST).isoformat(timespec='minutes'),
         headline=headline(item, target, pred, prev, factors, source),
+        track=track_record(track_rows or [], df),
         factors=factors,
         board=board(df, ind, tk),
         timeline=timeline(df, ind, item, tk),
@@ -687,6 +713,17 @@ def load_prediction(conn, item, target):
         log.warning('%s: 운영 예측 조회 실패(%s) — 인사이트 재학습 값 사용', item, e)
         return None
     return float(rows[0][0]) if rows and rows[0][0] is not None else None
+
+
+def load_track(conn, item):
+    """운영 소매 예측의 지난 기록(실제가가 나온 최근 순들). 테이블이 없거나 실패하면 빈 목록"""
+    try:
+        return query(conn, f"""SELECT target_date, predicted_price, actual_price FROM {pr.TABLE}
+                               WHERE item_name=%s AND actual_price IS NOT NULL
+                               ORDER BY target_date DESC LIMIT {TRACK_N}""", (item,))
+    except Exception as e:      # noqa: BLE001
+        log.warning('%s: 예측 기록 조회 실패(%s)', item, e)
+        return []
 
 
 def load_unit(conn, item):
@@ -716,7 +753,8 @@ def run_item(conn, item, target):
     retail = pr.load_retail(conn, item)
     garak = pr.load_g(conn, item)
     payload = build_insight(item, retail, garak, target, load_extras(conn, item),
-                            prediction=load_prediction(conn, item, target), unit=load_unit(conn, item))
+                            prediction=load_prediction(conn, item, target), unit=load_unit(conn, item),
+                            track_rows=load_track(conn, item))
     if payload is None:
         log.warning('%s: 직전 순 소매·도매 값이 없거나 학습 표본이 모자라 건너뜀', item)
         return None
