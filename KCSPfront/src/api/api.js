@@ -238,40 +238,6 @@ export const api = {
 
   // ========== 가격 API ==========
 
-  // 네이버 농산물 뉴스 조회
-  getAgriNews: async () => {
-    const response = await fetch(`${API_BASE_URL}/news/agri`);
-    if (!response.ok) {
-      throw new Error('뉴스를 불러오는데 실패했습니다.');
-    }
-    return await response.json();
-  },
-
-  // KAMIS 주요 농산물 일일 가격 조회
-  getDailyPrices: async () => {
-    const response = await fetch(`${API_BASE_URL}/price/daily`);
-    if (!response.ok) {
-      throw new Error('일일 가격 데이터를 불러오는데 실패했습니다.');
-    }
-    return await response.json();
-  },
-
-  // KAMIS 서울 소매가 요약 (홈 카드)
-  getRetailSummary: async () => {
-    const response = await fetch(`${API_BASE_URL}/price/retail/summary`);
-    if (!response.ok) throw new Error('소매가 데이터를 불러오는데 실패했습니다.');
-    return await response.json();
-  },
-
-  // KAMIS 서울 소매가 추이 (unit: 'daily' | 'soon')
-  getRetailSeries: async (itemName, unit) => {
-    const response = await fetch(
-      `${API_BASE_URL}/price/retail/series?itemName=${encodeURIComponent(itemName)}&unit=${unit}`
-    );
-    if (!response.ok) throw new Error('소매가 추이를 불러오는데 실패했습니다.');
-    return await response.json();
-  },
-
   // 분석 작업대 — 고를 수 있는 지표 목록 (배치가 매일 12:50 KST 모은다)
   getSeriesCatalog: async () => {
     const response = await fetch(`${API_BASE_URL}/series/catalog`);
