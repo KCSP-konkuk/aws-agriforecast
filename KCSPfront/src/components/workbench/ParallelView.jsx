@@ -142,7 +142,7 @@ export default function ParallelView({ rows, lines, conditions, match, freq, onC
           );
         })}
       </svg>
-      <p className="mt-1 text-xs text-subtext-light">
+      <p className="mt-1 text-xs text-subtext-light" data-export="skip">
         선 {complete.length.toLocaleString('ko-KR')}개({FREQ_LABEL[freq]}, 모든 지표가 있는 칸) · 색은 연도(옅을수록 예전) · 축을 위아래로 끌면 조건, 한 번 누르면 그 축 조건을 지워요
       </p>
     </div>

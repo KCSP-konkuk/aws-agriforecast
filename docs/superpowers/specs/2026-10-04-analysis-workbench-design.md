@@ -191,6 +191,7 @@ series_value (
   - `FilterBar` (조건) · `DataTable` (정렬된 표) · `ExportMenu` (CSV·PNG·링크) · `TemplateGallery`
   - `lib/series.js` — 주기 맞추기, 변환, 시차, 정렬, 상관, 시차 상관, 조건 (순수 함수)
 - 색은 tailwind 토큰 + 차트용 범주 색 8개(고른 순서대로 고정)
+- 구현 메모(PR6): '이미지 저장'은 차트 영역을 PNG 로 만든 뒤 위에 제목·설명(주기 · 기간 · 축 · 조건), 아래에 출처·날짜를 캔버스로 붙인다. SVG·HTML 차트는 `html-to-image`(누를 때만 받음), 3D 는 `Plotly.toImage`. 조작 칸(축·기준 고르기, 안내)은 `data-export="skip"` 으로 뺀다. 오늘의 요약 카드마다 '작업대에서 열기'(상황판 → 상황 공간 3D, 무슨 일이 있었나 → 도매가와 겹쳐 보기, 비슷했던 과거 → 비슷한 상황 찾기, 앞으로의 흐름 → 시차 상관 · 가격 지형도)
 - 구현 메모(PR4): Plotly 는 3D 두 가지(3D 산점도 · 지형도 3D)에만 쓰고, 3D 전용 묶음(`plotly.js-gl3d-dist-min`, gzip 약 560KB)을 그 차트를 처음 열 때 동적 import 한다. 평행 좌표 · 시차 상관 · 지형도 평면은 SVG · HTML 로 직접 그려 조건과 바로 잇는다(평행 좌표 축 끌기 = 조건). 조건은 주소 `q=지표,최소,최대;…`(비운 쪽은 열림), 3D 축은 `x·y·z`, 3D 색은 `cz=season|year|지표 순번`
 
 ## 7. 홈 개편

@@ -29,13 +29,13 @@ function TimelineTooltip({ active, payload, events, unit }) {
 }
 
 // ④ 무슨 일이 있었나 — 최근 2년 소매가와 자동 감지한 사건
-export default function EventTimeline({ data }) {
+export default function EventTimeline({ data, actions }) {
   const { series, events } = data.timeline;
   const bySoon = Object.fromEntries(series.map((s) => [s.soon, s]));
   const dots = events.filter((e) => bySoon[e.soon]?.retail != null);
 
   return (
-    <DashboardCard icon="event_note" title="무슨 일이 있었나" subtitle="최근 2년 소매가 흐름과 그 사이 있었던 일이에요. 점에 마우스를 올리면 내용이 보여요">
+    <DashboardCard icon="event_note" actions={actions} title="무슨 일이 있었나" subtitle="최근 2년 소매가 흐름과 그 사이 있었던 일이에요. 점에 마우스를 올리면 내용이 보여요">
       <ResponsiveContainer width="100%" height={240}>
         <LineChart data={series} margin={{ top: 10, right: 12, left: 0, bottom: 5 }}>
           <CartesianGrid stroke={COLOR.grid} strokeOpacity={0.5} vertical={false} />

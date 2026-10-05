@@ -104,6 +104,16 @@ export const LAG_OPTIONS = {
   m: [-6, -3, -2, -1, 0, 1, 2, 3, 6],
 };
 
+// 차트 종류: [키, 이름, 아이콘]
+export const CHARTS = [
+  ['line', '시계열', 'show_chart'],
+  ['scatter', '산점도', 'scatter_plot'],
+  ['scatter3d', '3D 산점도', 'view_in_ar'],
+  ['parallel', '평행 좌표', 'stacked_line_chart'],
+  ['lag', '시차 상관', 'grid_on'],
+  ['terrain', '가격 지형도', 'landscape'],
+];
+
 export const PERIODS = [
   ['1y', '1년'],
   ['3y', '3년'],

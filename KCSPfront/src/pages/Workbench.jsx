@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import StatusMessage from '../components/StatusMessage';
@@ -34,7 +34,8 @@ import FilterBar from '../components/workbench/FilterBar';
 import ConditionSummary from '../components/workbench/ConditionSummary';
 import DataTable from '../components/workbench/DataTable';
 import { defaultState, TEMPLATES } from '../components/workbench/templates';
-import { conditionText, lagLabel, spanLabel } from '../components/workbench/format';
+import { CHARTS, conditionText, lagLabel, spanLabel } from '../components/workbench/format';
+import { saveChartImage } from '../components/workbench/exportImage';
 
 const NATIVE = { daily: 'd', soon: 's', monthly: 'm' };
 const EMPTY = readState(new URLSearchParams());
@@ -91,6 +92,9 @@ export default function Workbench() {
   const [load, setLoad] = useState({ busy: false, error: false });
   const [retry, setRetry] = useState(0);
   const [dropped, setDropped] = useState(0);
+  const chartRef = useRef(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportFailed, setExportFailed] = useState(false);
 
   useEffect(() => {
     api
@@ -229,6 +233,43 @@ export default function Workbench() {
     setParams(writeState(normalize({ ...EMPTY, ...built }, catById, built.freq)));
   };
 
+  // 이미지 저장 — 제목(차트 · 지표), 설명(주기 · 기간 · 축 · 조건), 출처를 붙인다
+  const exportChart = async () => {
+    if (!chartRef.current || exporting) return;
+    setExporting(true);
+    setExportFailed(false);
+    const chartName = CHARTS.find(([k]) => k === state.chart)?.[1] ?? '차트';
+    const base = lines[state.y] ?? lines[0];
+    const shown = state.chart === 'terrain' ? [base] : lines;
+    const terrain = state.chart === 'terrain';
+    const detail = {
+      scatter: lines.length > 1 ? `가로 ${(lines[state.x] ?? lines[0]).name} · 세로 ${base.name}` : '',
+      lag: `기준 지표 ${base.name}`,
+      terrain: `${base.unitLabel} · 모든 해`,
+    }[state.chart];
+    const conditioned = ['line', 'scatter', 'scatter3d', 'parallel'].includes(state.chart) && state.conditions.length > 0;
+    const subtitle = [
+      terrain ? `${freq === 'm' ? '월' : '순'} 단위` : `${FREQ_LABEL[freq]} 단위`,
+      !terrain && rows.length ? spanLabel(rows[0].key, rows[rows.length - 1].key) : '',
+      detail,
+      conditioned ? `조건: ${state.conditions.map((c) => conditionText(lines.find((l) => l.id === c.id), c)).join(' 그리고 ')}` : '',
+    ]
+      .filter(Boolean)
+      .join(' · ');
+    try {
+      await saveChartImage(chartRef.current, {
+        title: `${chartName} — ${shown.map((l) => l.name).join(', ')}`,
+        subtitle,
+        footer: `출처: ${[...new Set(shown.map((l) => l.source))].join(' · ')} · AgriForecast 분석 작업대 ${new Date().toISOString().slice(0, 10)}`,
+        fileName: `agriforecast-${chartName}-${shown.map((l) => l.name).join('-')}`,
+      });
+    } catch {
+      setExportFailed(true);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // 지표마다 기간이 다르면 모두 있는 기간을 알린다(산점도·상관은 함께 있는 칸만 쓴다)
   const spans = Object.values(prepared)
     .filter((p) => p.length)
@@ -279,8 +320,9 @@ export default function Workbench() {
     const ownSummary = state.chart === 'lag' || state.chart === 'terrain'; // 이 둘은 차트 안에 해석이 있다
     body = (
       <div className={`space-y-4 transition-opacity ${load.busy ? 'opacity-60' : ''}`}>
-        {(views[state.chart] ?? views.line)()}
+        <div ref={chartRef}>{(views[state.chart] ?? views.line)()}</div>
         <div className="space-y-1 text-xs text-subtext-light">
+          {exportFailed && <p className="text-red-600">이미지를 만들지 못했어요. 다시 눌러 보세요.</p>}
           {load.error && (
             <p className="text-red-600">
               일부 지표를 불러오지 못했어요.{' '}
@@ -345,6 +387,8 @@ export default function Workbench() {
                     to={state.to}
                     bounds={{ min: firstIso, max: lastIso, from: range.from ?? firstIso, to: lastIso }}
                     onChange={update}
+                    onExport={hasData ? exportChart : null}
+                    exporting={exporting}
                   />
                   {body}
                 </section>

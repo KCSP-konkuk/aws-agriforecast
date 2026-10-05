@@ -5,7 +5,7 @@ const SOON = ['상순', '중순', '하순'];
 const MONTHS = Array.from({ length: 12 }, (_, i) => `${i + 1}월`);
 
 // ⑥ 앞으로의 흐름 — 도매가가 소매가에 반영되는 시차와 1년 가격 달력(평년 기준)
-export default function FlowPanel({ data }) {
+export default function FlowPanel({ data, actions }) {
   const f = data.flow;
   const cal = f.calendar ?? [];
   const max = Math.max(0.01, ...cal.filter((v) => v != null).map(Math.abs));
@@ -17,7 +17,7 @@ export default function FlowPanel({ data }) {
   const strong = f.linked && f.lagDays != null;   // 도매·소매가 뚜렷하게 같이 움직일 때만 시차를 크게 보여 준다
 
   return (
-    <DashboardCard icon="timeline" title="앞으로의 흐름" subtitle={`${data.wholesaleLabel}와 소매가의 관계, 1년 중 가격이 오르내리는 시기예요`}>
+    <DashboardCard icon="timeline" actions={actions} title="앞으로의 흐름" subtitle={`${data.wholesaleLabel}와 소매가의 관계, 1년 중 가격이 오르내리는 시기예요`}>
       <div className="rounded-lg bg-background-light p-4">
         {strong && (
           <p className="text-xs text-subtext-light">
