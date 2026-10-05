@@ -24,7 +24,7 @@ export default function Headline({ data }) {
         {data.unit && <span>{data.unit} 기준</span>}
       </div>
       {h.source !== 'retail_model' && (
-        <p className="text-xs text-subtext-light mt-2">이번 순 운영 예측이 아직 없어 대시보드 계산값을 보여드려요.</p>
+        <p className="text-xs text-subtext-light mt-2">이번 순 운영 예측이 아직 없어 요약 계산값을 보여드려요.</p>
       )}
     </section>
   );

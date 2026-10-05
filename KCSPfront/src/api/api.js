@@ -272,6 +272,20 @@ export const api = {
     return await response.json();
   },
 
+  // 분석 작업대 — 고를 수 있는 지표 목록 (배치가 매일 12:50 KST 모은다)
+  getSeriesCatalog: async () => {
+    const response = await fetch(`${API_BASE_URL}/series/catalog`);
+    if (!response.ok) throw new Error('지표 목록을 불러오는데 실패했습니다.');
+    return await response.json();
+  },
+
+  // 분석 작업대 — 고른 지표의 값 (원래 주기 그대로, 최대 8개)
+  getSeriesData: async (ids) => {
+    const response = await fetch(`${API_BASE_URL}/series/data?ids=${encodeURIComponent(ids.join(','))}`);
+    if (!response.ok) throw new Error('지표 값을 불러오는데 실패했습니다.');
+    return await response.json();
+  },
+
   // 대시보드 — 인사이트가 계산된 품목 목록 (배치가 매일 12:40 KST 계산)
   getDashboardItems: async () => {
     const response = await fetch(`${API_BASE_URL}/dashboard/items`);
