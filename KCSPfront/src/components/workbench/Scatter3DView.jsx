@@ -144,7 +144,7 @@ export default function Scatter3DView({ rows, lines, x, y, z, cz, freq, match, o
 
   return (
     <div>
-      <div className="mb-2 flex flex-wrap items-center gap-3">
+      <div className="mb-2 flex flex-wrap items-center gap-3" data-export="skip">
         <Pick id="cube-x" label="X" value={String(x)} options={axisOptions} onChange={(v) => setAxis('x', Number(v))} />
         <Pick id="cube-y" label="Y" value={String(y)} options={axisOptions} onChange={(v) => setAxis('y', Number(v))} />
         <Pick id="cube-z" label="Z" value={String(z)} options={axisOptions} onChange={(v) => setAxis('z', Number(v))} />

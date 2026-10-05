@@ -30,7 +30,7 @@ export default function LagView({ lines, prepared, base, freq, conditioned, onBa
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-1.5 text-xs text-subtext-light">
+        <label className="flex items-center gap-1.5 text-xs text-subtext-light" data-export="skip">
           기준 지표
           <select
             id="lag-base"

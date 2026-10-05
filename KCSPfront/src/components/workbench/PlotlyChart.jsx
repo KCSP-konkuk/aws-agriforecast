@@ -1,11 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-
-// Plotly 는 3D 전용 묶음(gzip 약 560KB)을 3D 차트를 처음 열 때만 받는다
-let plotly;
-const loadPlotly = () => {
-  plotly ??= import('plotly.js-gl3d-dist-min').then((m) => m.default ?? m);
-  return plotly;
-};
+import { loadPlotly, purgePlot } from './plotlyLoader';
 
 const CONFIG = {
   responsive: true,
@@ -43,9 +37,7 @@ export default function PlotlyChart({ data, layout, height = 460, label }) {
 
   useEffect(() => {
     const el = ref.current;
-    return () => {
-      if (plotly && el) plotly.then((Plotly) => Plotly.purge(el)).catch(() => {});
-    };
+    return () => purgePlot(el);
   }, []);
 
   return (

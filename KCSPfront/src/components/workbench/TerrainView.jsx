@@ -94,7 +94,7 @@ export default function TerrainView({ lines, store, catById, base, freq, onBase 
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3" data-export="skip">
         <label className="flex items-center gap-1.5 text-xs text-subtext-light">
           지표
           <select

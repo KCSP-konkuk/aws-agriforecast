@@ -3,10 +3,10 @@ import DashboardCard from './DashboardCard';
 import { COLOR, signedPct } from './format';
 
 // ⑤ 비슷했던 과거 — 같은 계절에서 지표가 가장 비슷했던 순과 그 뒤 가격
-export default function AnalogCards({ data }) {
+export default function AnalogCards({ data, actions }) {
   const { items, summary } = data.analogs;
   return (
-    <DashboardCard icon="history" title="비슷했던 과거" subtitle="같은 계절에서 지금과 상황이 가장 비슷했던 때와, 그 뒤 소매가예요">
+    <DashboardCard icon="history" actions={actions} title="비슷했던 과거" subtitle="같은 계절에서 지금과 상황이 가장 비슷했던 때와, 그 뒤 소매가예요">
       {items.length === 0 ? (
         <p className="text-sm text-subtext-light">비교할 만큼 비슷한 때를 찾지 못했어요.</p>
       ) : (

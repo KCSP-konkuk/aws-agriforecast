@@ -1,14 +1,5 @@
 import { FREQ_LABEL } from '../../lib/series';
-import { PERIODS } from './format';
-
-const CHARTS = [
-  ['line', '시계열', 'show_chart'],
-  ['scatter', '산점도', 'scatter_plot'],
-  ['scatter3d', '3D 산점도', 'view_in_ar'],
-  ['parallel', '평행 좌표', 'stacked_line_chart'],
-  ['lag', '시차 상관', 'grid_on'],
-  ['terrain', '지형도', 'landscape'],
-];
+import { CHARTS, PERIODS } from './format';
 
 function Segmented({ label, options, value, onChange, disabled = () => false, disabledTitle }) {
   return (
@@ -40,10 +31,24 @@ function Segmented({ label, options, value, onChange, disabled = () => false, di
 }
 
 // 차트 종류 · 주기 · 기간. 주기는 고른 지표 중 가장 거친 주기보다 촘촘하게는 못 고른다
-export default function Controls({ chart, freq, allowed, period, from, to, bounds, onChange }) {
+export default function Controls({ chart, freq, allowed, period, from, to, bounds, onChange, onExport, exporting }) {
   return (
     <div className="space-y-2">
-      <Segmented label="차트" options={CHARTS} value={chart} onChange={(c) => onChange({ chart: c })} />
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <Segmented label="차트" options={CHARTS} value={chart} onChange={(c) => onChange({ chart: c })} />
+        {onExport && (
+          <button
+            type="button"
+            onClick={onExport}
+            disabled={exporting}
+            className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-text-main hover:border-primary/50 disabled:opacity-60"
+            title="지금 차트를 제목·출처와 함께 PNG 로 저장해요"
+          >
+            <span className="material-symbols-outlined text-base">image</span>
+            {exporting ? '저장 중…' : '이미지 저장'}
+          </button>
+        )}
+      </div>
       <div className="flex flex-wrap items-center justify-end gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <Segmented
