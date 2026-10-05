@@ -1,5 +1,6 @@
-import { MAX_SERIES, TRANSFORMS } from '../../lib/series';
-import { colorOf, LAG_OPTIONS, lagLabel } from './format';
+import { MAX_SERIES, staleDays, TRANSFORMS } from '../../lib/series';
+import { colorOf, LAG_OPTIONS, lagLabel, todayIso } from './format';
+import { StaleBadge } from './SeriesPicker';
 
 // 고른 지표 — 색, 변환, 시차, 지우기
 export default function SelectedSeries({ series, catById, freq, onChange, onRemove }) {
@@ -24,6 +25,12 @@ export default function SelectedSeries({ series, catById, freq, onChange, onRemo
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-text-main">{c?.name ?? s.id}</p>
                     <p className="text-[11px] text-subtext-light truncate">{c ? `${c.source} · ${c.unit ?? ''}` : '목록에 없는 지표'}</p>
+                    {c?.lastDate && (
+                      <p className="flex items-center gap-1 text-[11px] text-subtext-light">
+                        마지막 값 {c.lastDate.slice(2).replaceAll('-', '.')}
+                        {staleDays(c, todayIso()) != null && <StaleBadge days={staleDays(c, todayIso())} />}
+                      </p>
+                    )}
                   </div>
                   <button
                     type="button"
