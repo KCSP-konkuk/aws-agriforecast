@@ -14,6 +14,7 @@ export default function MyPageSidebar({ user, onLogout }) {
 
   const menuItems = [
     { path: '/mypage', label: '계정정보', icon: 'person' },
+    { path: '/mypage/analyses', label: '내 분석', icon: 'bookmarks' },
   ];
 
   return (

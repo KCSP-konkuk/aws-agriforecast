@@ -34,6 +34,7 @@ import TerrainView from '../components/workbench/TerrainView';
 import Readout from '../components/workbench/Readout';
 import FilterBar from '../components/workbench/FilterBar';
 import FindingsPanel from '../components/workbench/FindingsPanel';
+import SaveAnalysis from '../components/workbench/SaveAnalysis';
 import ConditionSummary from '../components/workbench/ConditionSummary';
 import DataTable from '../components/workbench/DataTable';
 import { defaultState, TEMPLATES } from '../components/workbench/templates';
@@ -102,6 +103,7 @@ export default function Workbench() {
   const chartRef = useRef(null);
   const [exporting, setExporting] = useState(false);
   const [exportFailed, setExportFailed] = useState(false);
+  const [saveOpen, setSaveOpen] = useState(false);
 
   useEffect(() => {
     api
@@ -436,7 +438,15 @@ export default function Workbench() {
                     onChange={update}
                     onExport={hasData ? exportChart : null}
                     exporting={exporting}
+                    onSave={series.length ? () => setSaveOpen((o) => !o) : null}
                   />
+                  {saveOpen && (
+                    <SaveAnalysis
+                      defaultTitle={`${CHARTS.find(([k]) => k === state.chart)?.[1] ?? '분석'} — ${lines.map((l) => l.name).join(', ')}`}
+                      query={params.toString()}
+                      onClose={() => setSaveOpen(false)}
+                    />
+                  )}
                   {body}
                 </section>
                 {hasData && (
