@@ -99,7 +99,7 @@ Ubuntu 자동 업데이트(`apt-daily-upgrade`)가 매일 **06:00\~07:00 UTC(15\
 - PR 을 열면 **CI(`ci.yml`)** 가 돈다. **빨간불이면 머지하지 않는다**
   - 모델 배치: `requirements.txt` 고정 버전으로 설치 → 파이프라인 컴파일 → `KCSPmodel/batch/tests` (외부 요청·DB 없이 가짜 응답으로 돈다)
   - 백엔드: 컴파일 + 외부 의존 없는 테스트만(기존 테스트 대부분은 실제 API·DB 를 불러 CI 에서 뺐다)
-  - 프론트: `npm run build` + `npm test`(vitest — 작업대 계산 `src/lib/series.js`). lint 는 기존 오류가 있어 아직 뺐다
+  - 프론트: `npm run build` + `npm run lint`(eslint, 경고도 실패) + `npm test`(vitest — 작업대 계산 `src/lib`)
   - CI 는 서버·외부 API·DB 에 붙지 않는다. 그쪽 실패는 배포 워크플로의 실행 검증·헬스체크가 잡는다
 - 머지 방식
   - `feature/*` → `develop`: **Squash and merge**

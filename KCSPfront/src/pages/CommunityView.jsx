@@ -28,6 +28,8 @@ export default function CommunityView() {
   useEffect(() => {
     loadPost();
     loadComments();
+    // 글 번호가 바뀔 때만 다시 불러온다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadPost = async () => {
