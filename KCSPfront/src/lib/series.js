@@ -250,6 +250,55 @@ export function lagCorrelation(base, other, lags, f) {
   });
 }
 
+// 찾아낸 것 — 지표 쌍마다 한쪽을 0~k칸 늦춘 값과 다른 쪽의 상관을 훑어 가장 강한 관계를 고른다.
+// series: { id: [[칸, 값]] } (같은 주기·변환). 결과는 |r| 큰 순 [{ lead, follow, lag, r, n }]
+// lag 0 이면 '같은 칸에서 함께', lag > 0 이면 lead 가 lag 칸 앞서 follow 와 함께 움직였다는 뜻.
+// 시차를 둬도 같은 칸보다 뚜렷하게(|r| 0.05) 낫지 않으면 같은 칸 관계로 본다
+export function findLeads(series, f, lags, { minN = 24, minR = 0.3 } = {}) {
+  const ids = Object.keys(series).filter((id) => series[id]?.length);
+  const stepped = Object.fromEntries(ids.map((id) => [id, series[id].map(([k, v]) => [stepOf(k, f), v])]));
+  const byStep = Object.fromEntries(ids.map((id) => [id, new Map(stepped[id])]));
+  const scan = (lead, follow) =>
+    lags.map((k) => {
+      const xs = [];
+      const ys = [];
+      for (const [step, v] of stepped[lead]) {
+        const w = byStep[follow].get(step + k);
+        if (w != null && Number.isFinite(w) && Number.isFinite(v)) {
+          xs.push(v);
+          ys.push(w);
+        }
+      }
+      return { lag: k, ...pearson(xs, ys) };
+    });
+  const strongest = (list) =>
+    list.filter((c) => c.r != null && c.n >= minN).reduce((m, c) => (!m || Math.abs(c.r) > Math.abs(m.r) ? c : m), null);
+  const out = [];
+  for (let i = 0; i < ids.length; i += 1) {
+    for (let j = i + 1; j < ids.length; j += 1) {
+      const [a, b] = [ids[i], ids[j]];
+      const ab = scan(a, b);
+      const ba = scan(b, a);
+      const [bestAB, bestBA] = [strongest(ab), strongest(ba)];
+      if (!bestAB && !bestBA) continue;
+      const best =
+        !bestBA || (bestAB && Math.abs(bestAB.r) >= Math.abs(bestBA.r)) ? { ...bestAB, lead: a, follow: b } : { ...bestBA, lead: b, follow: a };
+      const same = ab[0];
+      const pick = same.r != null && same.n >= minN && Math.abs(best.r) - Math.abs(same.r) < 0.05 ? { ...same, lead: a, follow: b } : best;
+      if (Math.abs(pick.r) >= minR) out.push({ lead: pick.lead, follow: pick.follow, lag: pick.lag, r: pick.r, n: pick.n });
+    }
+  }
+  return out.sort((x, y) => Math.abs(y.r) - Math.abs(x.r));
+}
+
+// 멈춘 지표: 마지막 날이 원래 주기에 비해 오래됐으면 지난 날 수, 아니면 null (일 14일 · 순 40일 · 월 75일 넘게)
+const STALE_DAYS = { daily: 14, soon: 40, monthly: 75 };
+export function staleDays(entry, todayIso) {
+  if (!entry?.lastDate || !todayIso) return null;
+  const days = Math.round((utc(todayIso) - utc(entry.lastDate)) / DAY);
+  return days > (STALE_DAYS[entry.freq] ?? 30) ? days : null;
+}
+
 // 분위수 (선형 보간). 값이 없으면 null
 export function quantile(values, q) {
   const xs = values.filter(Number.isFinite).sort((a, b) => a - b);

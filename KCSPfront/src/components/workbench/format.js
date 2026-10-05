@@ -93,6 +93,13 @@ export function conditionText(line, c) {
   return c.min != null ? `${line.name} ≥ ${v(c.min)}` : `${line.name} ≤ ${v(c.max)}`;
 }
 
+// 받침에 맞는 조사를 붙인다: josa('양파 경매가', '이', '가') → '양파 경매가가', josa('반입량', '이', '가') → '반입량이'
+export function josa(word, withFinal, withoutFinal) {
+  const code = word.trim().slice(-1).charCodeAt(0) - 0xac00;
+  const hasFinal = code >= 0 && code <= 11171 && code % 28 !== 0;
+  return `${word}${hasFinal ? withFinal : withoutFinal}`;
+}
+
 const LAG_UNIT = { d: '일', w: '주', s: '순', m: '개월' };
 export const lagLabel = (lag, f) => (lag ? `${lag > 0 ? '+' : '−'}${Math.abs(lag)}${LAG_UNIT[f]}` : '없음');
 
@@ -124,6 +131,16 @@ export const PERIODS = [
 
 // 기간 문구: '2023.10 ~ 2026.10'
 export const spanLabel = (fromKey, toKey) => (fromKey && toKey ? `${fromKey.slice(0, 7).replace('-', '.')} ~ ${toKey.slice(0, 7).replace('-', '.')}` : '');
+
+// 기기 날짜 'YYYY-MM-DD' (멈춘 지표 판정용)
+export function todayIso() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// 지표 기간 '2014년~26.10.02'
+export const coverage = (entry) =>
+  entry?.firstDate ? `${entry.firstDate.slice(0, 4)}년~${(entry.lastDate ?? '').slice(2).replaceAll('-', '.')}` : '';
 
 export const years = (catalogEntry) =>
   catalogEntry?.firstDate ? `${catalogEntry.firstDate.slice(0, 4)}~${(catalogEntry.lastDate ?? '').slice(0, 4)}` : '';

@@ -1,12 +1,22 @@
 import { useMemo, useState } from 'react';
-import { FREQ_LABEL, MAX_SERIES } from '../../lib/series';
-import { years } from './format';
+import { FREQ_LABEL, MAX_SERIES, staleDays } from '../../lib/series';
+import { coverage, todayIso } from './format';
 
 const NATIVE = { daily: 'd', soon: 's', monthly: 'm' };
+
+// 원본 갱신이 늦어진 지표 표시
+export function StaleBadge({ days }) {
+  return (
+    <span className="shrink-0 rounded bg-accent/25 px-1 text-[10px] font-semibold text-text-main" title={`마지막 값이 ${days}일 전이에요 — 원본 갱신이 늦어지고 있어요`}>
+      멈춤
+    </span>
+  );
+}
 const CATEGORY_ICON = { 가격: 'payments', 수급: 'local_shipping', 기상: 'partly_cloudy_day', 거시: 'currency_exchange', 관심도: 'search' };
 
 // 데이터 고르기 — 분류·검색으로 지표를 찾고 눌러서 더한다 (목록은 API 에서)
 export default function SeriesPicker({ catalog, selectedIds, onAdd }) {
+  const today = todayIso();
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState({ 가격: true });
   const full = selectedIds.length >= MAX_SERIES;
@@ -43,7 +53,7 @@ export default function SeriesPicker({ catalog, selectedIds, onAdd }) {
       <div className="mt-3 space-y-2 max-h-[520px] overflow-y-auto pr-1">
         {groups.length === 0 && <p className="text-sm text-subtext-light py-4 text-center">찾는 지표가 없어요.</p>}
         {groups.map(([category, list]) => {
-          const isOpen = query.trim() !== '' || open[category];
+          const isOpen = query.trim() !== '' || Boolean(open[category]);
           return (
             <div key={category} className="border-b border-gray-100 pb-2">
               <button
@@ -76,8 +86,11 @@ export default function SeriesPicker({ catalog, selectedIds, onAdd }) {
                             {picked && <span className="material-symbols-outlined text-base text-primary">check</span>}
                           </span>
                           <span className="block text-[11px] text-subtext-light truncate">{c.source}</span>
-                          <span className="block text-[11px] text-subtext-light truncate">
-                            {FREQ_LABEL[NATIVE[c.freq]] ?? ''}별 · {years(c)} · {c.unit}
+                          <span className="flex items-center gap-1 text-[11px] text-subtext-light">
+                            <span className="truncate">
+                              {FREQ_LABEL[NATIVE[c.freq]] ?? ''}별 · {coverage(c)} · {c.unit}
+                            </span>
+                            {staleDays(c, today) != null && <StaleBadge days={staleDays(c, today)} />}
                           </span>
                         </button>
                       </li>

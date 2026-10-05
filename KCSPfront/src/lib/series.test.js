@@ -7,6 +7,7 @@ import {
   diffUnit,
   displayUnit,
   dropPartial,
+  findLeads,
   formatConditions,
   freeColor,
   keyOfStep,
@@ -23,6 +24,7 @@ import {
   seasonGrid,
   seasonName,
   shift,
+  staleDays,
   stepOf,
   toCsv,
   transform,
@@ -150,6 +152,31 @@ describe('정렬·상관·기간', () => {
     expect(best.lag).toBe(2);
     expect(best.r).toBeGreaterThan(0.99);
     expect(out[2].n).toBe(38);
+  });
+
+  it('찾아낸 것: 앞서 움직인 지표와 시차, 약한 관계는 뺀다', () => {
+    const keys = Array.from({ length: 80 }, (_, i) => keyOfStep(stepOf('2023-01-01', 's') + i, 's'));
+    const wave = (i) => Math.sin(i / 3) + Math.cos(i / 7);
+    const series = {
+      lead: keys.map((k, i) => [k, wave(i)]),
+      follow: keys.map((k, i) => [k, wave(i - 2)]), // 2순 뒤에 따라온다
+      noise: keys.map((k, i) => [k, ((i * 7919) % 13) - 6]),
+    };
+    const found = findLeads(series, 's', [0, 1, 2, 3, 4], { minN: 24 });
+    expect(found[0]).toMatchObject({ lead: 'lead', follow: 'follow', lag: 2 });
+    expect(found[0].r).toBeGreaterThan(0.99);
+    expect(found.every((x) => Math.abs(x.r) >= 0.3)).toBe(true);
+    // 같은 칸에서 함께 움직이면 시차 0
+    const same = findLeads({ a: series.lead, b: series.lead.map(([k, v]) => [k, -2 * v]) }, 's', [0, 1, 2]);
+    expect(same[0]).toMatchObject({ lag: 0 });
+    expect(same[0].r).toBeCloseTo(-1, 5);
+  });
+
+  it('멈춘 지표는 주기에 비해 오래된 것', () => {
+    expect(staleDays({ freq: 'daily', lastDate: '2026-10-01' }, '2026-10-05')).toBeNull();
+    expect(staleDays({ freq: 'daily', lastDate: '2026-09-01' }, '2026-10-05')).toBe(34);
+    expect(staleDays({ freq: 'soon', lastDate: '2026-09-11' }, '2026-10-05')).toBeNull();
+    expect(staleDays({ freq: 'monthly', lastDate: '2026-06-01' }, '2026-10-05')).toBe(126);
   });
 
   it('분위수와 조건에 맞는 칸', () => {

@@ -9,8 +9,10 @@ import {
   allowedFreqs,
   convertLag,
   displayUnit,
+  findLeads,
   FREQ_LABEL,
   freeColor,
+  LAG_SCAN,
   matchRows,
   MAX_SERIES,
   prepare,
@@ -31,6 +33,7 @@ import LagView from '../components/workbench/LagView';
 import TerrainView from '../components/workbench/TerrainView';
 import Readout from '../components/workbench/Readout';
 import FilterBar from '../components/workbench/FilterBar';
+import FindingsPanel from '../components/workbench/FindingsPanel';
 import ConditionSummary from '../components/workbench/ConditionSummary';
 import DataTable from '../components/workbench/DataTable';
 import { defaultState, TEMPLATES } from '../components/workbench/templates';
@@ -38,6 +41,10 @@ import { CHARTS, conditionText, lagLabel, spanLabel } from '../components/workbe
 import { saveChartImage } from '../components/workbench/exportImage';
 
 const NATIVE = { daily: 'd', soon: 's', monthly: 'm' };
+// 찾아낸 것의 최소 사례 수 (주기별)
+const FIND_MIN_N = { d: 60, w: 26, s: 24, m: 12 };
+// 찾아낸 것은 계절·추세에 속지 않게 원값·지수·이동평균을 전년 대비로 맞춰 계산한다
+const findingKind = (kind) => (kind === 'yoy' || kind === 'normal' ? kind : 'yoy');
 const EMPTY = readState(new URLSearchParams());
 
 // 차트 축(고른 지표 순번 x·y·z)이 범위를 넘지 않고, 지표가 넉넉하면 서로 겹치지 않게.
@@ -186,6 +193,18 @@ export default function Workbench() {
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.chart, series, store, catById, freq, range.from, range.to]);
+  const findings = useMemo(() => {
+    if (series.length < 2 || state.chart === 'terrain') return null;
+    const out = {};
+    for (const s of series) {
+      const c = catById[s.id];
+      if (store[s.id]) {
+        out[s.id] = prepare(store[s.id], { f: freq, agg: c.agg, unit: c.unit, native: c.freq, kind: findingKind(s.kind), ...range });
+      }
+    }
+    return Object.keys(out).length >= 2 ? findLeads(out, freq, LAG_SCAN[freq], { minN: FIND_MIN_N[freq] }).slice(0, 3) : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [series, store, catById, freq, range.from, range.to, state.chart]);
   const lines = useMemo(
     () =>
       series.map((s) => {
@@ -225,6 +244,23 @@ export default function Workbench() {
     const old = series.find((s) => s.id === id);
     const conditions = patch.kind && patch.kind !== old?.kind ? state.conditions.filter((c) => c.id !== id) : state.conditions;
     update({ series: series.map((s) => (s.id === id ? { ...s, ...patch } : s)), conditions });
+  };
+  // 찾아낸 관계를 화면에: 앞선 지표에 그 시차를 걸고, 두 지표를 계산한 변환(전년·평년 대비)으로 맞춘다
+  const applyFinding = (f, chart) => {
+    const changed = new Set();
+    const next = series.map((s) => {
+      if (s.id !== f.lead && s.id !== f.follow) return s;
+      const kind = findingKind(s.kind);
+      if (kind !== s.kind) changed.add(s.id);
+      return { ...s, kind, lag: s.id === f.lead ? f.lag : 0 };
+    });
+    const at = (id) => series.findIndex((s) => s.id === id);
+    update({
+      series: next,
+      chart,
+      conditions: state.conditions.filter((c) => !changed.has(c.id)),
+      ...(chart === 'scatter' ? { x: at(f.lead), y: at(f.follow) } : {}),
+    });
   };
   const setCondition = (id, range) =>
     update({ conditions: range ? [...state.conditions.filter((c) => c.id !== id), { id, ...range }] : state.conditions.filter((c) => c.id !== id) });
@@ -340,6 +376,17 @@ export default function Workbench() {
             ))}
           {freq === 'd' && rows.length > 1500 && !ownSummary && <p>점이 많아요. 주·순 단위로 보면 흐름이 더 잘 보여요.</p>}
         </div>
+        {findings && (
+          <FindingsPanel
+            findings={findings}
+            lines={lines}
+            freq={freq}
+            maxLag={lagLabel(LAG_SCAN[freq][LAG_SCAN[freq].length - 1], freq).replace('+', '')}
+            converted={series.some((s) => findingKind(s.kind) !== s.kind)}
+            onOverlay={(f) => applyFinding(f, 'line')}
+            onScatter={(f) => applyFinding(f, 'scatter')}
+          />
+        )}
         <FilterBar lines={lines} rows={rows} conditions={state.conditions} match={match} onChange={(conditions) => update({ conditions })} />
         {match ? <ConditionSummary lines={lines} rows={rows} match={match} freq={freq} /> : !ownSummary && <Readout lines={lines} prepared={prepared} freq={freq} />}
       </div>
