@@ -76,6 +76,9 @@ class KamisRetailParseTest {
         assertEquals("1kg", KamisRetailService.unitOf("양파(1kg)"));
         assertEquals("1포기", KamisRetailService.unitOf("여름(고랭지)(1포기)"));
         assertEquals("100g", KamisRetailService.unitOf("붉은고추(100g)"));
+        assertEquals("20kg", KamisRetailService.unitOf("20kg(20kg)"));
+        assertEquals("10kg(그물망 3포기)", KamisRetailService.unitOf("여름(고랭지)(10kg(그물망 3포기))"));   // 도매 배추
+        assertNull(KamisRetailService.unitOf("양파"));
     }
 
     @Test

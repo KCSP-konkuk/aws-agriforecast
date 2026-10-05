@@ -37,7 +37,7 @@ import FindingsPanel from '../components/workbench/FindingsPanel';
 import SaveAnalysis from '../components/workbench/SaveAnalysis';
 import ConditionSummary from '../components/workbench/ConditionSummary';
 import DataTable from '../components/workbench/DataTable';
-import { defaultState, TEMPLATES } from '../components/workbench/templates';
+import { defaultState, rankItems, TEMPLATES } from '../components/workbench/templates';
 import { CHARTS, conditionText, lagLabel, spanLabel } from '../components/workbench/format';
 import { saveChartImage } from '../components/workbench/exportImage';
 
@@ -87,7 +87,9 @@ function adjustText(entry, kind, f) {
 function initialState(params, catalog) {
   const tpl = TEMPLATES.find((t) => t.key === params.get('tpl'));
   const items = tpl ? tpl.items(catalog) : [];
-  if (tpl && items.length) return tpl.build(catalog, items.includes(params.get('item')) ? params.get('item') : items[0]);
+  if (tpl && items.length) {
+    return tpl.build(catalog, items.includes(params.get('item')) ? params.get('item') : rankItems(catalog, items)[0]);
+  }
   return defaultState(catalog);
 }
 

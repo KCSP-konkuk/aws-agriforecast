@@ -77,6 +77,26 @@ def test_소매는_판매처_평균을_일별로_단위는_최근_단위():
     assert s['values'].index[0] == date(2026, 9, 1)
 
 
+def test_도매는_품목마다_서울_도매시장_하나에_단위는_최근_단위(monkeypatch):
+    monkeypatch.setattr(ps, 'wholesale_units', lambda conn: {'가상곡물': '20kg'})
+    conn = FakeConn({'wholesale_market_price': [
+        (ITEM, pr.WHOLESALE_MARKET, date(2026, 9, 1), 15500), (ITEM, pr.WHOLESALE_MARKET, date(2026, 9, 2), 16700),
+        ('가상곡물', '양곡도매', date(2026, 9, 1), 59000), ('가상곡물', '양곡도매', date(2026, 9, 2), 59400),
+        ('가상곡물', '다른시장', date(2026, 9, 2), 1)]})
+    got = by_id(ps.load_wholesale(conn))
+    assert got[f'wholesale:{ITEM}']['source'] == f'KAMIS 도매 · {pr.WHOLESALE_MARKET}(중도매인 판매가)'
+    assert got[f'wholesale:{ITEM}']['unit'] == '원 (KAMIS 도매 거래 단위)'   # 단위를 아직 모르면
+    grain = got['wholesale:가상곡물']
+    assert grain['source'] == 'KAMIS 도매 · 양곡도매' and grain['unit'] == '원/20kg' and grain['item'] == '가상곡물'
+    assert list(grain['values'].values) == [59000.0, 59400.0]   # 행이 적은 시장은 섞지 않는다
+
+
+def test_도매_단위는_열이_없으면_비운다():
+    assert ps.wholesale_units(FakeConn({'information_schema.columns': [(0,)]})) == {}
+    conn = FakeConn({'information_schema.columns': [(1,)], 'wholesale_market_price': [(ITEM, '20개')]})
+    assert ps.wholesale_units(conn) == {ITEM: '20개'}
+
+
 def test_경매가는_레포_과거분_뒤로_DB를_잇는다():
     csv_name, item = next(iter(pr.GARAK.values()))
     hist = pd.read_csv(os.path.join(pr.DATA, csv_name), parse_dates=['date']).dropna(subset=['상'])

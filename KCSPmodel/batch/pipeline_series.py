@@ -7,7 +7,7 @@
 
 지표 종류마다 읽기 함수 하나. 품목 · 지점 · 검색어는 원본 테이블과 레포 CSV 에서 찾는다 — 이 파일에 품목 이름은 없다.
   retail:{품목}          KAMIS 소매 서울 경동·복조리 평균 (retail_market_price)          일 · 평균
-  wholesale:{품목}       KAMIS 도매 가락도매 (wholesale_market_price)                   일 · 평균
+  wholesale:{품목}       KAMIS 도매 서울 도매시장 한 곳 (wholesale_market_price)           일 · 평균
   auction:{품목}         가락시장 경매가 상 (agri_price + 레포 hist_daily_*.csv)          일 · 평균
   supply:{품목}          가락시장 반입량 (supply_data 일별 합 + hist_supply*.csv 순별)     순 · 합계
   station_temp|rain:{지점}  기상청 ASOS 관측소 일별 (station_weather_data)               일 · 평균|합계
@@ -33,6 +33,7 @@ import logging
 import os
 import sys
 import time
+from collections import Counter
 from datetime import date
 
 import numpy as np
@@ -125,6 +126,14 @@ def table_exists(conn, name):
     return bool(rows and rows[0][0])
 
 
+def column_exists(conn, table, column):
+    """백엔드가 나중에 더한 열은 배포 순서에 따라 아직 없을 수 있다 — 없으면 그 정보 없이 적재한다"""
+    rows = query(conn, """SELECT COUNT(*) FROM information_schema.columns
+                           WHERE table_schema = DATABASE() AND table_name = %s AND column_name = %s""",
+                 (table, column))
+    return bool(rows and rows[0][0])
+
+
 def retail_units(conn):
     """소매 품목 → 최근 조사 단위 (retail_price)"""
     return dict(query(conn, """SELECT r.ITEM_NAME, r.UNIT FROM retail_price r
@@ -150,13 +159,30 @@ def load_retail(conn):
     return out
 
 
+def wholesale_units(conn):
+    """도매 품목 → 최근 거래 단위 (wholesale_market_price.unit, 2026-10 에 생긴 열이라 지난 행은 비어 있다)"""
+    if not column_exists(conn, 'wholesale_market_price', 'unit'):
+        return {}
+    return dict(query(conn, """SELECT w.item_name, w.unit FROM wholesale_market_price w
+                                JOIN (SELECT item_name, MAX(price_date) d FROM wholesale_market_price
+                                      WHERE unit IS NOT NULL GROUP BY item_name) m
+                                  ON w.item_name = m.item_name AND w.price_date = m.d
+                                WHERE w.unit IS NOT NULL"""))
+
+
 def load_wholesale(conn):
-    rows = query(conn, """SELECT item_name, price_date, price FROM wholesale_market_price
-                          WHERE market_name = %s AND price > 0""", (pr.WHOLESALE_MARKET,))
-    return [make(f'wholesale:{item}', f'{item} 도매가', '가격', f'KAMIS 도매 · {pr.WHOLESALE_MARKET}(중도매인 판매가)',
-                 '원 (KAMIS 도매 거래 단위)', 'daily', 'mean',
-                 series_from([(d, v) for i, d, v in rows if i == item]), item)
-            for item in sorted({r[0] for r in rows})]
+    """KAMIS 도매 — 품목마다 서울 도매시장 한 곳(대부분 가락도매, 곡물은 양곡도매). 두 곳이 섞이면 행이 많은 쪽"""
+    rows = query(conn, "SELECT item_name, market_name, price_date, price FROM wholesale_market_price WHERE price > 0")
+    units = wholesale_units(conn)
+    out = []
+    for item in sorted({r[0] for r in rows}):
+        market = Counter(m for i, m, _, _ in rows if i == item).most_common(1)[0][0]
+        note = '(중도매인 판매가)' if market == pr.WHOLESALE_MARKET else ''
+        unit = units.get(item)
+        out.append(make(f'wholesale:{item}', f'{item} 도매가', '가격', f'KAMIS 도매 · {market}{note}',
+                        f'원/{unit}' if unit else '원 (KAMIS 도매 거래 단위)', 'daily', 'mean',
+                        series_from([(d, v) for i, m, d, v in rows if i == item and m == market]), item))
+    return out
 
 
 def auction_units():
