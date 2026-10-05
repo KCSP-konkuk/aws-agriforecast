@@ -1,0 +1,35 @@
+import { useMemo } from 'react';
+import { TEMPLATES } from './templates';
+
+// 시작 템플릿 카드들 — 품목 칩을 누르면 onApply(템플릿, 품목). 품목은 지표 목록에서 찾는다
+// 좁은 화면은 옆으로 넘기는 띠, 넓은 화면은 격자 (작업대 · 홈 공통)
+export default function TemplateCards({ catalog, onApply }) {
+  const list = useMemo(
+    () => TEMPLATES.map((t) => ({ ...t, options: t.items(catalog) })).filter((t) => t.options.length),
+    [catalog],
+  );
+  if (!list.length) return null;
+  return (
+    <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 xl:grid-cols-4">
+      {list.map((t) => (
+        <div key={t.key} className="flex w-64 shrink-0 snap-start flex-col rounded-lg border border-gray-100 bg-white p-3 sm:w-auto">
+          <p className="text-sm font-semibold text-text-main">{t.title}</p>
+          <p className="text-[11px] font-semibold text-primary">{t.who}</p>
+          <p className="mt-1 flex-1 text-xs text-subtext-light">{t.desc}</p>
+          <div className="mt-2 flex flex-wrap gap-1">
+            {t.options.map((item) => (
+              <button
+                key={item ?? 'all'}
+                type="button"
+                onClick={() => onApply(t, item)}
+                className="rounded-full border border-gray-200 px-2.5 py-0.5 text-xs text-text-main hover:border-primary hover:text-primary"
+              >
+                {item ?? '열기'}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

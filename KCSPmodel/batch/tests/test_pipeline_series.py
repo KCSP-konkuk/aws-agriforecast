@@ -170,6 +170,15 @@ def test_한_출처가_실패해도_나머지는_적재한다(monkeypatch):
     assert failed == ['고장'] and [s['id'] for s in series] == ['oil:diesel']
 
 
+def test_가락_품목은_소매_이름으로_묶는다():
+    for retail, (_, garak) in pr.GARAK.items():
+        assert ps.crop_of(garak) == retail
+    assert ps.crop_of('목록에_없는_품목') == '목록에_없는_품목'
+    retail, (csv_name, garak) = next(iter(pr.GARAK.items()))
+    s = by_id(ps.load_auction(FakeConn()))[f'auction:{garak}']
+    assert s['item'] == retail and s['name'] == f'{garak} 경매가'
+
+
 def test_파일에_품목_이름이_없다():
     src = open(os.path.join(os.path.dirname(HERE), 'pipeline_series.py'), encoding='utf-8').read()
     assert [name for name in pr.ITEMS if name in src] == []

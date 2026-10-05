@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { to: '/', label: '홈', end: true },
   { to: '/detail', label: '상세검색' },
   { to: '/community', label: '커뮤니티' },
-  { to: '/dashboard', label: '대시보드' },
+  { to: '/analysis', label: '분석' },
 ];
 
 export default function Header() {
