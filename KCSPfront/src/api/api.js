@@ -279,9 +279,10 @@ export const api = {
     return await response.json();
   },
 
-  // 분석 작업대 — 고른 지표의 값 (원래 주기 그대로, 최대 8개)
-  getSeriesData: async (ids) => {
-    const response = await fetch(`${API_BASE_URL}/series/data?ids=${encodeURIComponent(ids.join(','))}`);
+  // 분석 작업대 — 고른 지표의 값 (원래 주기 그대로, 최대 8개). from 을 주면 그날부터만
+  getSeriesData: async (ids, from) => {
+    const since = from ? `&from=${from}` : '';
+    const response = await fetch(`${API_BASE_URL}/series/data?ids=${encodeURIComponent(ids.join(','))}${since}`);
     if (!response.ok) throw new Error('지표 값을 불러오는데 실패했습니다.');
     return await response.json();
   },

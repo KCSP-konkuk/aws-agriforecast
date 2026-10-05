@@ -23,16 +23,6 @@ const BASE_LAYOUT = {
   hoverlabel: { bgcolor: '#FFFFFF', bordercolor: '#E0E0E0', font: { color: '#333333', size: 12 } },
 };
 
-// 3D 축 공통 모양
-export const sceneAxis = (title, extra = {}) => ({
-  title: { text: title, font: { size: 11, color: '#64748B' } },
-  gridcolor: '#E0E0E0',
-  zerolinecolor: '#94A3B8',
-  backgroundcolor: 'rgba(0,0,0,0)',
-  tickfont: { size: 10, color: '#64748B' },
-  ...extra,
-});
-
 // data·layout 은 부모가 useMemo 로 넘긴다(바뀔 때만 다시 그림). layout.uirevision 이 같으면 돌려 놓은 시점을 지킨다
 export default function PlotlyChart({ data, layout, height = 460, label }) {
   const ref = useRef(null);
