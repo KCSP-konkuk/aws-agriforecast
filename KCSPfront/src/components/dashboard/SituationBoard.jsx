@@ -17,13 +17,14 @@ function BoardTooltip({ active, payload }) {
 }
 
 // ③ 지금 상황판 — 지표마다 과거 대비 위치(가운데 낮음 · 바깥 높음)와 가격이 크게 오르기 직전의 평균 모양
-export default function SituationBoard({ data }) {
+export default function SituationBoard({ data, actions }) {
   const { axes, similarity, note } = data.board;
   const hasSurge = axes.some((a) => a.surge != null);
 
   return (
     <DashboardCard
       icon="radar"
+      actions={actions}
       title="지금 상황판"
       subtitle="지표마다 과거와 비교한 위치예요. 가운데가 낮음, 바깥이 높음, 중간이 보통이에요"
     >

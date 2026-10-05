@@ -23,6 +23,9 @@ export default function Dashboard() {
   const selected = params.get('item') || items.data[0]?.item || null;
   // 이 품목으로 열 수 있는 작업대 템플릿 (품목끼리 비교는 품목과 무관해 뺀다)
   const bridges = selected ? TEMPLATES.filter((t) => t.key !== 'compare' && t.items(catalog).includes(selected)) : [];
+  // 카드마다 더 파 볼 템플릿 — 이 품목으로 열 수 있을 때만
+  const open = (key, label) =>
+    bridges.some((t) => t.key === key) ? [{ to: `/analysis?tpl=${key}&item=${encodeURIComponent(selected)}`, label }] : [];
 
   useEffect(() => {
     api
@@ -121,12 +124,12 @@ export default function Dashboard() {
                 <Headline data={d} />
                 <div className="grid gap-6 lg:grid-cols-2">
                   <FactorBalance data={d} />
-                  <SituationBoard data={d} />
+                  <SituationBoard data={d} actions={open('situation', '상황 공간 3D')} />
                 </div>
-                <EventTimeline data={d} />
+                <EventTimeline data={d} actions={open('transmission', '도매가와 겹쳐 보기')} />
                 <div className="grid gap-6 lg:grid-cols-2">
-                  <AnalogCards data={d} />
-                  <FlowPanel data={d} />
+                  <AnalogCards data={d} actions={open('situation', '비슷한 상황 찾기')} />
+                  <FlowPanel data={d} actions={[...open('lead', '시차 상관'), ...open('terrain', '가격 지형도')]} />
                 </div>
                 <p className="text-xs text-subtext-light">
                   분석 기간 {sinceLabel(d.coverage?.since)}~ · 쓰인 지표: {(d.coverage?.indicators ?? []).join(', ')}.

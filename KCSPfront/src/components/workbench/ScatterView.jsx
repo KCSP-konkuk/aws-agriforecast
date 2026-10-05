@@ -84,7 +84,7 @@ export default function ScatterView({ rows, lines, x, y, freq, match, onAxes }) 
 
   return (
     <div>
-      <div className="mb-2 flex flex-wrap items-center gap-3">
+      <div className="mb-2 flex flex-wrap items-center gap-3" data-export="skip">
         <AxisSelect id="scatter-x" label="가로" value={lines.indexOf(xl)} lines={lines} onChange={(v) => onAxes(v, lines.indexOf(yl))} />
         <button
           type="button"
