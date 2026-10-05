@@ -100,6 +100,9 @@ public class CommunityController {
         try {
             PostResponse post = postService.updatePost(id, request, userId);
             return ResponseEntity.ok(post);
+        } catch (IllegalArgumentException e) {
+            // 붙인 작업대 주소가 틀린 것 같은 입력 문제는 권한 문제(403)와 나눈다
+            return ResponseEntity.badRequest().body(error(e, "게시글 수정에 실패했습니다."));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error(e, "게시글 수정에 실패했습니다."));
         }

@@ -42,6 +42,10 @@ public class Post {
     @Column(name = "KIND", length = 10)
     private String kind;
 
+    /** 붙인 분석 작업대 화면(주소의 쿼리). 없으면 null */
+    @Column(name = "ANALYSIS_QUERY", length = 2000)
+    private String analysisQuery;
+
     @Column(nullable = false, name = "view_count")
     private Integer viewCount = 0;
     

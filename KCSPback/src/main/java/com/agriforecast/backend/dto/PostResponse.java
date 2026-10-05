@@ -18,6 +18,7 @@ public class PostResponse {
     private String category;
     private String kind;  // USER · BRIEF
     private String content;
+    private String analysisQuery;  // 붙인 분석 작업대 화면(주소의 쿼리), 없으면 null
     private Integer viewCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
