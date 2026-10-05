@@ -238,6 +238,17 @@ export const api = {
 
   // ========== 가격 API ==========
 
+  // 내 분석 — 로그인 사용자가 저장한 작업대 화면(주소의 쿼리)
+  getMyAnalyses: () => authorizedRequest(`${API_BASE_URL}/me/analyses`, { method: 'GET' }, '내 분석을 불러오지 못했습니다.'),
+
+  saveMyAnalysis: (body) =>
+    authorizedRequest(`${API_BASE_URL}/me/analyses`, { method: 'POST', body: JSON.stringify(body) }, '분석을 저장하지 못했습니다.'),
+
+  updateMyAnalysis: (id, body) =>
+    authorizedRequest(`${API_BASE_URL}/me/analyses/${id}`, { method: 'PUT', body: JSON.stringify(body) }, '분석을 고치지 못했습니다.'),
+
+  deleteMyAnalysis: (id) => authorizedRequest(`${API_BASE_URL}/me/analyses/${id}`, { method: 'DELETE' }, '분석을 지우지 못했습니다.'),
+
   // 분석 작업대 — 고를 수 있는 지표 목록 (배치가 매일 12:50 KST 모은다)
   getSeriesCatalog: async () => {
     const response = await fetch(`${API_BASE_URL}/series/catalog`);

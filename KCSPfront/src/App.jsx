@@ -16,6 +16,7 @@ const CommunityView = lazy(() => import('./pages/CommunityView'));
 const CommunityViewMy = lazy(() => import('./pages/CommunityViewMy'));
 const Detail = lazy(() => import('./pages/Detail'));
 const MyPage = lazy(() => import('./pages/MyPage'));
+const MyAnalyses = lazy(() => import('./pages/MyAnalyses'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Workbench = lazy(() => import('./pages/Workbench'));
 
@@ -50,6 +51,7 @@ function App() {
           <Route path="/community/:id" element={<CommunityView />} />
           <Route path="/detail" element={<Detail />} />
           <Route path="/mypage" element={<MyPage />} />
+          <Route path="/mypage/analyses" element={<MyAnalyses />} />
           <Route path="/analysis" element={<Workbench />} />
           <Route path="/analysis/summary" element={<Dashboard />} />
           <Route path="/dashboard" element={<DashboardRedirect />} />
