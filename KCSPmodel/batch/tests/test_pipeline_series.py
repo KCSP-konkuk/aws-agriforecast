@@ -16,6 +16,7 @@ import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
+import backtest  # noqa: E402
 import pipeline_retail as pr  # noqa: E402
 import pipeline_series as ps  # noqa: E402
 
@@ -138,6 +139,43 @@ def test_검색량과_유가는_일별():
     conn = FakeConn({'search_trend': [(ITEM, date(2026, 9, 1), 55.0)], 'oil_price': [(date(2026, 9, 1), 1650.0)]})
     assert by_id(ps.load_search(conn))[f'search:{ITEM}']['freq'] == 'daily'
     assert by_id(ps.load_oil(conn))['oil:diesel']['values'][date(2026, 9, 1)] == 1650.0
+
+
+EXISTS = {'information_schema.tables': [(1,)]}
+
+
+def test_소매_예측은_순_첫날에_예측가와_오차():
+    conn = FakeConn({**EXISTS, pr.TABLE: [(ITEM, '202609중순', 1500.0, 4.2), (ITEM, '202609하순', 1600.0, None)],
+                     'retail_price': [(ITEM, '1kg')]})
+    got = by_id(ps.load_retail_forecast(conn))
+    f, e = got[f'forecast:{ITEM}'], got[f'forecast_error:{ITEM}']
+    assert f['category'] == '예측' and f['freq'] == 'soon' and f['unit'] == '원/1kg' and f['item'] == ITEM
+    assert dict(f['values']) == {date(2026, 9, 11): 1500.0, date(2026, 9, 21): 1600.0}
+    assert dict(e['values']) == {date(2026, 9, 11): 4.2} and e['unit'] == '%'      # 실제가 아직 없는 순은 오차 없음
+
+
+def test_도매_예측은_운영_예측이_백테스트를_덮고_그_전은_백테스트로(monkeypatch):
+    monkeypatch.setattr(backtest, 'MODELS', {'가상품목': 'fake'})
+    conn = FakeConn({**EXISTS,
+                     'fake_backtest': [('202601상순', 900.0, 10.0), ('202601중순', 950.0, 5.0)],
+                     'fake_predictions': [('202601중순', 1000.0, 2.0), ('202601하순', 1100.0, None)]})
+    got = by_id(ps.load_wholesale_forecast(conn))
+    f = got['forecast_w:가상품목']
+    assert dict(f['values']) == {date(2026, 1, 1): 900.0, date(2026, 1, 11): 1000.0, date(2026, 1, 21): 1100.0}
+    assert dict(got['forecast_w_error:가상품목']['values']) == {date(2026, 1, 1): 10.0, date(2026, 1, 11): 2.0}
+    assert f['item'] == ps.crop_of('가상품목')
+
+
+def test_예측_테이블이_없으면_건너뛴다(monkeypatch):
+    monkeypatch.setattr(backtest, 'MODELS', {'가상품목': 'fake'})
+    conn = FakeConn({'information_schema.tables': [(0,)], pr.TABLE: [(ITEM, '202609중순', 1500.0, 4.2)]})
+    assert ps.load_retail_forecast(conn) == [] and ps.load_wholesale_forecast(conn) == []
+
+
+def test_도매_예측_모델_목록의_가락_품목은_예측_지표_묶음과_맞는다():
+    # 가락 품목명을 소매 이름으로 묶는 규칙(crop_of)이 도매 예측에도 같이 쓰인다
+    for garak in backtest.MODELS:
+        assert isinstance(ps.crop_of(garak), str) and ps.crop_of(garak)
 
 
 def sample_series():
