@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -48,8 +49,22 @@ class KamisWholesaleServiceTest {
     }
 
     @Test
-    void 도매_품목은_소매_수집_품목이고_코드가_같다() {
-        KamisWholesaleService.TARGET_ITEMS.forEach((item, codes) ->
-                assertArrayEquals(KamisRetailService.TARGET_ITEMS.get(item), codes, item));
+    void 도매_품목은_소매와_같고_품목_코드도_같다() {
+        assertEquals(List.copyOf(KamisRetailService.TARGET_ITEMS.keySet()), List.copyOf(KamisWholesaleService.TARGET_ITEMS.keySet()));
+        KamisWholesaleService.TARGET_ITEMS.forEach((item, codes) -> {
+            KamisItems.Codes retail = KamisRetailService.TARGET_ITEMS.get(item);
+            assertEquals(retail.category(), codes.category(), item);
+            assertEquals(retail.item(), codes.item(), item);
+            assertFalse(codes.kinds().isEmpty(), item);
+        });
+    }
+
+    @Test
+    void 거래_단위는_날짜별로_평균_행에서() throws Exception {
+        String body = BODY.replace("애호박(20개)", "여름(고랭지)(10kg(그물망 3포기))");
+        List<KamisRetailService.DailyRetail> averages =
+                KamisRetailService.parse(body, LocalDate.of(2026, 9, 28), LocalDate.of(2026, 9, 29));
+
+        assertEquals(Map.of(LocalDate.of(2026, 9, 29), "10kg(그물망 3포기)"), KamisWholesaleService.units(averages));
     }
 }

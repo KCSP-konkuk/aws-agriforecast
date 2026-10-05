@@ -7,12 +7,15 @@ const WorkbenchPreview = lazy(() => import('./WorkbenchPreview'));
 // 홈 첫 화면 — 서비스 정체성 한 문장, 작업대 · 오늘의 요약 바로가기, 숫자 몇 개, 작업대 미리보기
 // 숫자는 지표 목록에서 센다(목록을 못 받으면 숨긴다)
 export default function HomeHero({ catalog }) {
-  const retailSince = catalog
-    .filter((c) => c.id.startsWith('retail:') && c.firstDate)
+  const retail = catalog.filter((c) => c.id.startsWith('retail:'));
+  const retailSince = retail
+    .filter((c) => c.firstDate)
     .map((c) => c.firstDate.slice(0, 4))
     .sort()[0];
+  const items = new Set(retail.map((c) => c.item)).size;
   const stats = [
     catalog.length > 0 && ['모은 지표', `${catalog.length}개`],
+    items > 0 && ['품목', `${items}개`],
     catalog.length > 0 && ['분류', '가격·수급·기상·거시·관심도'],
     retailSince && ['KAMIS 일별 소매가', `${retailSince}년부터`],
   ].filter(Boolean);

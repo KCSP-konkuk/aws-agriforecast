@@ -21,16 +21,18 @@ const CATEGORY_ICON = {
   관심도: 'search',
 };
 
-// 데이터 고르기 — 분류·검색으로 지표를 찾고 눌러서 더한다 (목록은 API 에서)
+// 데이터 고르기 — 분류·품목·검색으로 지표를 찾고 눌러서 더한다 (목록은 API 에서)
 export default function SeriesPicker({ catalog, selectedIds, onAdd }) {
   const today = todayIso();
   const [query, setQuery] = useState('');
+  const [item, setItem] = useState('');
   const [open, setOpen] = useState({ 가격: true });
   const full = selectedIds.length >= MAX_SERIES;
+  const items = useMemo(() => [...new Set(catalog.map((c) => c.item).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko')), [catalog]);
 
   const groups = useMemo(() => {
     const q = query.trim();
-    const hit = (c) => !q || [c.name, c.item, c.source, c.id].some((v) => v && v.includes(q));
+    const hit = (c) => (!item || c.item === item) && (!q || [c.name, c.item, c.source, c.id].some((v) => v && v.includes(q)));
     const out = new Map();
     for (const c of catalog) {
       if (!hit(c)) continue;
@@ -38,7 +40,7 @@ export default function SeriesPicker({ catalog, selectedIds, onAdd }) {
       out.get(c.category).push(c);
     }
     return [...out.entries()];
-  }, [catalog, query]);
+  }, [catalog, query, item]);
 
   return (
     <div className="rounded-xl bg-white border border-gray-200 p-4">
@@ -46,21 +48,38 @@ export default function SeriesPicker({ catalog, selectedIds, onAdd }) {
         <h3 className="font-bold text-text-main">데이터 고르기</h3>
         <span className="text-xs text-subtext-light">{catalog.length}개 지표</span>
       </div>
-      <label className="mt-3 flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 focus-within:border-primary">
-        <span className="material-symbols-outlined text-lg text-subtext-light">search</span>
-        <input
-          id="series-search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="품목·지표·출처 검색"
-          className="w-full text-sm outline-none"
-        />
-      </label>
+      <div className="mt-3 space-y-2">
+        <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 focus-within:border-primary">
+          <span className="material-symbols-outlined text-lg text-subtext-light">search</span>
+          <input
+            id="series-search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="품목·지표·출처 검색"
+            className="w-full text-sm outline-none"
+          />
+        </label>
+        {items.length > 1 && (
+          <select
+            aria-label="품목"
+            value={item}
+            onChange={(e) => setItem(e.target.value)}
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-text-main focus:border-primary focus:outline-none"
+          >
+            <option value="">모든 품목</option>
+            {items.map((i) => (
+              <option key={i} value={i}>
+                {i}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
       {full && <p className="mt-2 text-xs text-subtext-light">한 번에 {MAX_SERIES}개까지 고를 수 있어요. 지표를 지우면 더 고를 수 있어요.</p>}
       <div className="mt-3 space-y-2 max-h-[520px] overflow-y-auto pr-1">
         {groups.length === 0 && <p className="text-sm text-subtext-light py-4 text-center">찾는 지표가 없어요.</p>}
         {groups.map(([category, list]) => {
-          const isOpen = query.trim() !== '' || Boolean(open[category]);
+          const isOpen = query.trim() !== '' || item !== '' || Boolean(open[category]);
           return (
             <div key={category} className="border-b border-gray-100 pb-2">
               <button

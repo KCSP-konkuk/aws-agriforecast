@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { api } from '../../api/api';
 import { align, bucketOf, periodStart, prepare } from '../../lib/series';
-import { TEMPLATES } from '../workbench/templates';
+import { rankItems, TEMPLATES } from '../workbench/templates';
 import { AXIS, colorOf, keyLabel, num } from '../workbench/format';
 
 const TEMPLATE = TEMPLATES.find((t) => t.key === 'transmission');
@@ -26,10 +26,10 @@ function PreviewTip({ active, payload, names }) {
   );
 }
 
-// 홈 첫 화면의 작업대 미리보기 — 첫 품목의 '도매가 → 소매가' 템플릿을 최근 1년, 주 단위 지수로.
+// 홈 첫 화면의 작업대 미리보기 — 지표가 가장 많은 품목의 '도매가 → 소매가' 템플릿을 최근 1년, 주 단위 지수로.
 // 품목은 지표 목록에서 고른다(코드에 품목 이름 없음)
 export default function WorkbenchPreview({ catalog }) {
-  const item = useMemo(() => TEMPLATE.items(catalog)[0] ?? null, [catalog]);
+  const item = useMemo(() => rankItems(catalog, TEMPLATE.items(catalog))[0] ?? null, [catalog]);
   const series = useMemo(() => (item ? TEMPLATE.build(catalog, item).series : []), [catalog, item]);
   const entries = useMemo(() => series.map((s) => catalog.find((c) => c.id === s.id)).filter(Boolean), [series, catalog]);
   const [points, setPoints] = useState(null);
