@@ -32,14 +32,16 @@ function download(name, text) {
 
 // 표 미리보기 · CSV 받기 · 링크 복사 — 차트와 같은 값(주기·변환·시차·기간 반영)
 // columns: [{ id, name, source, unit(원래 단위), adjust(맞춘 방법), lagText, color }]
-export default function DataTable({ rows, columns, freq, title }) {
+export default function DataTable({ rows: all, columns, freq, title, notes = [], match }) {
   const [limit, setLimit] = useState(PAGE);
   const [copied, setCopied] = useState(null);
+  const rows = useMemo(() => (match ? all.filter((r) => match.has(r.key)) : all), [all, match]);
   const latestFirst = useMemo(() => [...rows].reverse(), [rows]);
 
   const saveCsv = () => {
     const csv = toCsv({
       title,
+      notes,
       columns: columns.map((c) => ({ id: c.id, name: c.name, source: c.source, unit: c.unit, transform: c.adjust || '원값', lag: c.lagText })),
       rows,
     });
@@ -60,7 +62,10 @@ export default function DataTable({ rows, columns, freq, title }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="font-bold text-text-main">표로 보기</h3>
-          <p className="text-xs text-subtext-light">차트와 같은 값이에요 · {rows.length.toLocaleString('ko-KR')}행 · 최근부터</p>
+          <p className="text-xs text-subtext-light">
+            차트와 같은 값이에요 · {match ? '조건에 맞는 ' : ''}
+            {rows.length.toLocaleString('ko-KR')}행 · 최근부터
+          </p>
         </div>
         <div className="flex gap-2">
           <button
@@ -83,7 +88,7 @@ export default function DataTable({ rows, columns, freq, title }) {
         </div>
       </div>
       {rows.length === 0 ? (
-        <p className="py-6 text-center text-sm text-subtext-light">고른 기간에 값이 없어요.</p>
+        <p className="py-6 text-center text-sm text-subtext-light">{match ? '조건에 맞는 칸이 없어요.' : '고른 기간에 값이 없어요.'}</p>
       ) : (
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-sm">

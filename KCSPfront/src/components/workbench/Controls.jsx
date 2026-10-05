@@ -4,13 +4,17 @@ import { PERIODS } from './format';
 const CHARTS = [
   ['line', '시계열', 'show_chart'],
   ['scatter', '산점도', 'scatter_plot'],
+  ['scatter3d', '3D 산점도', 'view_in_ar'],
+  ['parallel', '평행 좌표', 'stacked_line_chart'],
+  ['lag', '시차 상관', 'grid_on'],
+  ['terrain', '지형도', 'landscape'],
 ];
 
 function Segmented({ label, options, value, onChange, disabled = () => false, disabledTitle }) {
   return (
     <div className="flex items-center gap-1.5" role="group" aria-label={label}>
-      <span className="text-xs text-subtext-light">{label}</span>
-      <div className="flex rounded-lg border border-gray-200 bg-white p-0.5">
+      <span className="shrink-0 whitespace-nowrap text-xs text-subtext-light">{label}</span>
+      <div className="flex flex-wrap rounded-lg border border-gray-200 bg-white p-0.5">
         {options.map(([key, text, icon]) => {
           const off = disabled(key);
           return (
@@ -39,8 +43,8 @@ function Segmented({ label, options, value, onChange, disabled = () => false, di
 export default function Controls({ chart, freq, allowed, period, from, to, bounds, onChange }) {
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Segmented label="차트" options={CHARTS} value={chart} onChange={(c) => onChange({ chart: c })} />
+      <Segmented label="차트" options={CHARTS} value={chart} onChange={(c) => onChange({ chart: c })} />
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <Segmented
             label="주기"

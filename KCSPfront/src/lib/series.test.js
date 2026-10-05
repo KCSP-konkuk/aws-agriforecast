@@ -7,14 +7,21 @@ import {
   diffUnit,
   displayUnit,
   dropPartial,
+  formatConditions,
   freeColor,
   keyOfStep,
+  lagCorrelation,
+  matchRows,
+  parseConditions,
   pearson,
   periodStart,
   prepare,
+  quantile,
   rangeOf,
   readState,
   resample,
+  seasonGrid,
+  seasonName,
   shift,
   stepOf,
   toCsv,
@@ -134,6 +141,40 @@ describe('정렬·상관·기간', () => {
     expect(pearson([1, 2, null], [1, 2, 3])).toEqual({ r: null, n: 2 });
   });
 
+  it('시차 상관: 앞서 움직인 지표는 그 시차에서 상관이 가장 크다', () => {
+    const keys = Array.from({ length: 40 }, (_, i) => keyOfStep(stepOf('2024-01-01', 's') + i, 's'));
+    const lead = keys.map((k, i) => [k, Math.sin(i / 2) + (i % 3) * 0.01]);
+    const base = keys.map((k, i) => [k, i >= 2 ? Math.sin((i - 2) / 2) : 0]); // 2순 뒤에 따라온다
+    const out = lagCorrelation(base, lead, [0, 1, 2, 3], 's');
+    const best = out.reduce((a, b) => (Math.abs(b.r) > Math.abs(a.r) ? b : a));
+    expect(best.lag).toBe(2);
+    expect(best.r).toBeGreaterThan(0.99);
+    expect(out[2].n).toBe(38);
+  });
+
+  it('분위수와 조건에 맞는 칸', () => {
+    expect(quantile([4, 1, 3, 2, null], 0.5)).toBe(2.5);
+    expect(quantile([], 0.5)).toBeNull();
+    const rows = [
+      { key: 'a', s: -20, t: 2 },
+      { key: 'b', s: -10, t: 2 },
+      { key: 'c', s: -30 },
+    ];
+    expect(matchRows(rows, [])).toBeNull();
+    expect([...matchRows(rows, [{ id: 's', min: null, max: -15 }])]).toEqual(['a', 'c']);
+    expect([...matchRows(rows, [{ id: 's', min: null, max: -15 }, { id: 't', min: 1.5, max: null }])]).toEqual(['a']);
+  });
+
+  it('지형도 격자와 계절', () => {
+    const g = seasonGrid([['2024-01-01', 1], ['2024-12-21', 2], ['2025-02-11', 3]], 's');
+    expect(g.years).toEqual([2024, 2025]);
+    expect(g.z[0][0]).toBe(1);
+    expect(g.z[0][35]).toBe(2);
+    expect(g.z[1][4]).toBe(3);
+    expect(seasonGrid([['2024-03-01', 5]], 'm').z[0][2]).toBe(5);
+    expect(['2024-04-11', '2024-07-01', '2024-10-21', '2024-01-01'].map(seasonName)).toEqual(['봄', '여름', '가을', '겨울']);
+  });
+
   it('기간 단축키는 데이터 마지막 날 기준', () => {
     expect(periodStart('3y', '2026-09-30')).toBe('2023-09-30');
     expect(periodStart('all', '2026-09-30')).toBeNull();
@@ -173,11 +214,31 @@ describe('내보내기·링크', () => {
       chart: 'scatter',
       x: 1,
       y: 0,
+      z: 2,
+      cz: 'season',
+      conditions: [],
     };
     expect(readState(writeState(state))).toEqual(state);
+    const cube = { ...state, chart: 'scatter3d', z: 0, cz: '1', conditions: [{ id: 'auction:가', min: null, max: -15 }] };
+    expect(readState(writeState(cube))).toEqual(cube);
     const custom = { ...state, period: 'custom', from: '2024-01-01', to: '2024-12-31', chart: 'line', x: 0, y: 1 };
     expect(readState(writeState(custom))).toEqual(custom);
     expect(readState(new URLSearchParams('p=custom&from=2024-1-1')).from).toBeNull();
+  });
+
+  it('조건은 주소에서 왕복하고, 범위가 빈 조건은 버린다', () => {
+    const list = [
+      { id: 'supply:가', min: null, max: -15 },
+      { id: 'area_temp:x', min: 1.5, max: null },
+    ];
+    expect(formatConditions(list)).toBe('supply:가,,-15;area_temp:x,1.5,');
+    expect(parseConditions(formatConditions(list))).toEqual(list);
+    expect(parseConditions('a,,;b,x,3')).toEqual([{ id: 'b', min: null, max: 3 }]);
+  });
+
+  it('CSV 제목 아래 설명 줄', () => {
+    const csv = toCsv({ title: 't', notes: ['조건: 가 ≤ −15'], columns: [], rows: [] });
+    expect(csv).toContain('t\n조건: 가 ≤ −15\n지표,출처');
   });
 
   it('새 지표는 비어 있는 첫 색', () => {
