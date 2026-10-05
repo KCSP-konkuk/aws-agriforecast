@@ -91,3 +91,6 @@ jobs:
         run: |
           npm ci
           npm run build
+      # 작업대 계산(src/lib/series.js — 주기 맞추기·변환·시차·CSV·주소 상태) 단위 테스트
+      - name: Test
+        run: npm test

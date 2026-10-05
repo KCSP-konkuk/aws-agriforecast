@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import StatusMessage from '../components/StatusMessage';
+import AnalysisTabs from '../components/AnalysisTabs';
 import { api } from '../api/api';
 import Headline from '../components/dashboard/Headline';
 import FactorBalance from '../components/dashboard/FactorBalance';
@@ -10,20 +11,28 @@ import EventTimeline from '../components/dashboard/EventTimeline';
 import AnalogCards from '../components/dashboard/AnalogCards';
 import FlowPanel from '../components/dashboard/FlowPanel';
 import { sinceLabel, updatedLabel } from '../components/dashboard/format';
+import { TEMPLATES } from '../components/workbench/templates';
 
-// 가격 대시보드 — 품목마다 배치(pipeline_insight)가 매일 12:40 KST 계산한 인사이트를 보여 준다.
+// 오늘의 요약(분석 › 오늘의 요약) — 품목마다 배치(pipeline_insight)가 매일 12:40 KST 계산한 인사이트를 보여 준다.
 // 품목 목록은 API 에서 받는다(화면에 품목 이름을 두지 않는다)
 export default function Dashboard() {
   const [params, setParams] = useSearchParams();
   const [items, setItems] = useState({ status: 'loading', data: [] });
   const [insight, setInsight] = useState({ status: 'loading', data: null });
+  const [catalog, setCatalog] = useState([]);
   const selected = params.get('item') || items.data[0]?.item || null;
+  // 이 품목으로 열 수 있는 작업대 템플릿 (품목끼리 비교는 품목과 무관해 뺀다)
+  const bridges = selected ? TEMPLATES.filter((t) => t.key !== 'compare' && t.items(catalog).includes(selected)) : [];
 
   useEffect(() => {
     api
       .getDashboardItems()
       .then((data) => setItems({ status: 'ready', data }))
       .catch(() => setItems({ status: 'error', data: [] }));
+    api
+      .getSeriesCatalog()
+      .then(setCatalog)
+      .catch(() => setCatalog([]));
   }, []);
 
   useEffect(() => {
@@ -46,11 +55,12 @@ export default function Dashboard() {
     <Layout>
       <main className="px-4 py-6 sm:px-6 lg:p-10 space-y-6">
         <div>
-          <h1 className="text-text-main text-3xl sm:text-4xl font-black leading-tight tracking-[-0.033em]">가격 대시보드</h1>
+          <h1 className="text-text-main text-3xl sm:text-4xl font-black leading-tight tracking-[-0.033em]">오늘의 요약</h1>
           <p className="text-subtext-light mt-2 text-sm">
             KAMIS 서울 전통시장 소매가를 도매가·반입량·날씨·환율 같은 데이터와 함께 읽어요. 매일 낮 12시 40분에 갱신돼요.
           </p>
         </div>
+        <AnalysisTabs />
 
         {items.status !== 'ready' || items.data.length === 0 ? (
           <StatusMessage
@@ -80,12 +90,28 @@ export default function Dashboard() {
               ))}
             </div>
 
+            {bridges.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-subtext-light">작업대에서 직접 보기</span>
+                {bridges.map((t) => (
+                  <Link
+                    key={t.key}
+                    to={`/analysis?tpl=${t.key}&item=${encodeURIComponent(selected)}`}
+                    className="flex items-center gap-1 rounded-full border border-primary/30 px-3 py-1 font-semibold text-primary hover:bg-primary-light"
+                  >
+                    <span className="material-symbols-outlined text-base">insights</span>
+                    {t.title}
+                  </Link>
+                ))}
+              </div>
+            )}
+
             {!d ? (
               <StatusMessage
                 status={insight.status === 'ready' ? 'ready' : insight.status}
-                loadingText="대시보드를 불러오는 중이에요"
+                loadingText="요약을 불러오는 중이에요"
                 emptyText="이 품목은 아직 계산 전이에요. 매일 낮 12시 40분에 갱신돼요."
-                errorText="대시보드를 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요."
+                errorText="요약을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요."
               />
             ) : (
               <div className={`space-y-6 transition-opacity ${insight.status === 'loading' ? 'opacity-60' : ''}`}>

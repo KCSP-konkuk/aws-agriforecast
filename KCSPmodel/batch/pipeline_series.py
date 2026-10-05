@@ -91,6 +91,13 @@ def join_history(history, recent):
     return pd.concat([history, recent[recent.index > history.index.max()]]).sort_index()
 
 
+def crop_of(garak_item):
+    """가락(농넷) 품목명 → 작업대 품목 묶음. 소매와 이름이 다른 작물은 pipeline_retail.GARAK 의 짝을 따른다
+    (소매 이름으로 묶어야 작업대 템플릿이 소매가·경매가·반입량을 한 품목으로 짝짓는다)"""
+    reverse = {garak: retail for retail, (_, garak) in pr.GARAK.items()}
+    return reverse.get(garak_item, garak_item)
+
+
 def make(series_id, name, category, source, unit, freq, agg, values, item=None):
     return dict(id=series_id, name=name, item=item, category=category, source=source, unit=unit,
                 freq=freq, agg=agg, values=values)
@@ -167,7 +174,7 @@ def load_auction(conn):
         unit = units.get(item)
         out.append(make(f'auction:{item}', f'{item} 경매가', '가격', '가락시장 경매가 · 상 등급(농넷)',
                         f'원/{unit}' if unit else '원', 'daily', 'mean',
-                        join_history(history.get(item, pd.Series(dtype=float)), recent), item))
+                        join_history(history.get(item, pd.Series(dtype=float)), recent), crop_of(item)))
     return out
 
 
@@ -193,7 +200,7 @@ def load_supply(conn):
         out.append(make(f'supply:{item}', f'{item} 반입량', '수급', '가락시장 반입량(서울시농수산식품공사)', '톤',
                         'soon', 'sum',
                         join_history(history.get(item, pd.Series(dtype=float)), to_soon(daily, 'sum', complete_only=True)),
-                        item))
+                        crop_of(item)))
     return out
 
 
@@ -260,14 +267,14 @@ def load_oil(conn):
 def load_price_index(conn, table, column, prefix, label, source):
     rows = query(conn, f"SELECT ITEM_NAME, YEAR, MONTH, {column} FROM {table} WHERE {column} IS NOT NULL")
     return [make(f'{prefix}:{item}', f'{item} {label}', '거시', source, '지수', 'monthly', 'mean',
-                 series_from([(month_first_day(y, m), v) for i, y, m, v in rows if i == item]), item)
+                 series_from([(month_first_day(y, m), v) for i, y, m, v in rows if i == item]), crop_of(item))
             for item in sorted({r[0] for r in rows})]
 
 
 def load_search(conn):
     rows = query(conn, "SELECT KEYWORD, PERIOD, RATIO FROM search_trend")
     return [make(f'search:{kw}', f"'{kw}' 검색량", '관심도', '네이버 데이터랩 검색어 트렌드', '상대값 (기간 최댓값 100)',
-                 'daily', 'mean', series_from([(d, v) for k, d, v in rows if k == kw]))
+                 'daily', 'mean', series_from([(d, v) for k, d, v in rows if k == kw]), crop_of(kw))
             for kw in sorted({r[0] for r in rows})]
 
 
