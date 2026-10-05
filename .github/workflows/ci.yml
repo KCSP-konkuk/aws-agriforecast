@@ -89,11 +89,13 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: KCSPfront/package-lock.json
-      # lint 는 기존 코드에 오류 27개가 있어 넣지 않았다(정리 후 추가)
       - name: Build
         run: |
           npm ci
           npm run build
+      # eslint(경고도 실패로 — --max-warnings 0). PropTypes 규칙은 끈다(.eslintrc.cjs)
+      - name: Lint
+        run: npm run lint
       # 작업대 계산(src/lib/series.js — 주기 맞추기·변환·시차·CSV·주소 상태) 단위 테스트
       - name: Test
         run: npm test
