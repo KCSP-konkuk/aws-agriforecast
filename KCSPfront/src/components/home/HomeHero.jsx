@@ -1,5 +1,8 @@
+import { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import WorkbenchPreview from './WorkbenchPreview';
+
+// 미리보기 차트(Recharts)는 따로 받는다 — 홈 첫 로드에 차트 라이브러리를 싣지 않게
+const WorkbenchPreview = lazy(() => import('./WorkbenchPreview'));
 
 // 홈 첫 화면 — 서비스 정체성 한 문장, 작업대 · 오늘의 요약 바로가기, 숫자 몇 개, 작업대 미리보기
 // 숫자는 지표 목록에서 센다(목록을 못 받으면 숨긴다)
@@ -54,7 +57,11 @@ export default function HomeHero({ catalog }) {
             </dl>
           )}
         </div>
-        {catalog.length > 0 && <WorkbenchPreview catalog={catalog} />}
+        {catalog.length > 0 && (
+          <Suspense fallback={<div className="h-72 rounded-xl border border-gray-200 bg-white" aria-hidden="true" />}>
+            <WorkbenchPreview catalog={catalog} />
+          </Suspense>
+        )}
       </div>
     </section>
   );
