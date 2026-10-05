@@ -16,6 +16,16 @@ export function yearColor(year, first, last) {
   return `rgb(${YEAR_FROM.map((v, i) => Math.round(v + (YEAR_TO[i] - v) * t)).join(',')})`;
 }
 
+// Plotly 3D 축 공통 모양
+export const sceneAxis = (title, extra = {}) => ({
+  title: { text: title, font: { size: 11, color: '#64748B' } },
+  gridcolor: '#E0E0E0',
+  zerolinecolor: '#94A3B8',
+  backgroundcolor: 'rgba(0,0,0,0)',
+  tickfont: { size: 10, color: '#64748B' },
+  ...extra,
+});
+
 // 3D 산점도 계절 색 (범주 색에서)
 export const SEASON_COLORS = { 봄: '#1baf7a', 여름: '#e34948', 가을: '#eda100', 겨울: '#2a78d6' };
 export const MUTED = '#CBD5E1'; // 조건에 맞지 않는 점·선

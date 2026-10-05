@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { prepare, seasonGrid } from '../../lib/series';
-import PlotlyChart, { sceneAxis } from './PlotlyChart';
-import { heatColor, num, signed } from './format';
+import PlotlyChart from './PlotlyChart';
+import { heatColor, num, sceneAxis, signed } from './format';
 
 const SOON = ['상', '중', '하'];
 const MONTHS = Array.from({ length: 12 }, (_, i) => `${i + 1}월`);

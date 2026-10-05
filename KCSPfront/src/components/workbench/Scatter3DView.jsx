@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { FREQ_LABEL, seasonName } from '../../lib/series';
-import PlotlyChart, { sceneAxis } from './PlotlyChart';
-import { keyLabel, MUTED, num, SEASON_COLORS } from './format';
+import PlotlyChart from './PlotlyChart';
+import { keyLabel, MUTED, num, sceneAxis, SEASON_COLORS } from './format';
 
 const YEAR_SCALE = [
   [0, 'rgb(191,216,176)'],
