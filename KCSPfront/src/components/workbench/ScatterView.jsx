@@ -1,6 +1,6 @@
 import { CartesianGrid, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { FREQ_LABEL, pearson } from '../../lib/series';
-import { AXIS, keyLabel, num, tickNum, yearColor } from './format';
+import { AXIS, keyLabel, MUTED, num, tickNum, yearColor } from './format';
 
 const strength = (r) => {
   const a = Math.abs(r);
@@ -61,7 +61,7 @@ function AxisSelect({ id, label, value, lines, onChange }) {
 }
 
 // 산점도 — 가로·세로 지표의 같은 칸 값을 점 하나로. 색은 연도(옅을수록 예전), 테두리 점이 가장 최근
-export default function ScatterView({ rows, lines, x, y, freq, onAxes }) {
+export default function ScatterView({ rows, lines, x, y, freq, match, onAxes }) {
   if (lines.length < 2) {
     return <p className="py-16 text-center text-sm text-subtext-light">산점도는 지표가 2개 이상 있어야 그릴 수 있어요.</p>;
   }
@@ -76,7 +76,9 @@ export default function ScatterView({ rows, lines, x, y, freq, onAxes }) {
   );
   const years = [...new Set(points.map((p) => p.year))];
   const [y0, y1] = [years[0], years[years.length - 1]];
-  const byYear = years.map((yr) => ({ yr, data: points.filter((p) => p.year === yr) }));
+  const inside = match ? points.filter((p) => match.has(p.key)) : points;
+  const outside = match ? points.filter((p) => !match.has(p.key)) : [];
+  const byYear = years.map((yr) => ({ yr, data: inside.filter((p) => p.year === yr) })).filter((g) => g.data.length);
   const latest = points[points.length - 1];
   const line = trend(points);
 
@@ -105,6 +107,7 @@ export default function ScatterView({ rows, lines, x, y, freq, onAxes }) {
               <XAxis type="number" dataKey="x" tick={AXIS.tick} tickFormatter={tickNum} domain={['auto', 'auto']} name={xl.name} />
               <YAxis type="number" dataKey="y" tick={AXIS.tick} tickFormatter={tickNum} width={56} domain={['auto', 'auto']} name={yl.name} />
               <Tooltip content={<ScatterTip xl={xl} yl={yl} freq={freq} />} />
+              {outside.length > 0 && <Scatter data={outside} fill={MUTED} fillOpacity={0.6} isAnimationActive={false} />}
               {byYear.map(({ yr, data }) => (
                 <Scatter key={yr} data={data} fill={yearColor(yr, y0, y1)} fillOpacity={0.85} isAnimationActive={false} />
               ))}
@@ -124,6 +127,7 @@ export default function ScatterView({ rows, lines, x, y, freq, onAxes }) {
               </span>
             )}
             <span>테두리 점 = 가장 최근 ({keyLabel(latest.key, freq)})</span>
+            {match && <span>회색 = 조건 밖 (맞는 점 {inside.length.toLocaleString('ko-KR')}개)</span>}
             <span>점선 = 추세</span>
           </div>
           <p className="mt-3 text-sm text-text-main">

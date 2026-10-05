@@ -225,6 +225,73 @@ export function pearson(xs, ys) {
   return { r: sxx && syy ? sxy / Math.sqrt(sxx * syy) : null, n };
 }
 
+// 시차 상관에서 훑어볼 시차 (칸 단위, 설계 4.4: 0~12순)
+export const LAG_SCAN = {
+  d: [0, 3, 7, 10, 14, 21, 30, 45, 60, 90],
+  w: [0, 1, 2, 3, 4, 6, 8, 10, 12],
+  s: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  m: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+};
+
+// 시차 상관: 다른 지표를 k칸 늦춰(k칸 앞서 움직였다고 보고) 기준 지표의 같은 칸과 상관. [{lag, r, n}]
+export function lagCorrelation(base, other, lags, f) {
+  const target = new Map(base);
+  return lags.map((k) => {
+    const xs = [];
+    const ys = [];
+    for (const [key, v] of other) {
+      const b = target.get(keyOfStep(stepOf(key, f) + k, f));
+      if (b != null && Number.isFinite(b) && Number.isFinite(v)) {
+        xs.push(v);
+        ys.push(b);
+      }
+    }
+    return { lag: k, ...pearson(xs, ys) };
+  });
+}
+
+// 분위수 (선형 보간). 값이 없으면 null
+export function quantile(values, q) {
+  const xs = values.filter(Number.isFinite).sort((a, b) => a - b);
+  if (!xs.length) return null;
+  const pos = (xs.length - 1) * q;
+  const lo = Math.floor(pos);
+  const hi = Math.ceil(pos);
+  return xs[lo] + (xs[hi] - xs[lo]) * (pos - lo);
+}
+
+// 조건: [{ id, min, max }] — 화면에 보이는 값(변환·시차 반영) 기준, 비운 쪽은 열려 있다.
+// 모든 조건을 만족하는 칸의 Set (값이 없는 칸은 맞지 않음). 조건이 없으면 null
+export function matchRows(rows, conditions) {
+  if (!conditions.length) return null;
+  const ok = (r) =>
+    conditions.every((c) => {
+      const v = r[c.id];
+      return Number.isFinite(v) && (c.min == null || v >= c.min) && (c.max == null || v <= c.max);
+    });
+  return new Set(rows.filter(ok).map((r) => r.key));
+}
+
+// 계절(3~5월 봄 …) — 3D 산점도 색
+export function seasonName(key) {
+  const m = parse(key)[1];
+  return m >= 3 && m <= 5 ? '봄' : m >= 6 && m <= 8 ? '여름' : m >= 9 && m <= 11 ? '가을' : '겨울';
+}
+
+// 지형도 격자: [[칸, 값]] (순 또는 월) → 해(행) × 한 해 안 시기(열: 순 36 · 월 12)
+export function seasonGrid(series, f) {
+  const cols = f === 'm' ? 12 : 36;
+  const byYear = new Map();
+  for (const [k, v] of series) {
+    const [y, m, d] = parse(k);
+    const col = f === 'm' ? m - 1 : (m - 1) * 3 + (d <= 10 ? 0 : d <= 20 ? 1 : 2);
+    if (!byYear.has(y)) byYear.set(y, Array(cols).fill(null));
+    byYear.get(y)[col] = v;
+  }
+  const years = [...byYear.keys()].sort((a, b) => a - b);
+  return { years, cols, z: years.map((y) => byYear.get(y)) };
+}
+
 // 화면에 보일 단위: 원값·이동평균은 지표 단위, 지수·비율은 공통 단위 — 같은 단위끼리 한 차트에
 export function displayUnit(kind, unit) {
   if (kind === 'index') return '지수 (시작=100)';
@@ -248,8 +315,8 @@ export function rangeOf(state, f, lastIso) {
   return { from: from ? bucketOf(from, f) : null, to: to ? bucketOf(to, f) : null };
 }
 
-// CSV — 맨 위에 지표 설명(출처·단위·변환·시차), 빈 줄, 그 아래 표. 엑셀에서 한글이 깨지지 않게 BOM
-export function toCsv({ title, columns, rows }) {
+// CSV — 맨 위에 제목·설명 줄(조건 등), 지표 설명(출처·단위·변환·시차), 빈 줄, 그 아래 표. 엑셀에서 한글이 깨지지 않게 BOM
+export function toCsv({ title, notes = [], columns, rows }) {
   const esc = (v) => {
     if (v == null) return '';
     const s = typeof v === 'number' ? String(Math.round(v * 1000) / 1000) : String(v);
@@ -257,6 +324,7 @@ export function toCsv({ title, columns, rows }) {
   };
   const lines = [
     [title].map(esc).join(','),
+    ...notes.map(esc),
     ['지표', '출처', '단위', '변환', '시차'].join(','),
     ...columns.map((c) => [c.name, c.source, c.unit, c.transform, c.lag].map(esc).join(',')),
     '',
@@ -268,6 +336,25 @@ export function toCsv({ title, columns, rows }) {
 
 const PERIOD_KEYS = ['1y', '3y', '5y', 'all', 'custom'];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const COLOR_BY = /^(season|year|\d)$/;
+const CHART_KEYS = ['line', 'scatter', 'scatter3d', 'parallel', 'lag', 'terrain'];
+
+// 조건 ↔ 주소: 'supply:양파,,-15;area_temp:haenam,1.5,' (지표, 최소, 최대 — 비우면 열림)
+export function parseConditions(raw) {
+  if (!raw) return [];
+  const num = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
+  return raw
+    .split(';')
+    .map((part) => {
+      const [id, lo, hi] = part.split(',');
+      return { id, min: num(lo), max: num(hi) };
+    })
+    .filter((c) => c.id && (c.min != null || c.max != null));
+}
+
+export function formatConditions(list) {
+  return list.map((c) => [c.id, c.min ?? '', c.max ?? ''].join(',')).join(';');
+}
 
 // 주소(쿼리) ↔ 작업대 상태. 링크를 받은 사람이 같은 화면을 연다
 export function readState(params) {
@@ -287,9 +374,12 @@ export function readState(params) {
     period: PERIOD_KEYS.includes(params.get('p')) ? params.get('p') : '3y',
     from: DATE_RE.test(params.get('from') ?? '') ? params.get('from') : null,
     to: DATE_RE.test(params.get('to') ?? '') ? params.get('to') : null,
-    chart: params.get('c') || 'line',
+    chart: CHART_KEYS.includes(params.get('c')) ? params.get('c') : 'line',
     x: Number.parseInt(params.get('x') ?? '0', 10) || 0,
     y: Number.parseInt(params.get('y') ?? '1', 10) || 0,
+    z: Number.parseInt(params.get('z') ?? '2', 10) || 0,
+    cz: COLOR_BY.test(params.get('cz') ?? '') ? params.get('cz') : 'season',
+    conditions: parseConditions(params.get('q')),
   };
 }
 
@@ -312,6 +402,11 @@ export function writeState(state) {
     p.set('x', String(state.x));
     p.set('y', String(state.y));
   }
+  if (state.chart === 'scatter3d') {
+    p.set('z', String(state.z));
+    p.set('cz', state.cz);
+  }
+  if (state.conditions?.length) p.set('q', formatConditions(state.conditions));
   return p;
 }
 

@@ -19,7 +19,7 @@ export default function TemplateBar({ catalog, onApply }) {
         <span className="material-symbols-outlined ml-auto text-lg text-subtext-light">{open ? 'expand_less' : 'expand_more'}</span>
       </button>
       {open && (
-        <div className="-mx-4 mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-4">
+        <div className="-mx-4 mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 xl:grid-cols-4">
           {list.map((t) => (
             <div key={t.key} className="flex w-64 shrink-0 snap-start flex-col rounded-lg border border-gray-100 p-3 sm:w-auto">
               <p className="text-sm font-semibold text-text-main">{t.title}</p>

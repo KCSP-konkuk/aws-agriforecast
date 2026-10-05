@@ -21,6 +21,28 @@ export const TEMPLATES = [
     }),
   },
   {
+    key: 'lead',
+    title: '몇 순 뒤에 반영되나',
+    who: '소매상 · 도매상',
+    desc: '경매·도매가와 반입량이 몇 순 앞서 소매가와 함께 움직였는지 시차별 상관으로 봐요',
+    items: (catalog) => retailItems(catalog).filter((item) => wholesaleOf(catalog, item)),
+    build: (catalog, item) => {
+      const supply = find(catalog, 'supply', item);
+      return {
+        series: [
+          pick(`retail:${item}`, 'normal', 0),
+          pick(wholesaleOf(catalog, item).id, 'normal', 1),
+          ...(supply ? [pick(supply.id, 'normal', 2)] : []),
+        ],
+        freq: 's',
+        period: 'all',
+        chart: 'lag',
+        x: 1,
+        y: 0,
+      };
+    },
+  },
+  {
     key: 'supply',
     title: '반입량과 경매가',
     who: '도매상',
@@ -52,6 +74,35 @@ export const TEMPLATES = [
       period: '5y',
       chart: 'line',
     }),
+  },
+  {
+    key: 'situation',
+    title: '상황 공간 3D',
+    who: '모두',
+    desc: '반입량·산지 기온·소매가가 평년과 얼마나 달랐는지 한 공간에 찍어 비슷했던 상황을 찾아봐요',
+    items: (catalog) => (find(catalog, 'area_temp') ? retailItems(catalog).filter((item) => find(catalog, 'supply', item)) : []),
+    build: (catalog, item) => ({
+      series: [
+        pick(find(catalog, 'supply', item).id, 'normal', 0),
+        pick(find(catalog, 'area_temp').id, 'normal', 1),
+        pick(`retail:${item}`, 'normal', 2),
+      ],
+      freq: 's',
+      period: 'all',
+      chart: 'scatter3d',
+      x: 0,
+      y: 1,
+      z: 2,
+      cz: 'season',
+    }),
+  },
+  {
+    key: 'terrain',
+    title: '가격 지형도',
+    who: '모두',
+    desc: '해마다 같은 시기의 소매가를 지형처럼 펼쳐 계절성과 유난했던 해를 봐요',
+    items: retailItems,
+    build: (catalog, item) => ({ series: [pick(`retail:${item}`, 'raw', 0)], freq: 's', period: 'all', chart: 'terrain', y: 0 }),
   },
   {
     key: 'compare',

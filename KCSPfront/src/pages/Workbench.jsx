@@ -11,6 +11,7 @@ import {
   displayUnit,
   FREQ_LABEL,
   freeColor,
+  matchRows,
   MAX_SERIES,
   prepare,
   rangeOf,
@@ -24,20 +25,35 @@ import SeriesPicker from '../components/workbench/SeriesPicker';
 import Controls from '../components/workbench/Controls';
 import LineView from '../components/workbench/LineView';
 import ScatterView from '../components/workbench/ScatterView';
+import Scatter3DView from '../components/workbench/Scatter3DView';
+import ParallelView from '../components/workbench/ParallelView';
+import LagView from '../components/workbench/LagView';
+import TerrainView from '../components/workbench/TerrainView';
 import Readout from '../components/workbench/Readout';
+import FilterBar from '../components/workbench/FilterBar';
+import ConditionSummary from '../components/workbench/ConditionSummary';
 import DataTable from '../components/workbench/DataTable';
 import { defaultState, TEMPLATES } from '../components/workbench/templates';
-import { lagLabel, spanLabel } from '../components/workbench/format';
+import { conditionText, lagLabel, spanLabel } from '../components/workbench/format';
 
 const NATIVE = { daily: 'd', soon: 's', monthly: 'm' };
 const EMPTY = readState(new URLSearchParams());
 
-// 산점도 축(고른 지표 순번)이 범위를 넘거나 가로·세로가 같아지지 않게
+// 차트 축(고른 지표 순번 x·y·z)이 범위를 넘지 않고, 지표가 넉넉하면 서로 겹치지 않게.
+// 색(cz)이 없는 지표를 가리키면 계절로, 조건은 남아 있는 지표 것만
 function fixAxes(state) {
   const n = state.series.length;
-  const x = state.x >= 0 && state.x < n ? state.x : 0;
-  const y = state.y >= 0 && state.y < n && state.y !== x ? state.y : n > 1 ? (x === 0 ? 1 : 0) : 0;
-  return { ...state, x, y };
+  const pick = (v, taken) => {
+    if (v >= 0 && v < n && !taken.includes(v)) return v;
+    for (let i = 0; i < n; i += 1) if (!taken.includes(i)) return i;
+    return 0;
+  };
+  const x = pick(state.x, []);
+  const y = pick(state.y, n > 1 ? [x] : []);
+  const z = pick(state.z, n > 2 ? [x, y] : []);
+  const cz = /^\d$/.test(state.cz) && Number(state.cz) >= n ? 'season' : state.cz;
+  const ids = new Set(state.series.map((s) => s.id));
+  return { ...state, x, y, z, cz, conditions: state.conditions.filter((c) => ids.has(c.id)) };
 }
 
 // 주기는 고른 지표가 허락하는 것으로 맞추고, 주기가 바뀌면 시차를 같은 날 수에 가깝게 옮긴다
@@ -47,6 +63,9 @@ function normalize(next, catById, prevFreq) {
   const series = freq === prevFreq ? next.series : next.series.map((s) => ({ ...s, lag: convertLag(s.lag, prevFreq, freq) }));
   return fixAxes({ ...next, freq, series });
 }
+
+// 기준 지표(y)를 고르면 x 와 겹치지 않게 서로 바꾼다 — 시차 상관·지형도
+const baseAxes = (state, i) => ({ y: i, x: i === state.x ? state.y : state.x });
 
 // 표 머리에 적는 '무엇을 어떻게 맞췄나' — 예: 일→순 평균 · 지수 (시작=100). 그대로면 빈 문자열
 function adjustText(entry, kind, f) {
@@ -151,6 +170,18 @@ export default function Workbench() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [series, store, catById, freq, range.from, range.to]);
   const rows = useMemo(() => align(prepared), [prepared]);
+  const match = useMemo(() => matchRows(rows, state.conditions), [rows, state.conditions]);
+  // 시차 상관은 사용자가 건 시차를 빼고(0) 계산한다 — 그 차트를 볼 때만
+  const preparedNoLag = useMemo(() => {
+    if (state.chart !== 'lag') return null;
+    const out = {};
+    for (const s of series) {
+      const c = catById[s.id];
+      if (store[s.id]) out[s.id] = prepare(store[s.id], { f: freq, agg: c.agg, unit: c.unit, native: c.freq, kind: s.kind, ...range });
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.chart, series, store, catById, freq, range.from, range.to]);
   const lines = useMemo(
     () =>
       series.map((s) => {
@@ -182,9 +213,17 @@ export default function Workbench() {
   const removeSeries = (id) => {
     const at = series.findIndex((s) => s.id === id);
     const move = (v) => (v > at ? v - 1 : v);
-    update({ series: series.filter((s) => s.id !== id), x: move(state.x), y: move(state.y) });
+    const cz = /^\d$/.test(state.cz) ? (Number(state.cz) === at ? 'season' : String(move(Number(state.cz)))) : state.cz;
+    update({ series: series.filter((s) => s.id !== id), x: move(state.x), y: move(state.y), z: move(state.z), cz });
   };
-  const changeSeries = (id, patch) => update({ series: series.map((s) => (s.id === id ? { ...s, ...patch } : s)) });
+  // 변환을 바꾸면 값의 뜻이 달라지므로 그 지표의 조건은 지운다
+  const changeSeries = (id, patch) => {
+    const old = series.find((s) => s.id === id);
+    const conditions = patch.kind && patch.kind !== old?.kind ? state.conditions.filter((c) => c.id !== id) : state.conditions;
+    update({ series: series.map((s) => (s.id === id ? { ...s, ...patch } : s)), conditions });
+  };
+  const setCondition = (id, range) =>
+    update({ conditions: range ? [...state.conditions.filter((c) => c.id !== id), { id, ...range }] : state.conditions.filter((c) => c.id !== id) });
   const applyTemplate = (t, item) => {
     const built = t.build(catalog.data, item);
     setParams(writeState(normalize({ ...EMPTY, ...built }, catById, built.freq)));
@@ -216,13 +255,31 @@ export default function Workbench() {
   } else if (!hasData) {
     body = <StatusMessage status="loading" loadingText="데이터를 불러오는 중이에요" />;
   } else {
+    const onBase = (i) => update(baseAxes(state, i));
+    const views = {
+      line: () => (
+        <LineView
+          rows={rows}
+          lines={lines}
+          freq={freq}
+          match={match}
+          onIndexAll={() => update({ series: series.map((s) => ({ ...s, kind: 'index' })) })}
+        />
+      ),
+      scatter: () => <ScatterView rows={rows} lines={lines} x={state.x} y={state.y} freq={freq} match={match} onAxes={(x, y) => update({ x, y })} />,
+      scatter3d: () => (
+        <Scatter3DView rows={rows} lines={lines} x={state.x} y={state.y} z={state.z} cz={state.cz} freq={freq} match={match} onAxes={update} />
+      ),
+      parallel: () => <ParallelView rows={rows} lines={lines} conditions={state.conditions} match={match} freq={freq} onCondition={setCondition} />,
+      lag: () => (
+        <LagView lines={lines} prepared={preparedNoLag ?? {}} base={state.y} freq={freq} conditioned={state.conditions.length > 0} onBase={onBase} />
+      ),
+      terrain: () => <TerrainView lines={lines} store={store} catById={catById} base={state.y} freq={freq} onBase={onBase} />,
+    };
+    const ownSummary = state.chart === 'lag' || state.chart === 'terrain'; // 이 둘은 차트 안에 해석이 있다
     body = (
       <div className={`space-y-4 transition-opacity ${load.busy ? 'opacity-60' : ''}`}>
-        {state.chart === 'scatter' ? (
-          <ScatterView rows={rows} lines={lines} x={state.x} y={state.y} freq={freq} onAxes={(x, y) => update({ x, y })} />
-        ) : (
-          <LineView rows={rows} lines={lines} freq={freq} onIndexAll={() => update({ series: series.map((s) => ({ ...s, kind: 'index' })) })} />
-        )}
+        {(views[state.chart] ?? views.line)()}
         <div className="space-y-1 text-xs text-subtext-light">
           {load.error && (
             <p className="text-red-600">
@@ -233,14 +290,16 @@ export default function Workbench() {
             </p>
           )}
           {partial &&
+            state.chart !== 'terrain' &&
             (overlap[0] <= overlap[1] ? (
               <p>지표마다 기간이 달라요. 모두 있는 기간은 {spanLabel(overlap[0], overlap[1])}이에요. 산점도·상관은 함께 있는 칸만 써요.</p>
             ) : (
               <p>고른 지표들이 함께 있는 기간이 없어요. 기간을 넓히거나 다른 지표를 골라 보세요.</p>
             ))}
-          {freq === 'd' && rows.length > 1500 && <p>점이 많아요. 주·순 단위로 보면 흐름이 더 잘 보여요.</p>}
+          {freq === 'd' && rows.length > 1500 && !ownSummary && <p>점이 많아요. 주·순 단위로 보면 흐름이 더 잘 보여요.</p>}
         </div>
-        <Readout lines={lines} prepared={prepared} freq={freq} />
+        <FilterBar lines={lines} rows={rows} conditions={state.conditions} match={match} onChange={(conditions) => update({ conditions })} />
+        {match ? <ConditionSummary lines={lines} rows={rows} match={match} freq={freq} /> : !ownSummary && <Readout lines={lines} prepared={prepared} freq={freq} />}
       </div>
     );
   }
@@ -292,6 +351,12 @@ export default function Workbench() {
                 {hasData && (
                   <DataTable
                     rows={rows}
+                    match={match}
+                    notes={
+                      state.conditions.length
+                        ? [`조건: ${state.conditions.map((c) => conditionText(lines.find((l) => l.id === c.id), c)).join(' 그리고 ')}`]
+                        : []
+                    }
                     columns={lines}
                     freq={freq}
                     title={`AgriForecast 분석 작업대 (${FREQ_LABEL[freq]} 단위${rows.length ? `, ${spanLabel(rows[0].key, rows[rows.length - 1].key)}` : ''})`}

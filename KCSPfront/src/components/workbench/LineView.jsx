@@ -24,7 +24,18 @@ function LineTip({ active, payload, lines, freq }) {
 }
 
 // 시계열 겹쳐 보기 — 같은 단위끼리 한 판. 단위가 다르면 판을 나눈다(두 축 차트는 만들지 않는다)
-export default function LineView({ rows, lines, freq, onIndexAll }) {
+// 조건에 맞는 칸만 점을 찍는다
+const dotsFor = (match, color) =>
+  match
+    ? (p) =>
+        match.has(p.payload?.key) && p.cy != null ? (
+          <circle key={p.index} cx={p.cx} cy={p.cy} r={3} fill={color} stroke="#FFFFFF" strokeWidth={0.8} />
+        ) : (
+          <g key={p.index} />
+        )
+    : false;
+
+export default function LineView({ rows, lines, freq, match, onIndexAll }) {
   const panels = [];
   for (const l of lines) {
     const panel = panels.find((p) => p.unit === l.unitLabel);
@@ -65,6 +76,7 @@ export default function LineView({ rows, lines, freq, onIndexAll }) {
                   {l.lag ? ` (${lagLabel(l.lag, freq)})` : ''}
                 </span>
               ))}
+              {match && <span className="text-subtext-light">● 조건에 맞는 칸</span>}
             </div>
             <ResponsiveContainer width="100%" height={height}>
               <LineChart data={rows} syncId="workbench" margin={{ top: 6, right: 12, left: 0, bottom: 0 }}>
@@ -80,7 +92,8 @@ export default function LineView({ rows, lines, freq, onIndexAll }) {
                     name={l.name}
                     stroke={colorOf(l.color)}
                     strokeWidth={2}
-                    dot={false}
+                    dot={dotsFor(match, colorOf(l.color))}
+                    activeDot={{ r: 4 }}
                     connectNulls
                     isAnimationActive={false}
                   />
