@@ -13,6 +13,9 @@
 import sys
 
 BACKTEST_START = '202601상순'
+# 도매 예측 모델: 가락 품목명 → 테이블 앞부분({앞}_predictions 운영 예측 · {앞}_backtest 백테스트).
+# 백엔드 PredictionService 와 같은 짝. 분석 작업대 통합 시계열(pipeline_series)도 이 목록으로 예측 지표를 만든다
+MODELS = {'배추': 'cabbage', '양파': 'onion', '홍고추': 'redpepper'}
 
 
 def requested():

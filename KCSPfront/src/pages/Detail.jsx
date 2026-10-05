@@ -3,6 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import PredictionHistory from '../components/PredictionHistory';
 import { api } from '../api/api';
@@ -157,6 +158,11 @@ export default function Detail() {
   const [predictionData, setPredictionData] = useState([]);
   // 지금 화면 데이터를 받아 온 기간 { start, end } ('YYYY-MM-DD')
   const [range, setRange] = useState(null);
+  // 작업대 지표 목록 — 이 품목의 '예측은 얼마나 맞았나' 템플릿 링크용(가락 이름 → 작업대 품목 묶음)
+  const [catalog, setCatalog] = useState([]);
+  useEffect(() => {
+    api.getSeriesCatalog().then(setCatalog).catch(() => setCatalog([]));
+  }, []);
 
   // ITEM_ORDER 기준으로 정렬
   const sortedItems = useMemo(() => {
@@ -340,6 +346,7 @@ export default function Detail() {
   }, [period, customStart, customEnd, validPrices]);
 
   const selectedItem = selectedItemName;
+  const forecastItem = catalog.find((c) => c.id === `forecast_w:${selectedItem}`)?.item;
   const currentUnit = ITEM_UNIT[selectedItemName] ?? 'kg';
 
   // 눈금을 8개 안팎으로. 주별·월별처럼 점이 적으면 모두 보여준다
@@ -380,15 +387,24 @@ export default function Detail() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-col gap-1">
               <h2 className="text-3xl font-extrabold tracking-tight text-text-main">
-                농산물 가격 분석{selectedItem ? `: ${selectedItem}` : ''}
+                도매가 예측{selectedItem ? `: ${selectedItem}` : ''}
               </h2>
               <p className="text-base font-normal text-subtext-light">
-                과거, 현재, 그리고 AI 예측 가격 데이터를 시각적으로 분석하세요.
+                가락시장 경매가 추이와 다음 순 AI 예측, 그리고 지난 예측이 얼마나 맞았는지 봐요.
               </p>
               <p className="text-sm text-subtext-light">
                 가격 기준: 서울 가락시장 도매 경매가 · 상 등급 · 출처 농넷(서울시농수산식품공사). AI 예측도 같은 기준입니다.
               </p>
             </div>
+            {forecastItem && (
+              <Link
+                to={`/analysis?tpl=forecast&item=${encodeURIComponent(forecastItem)}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-white px-4 py-2 text-sm font-semibold text-primary hover:border-primary"
+              >
+                <span className="material-symbols-outlined text-lg">construction</span>
+                작업대에서 예측 ↔ 실제 겹쳐 보기
+              </Link>
+            )}
           </div>
 
           {/* 필터 & 컨트롤 패널 */}

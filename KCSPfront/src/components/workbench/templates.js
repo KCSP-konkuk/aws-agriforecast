@@ -105,6 +105,23 @@ export const TEMPLATES = [
     build: (catalog, item) => ({ series: [pick(`retail:${item}`, 'raw', 0)], freq: 's', period: 'all', chart: 'terrain', y: 0 }),
   },
   {
+    key: 'forecast',
+    title: '예측은 얼마나 맞았나',
+    who: '모두',
+    desc: 'AI 예측가와 실제 가격을 순마다 겹쳐 보고, 크게 틀린 때 무슨 일이 있었는지 찾아봐요',
+    // 소매 예측(forecast:) · 도매 예측(forecast_w:)이 있는 품목 — 도매 예측 품목은 가락 이름을 소매 이름으로 묶어 둔다
+    items: (catalog) => uniq(catalog.filter((c) => /^forecast(_w)?:/.test(c.id)).map((c) => c.item)),
+    build: (catalog, item) => {
+      const series = [];
+      const retail = find(catalog, 'forecast', item);
+      if (retail && find(catalog, 'retail', item)) series.push(pick(`retail:${item}`, 'raw', 0), pick(retail.id, 'raw', 1));
+      const wholesale = find(catalog, 'forecast_w', item);
+      const actual = wholesale && find(catalog, 'auction', item);
+      if (actual) series.push(pick(actual.id, 'raw', series.length), pick(wholesale.id, 'raw', series.length + 1));
+      return { series, freq: 's', period: '1y', chart: 'line' };
+    },
+  },
+  {
     key: 'compare',
     title: '품목끼리 비교',
     who: 'KAMIS 직원',

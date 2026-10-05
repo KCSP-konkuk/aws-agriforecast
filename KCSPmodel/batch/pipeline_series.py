@@ -16,6 +16,10 @@
   oil:diesel             경유 전국 평균 (oil_price)                                     일 · 평균
   cpi:{품목} · ppi:{품목}  KOSIS 품목별 물가지수 (cpi_data · ppi_data)                    월 · 평균
   search:{검색어}         네이버 검색량 (search_trend)                                   일 · 평균
+  forecast:{품목}         소매 예측 모델의 순별 예측가 (retail_predictions)                순 · 평균
+  forecast_error:{품목}   소매 예측 오차 % (retail_predictions.error_pct)                  순 · 평균
+  forecast_w:{품목}       도매 예측 — 운영 예측({앞}_predictions) 우선, 그 전은 백테스트     순 · 평균
+  forecast_w_error:{품목} 도매 예측 오차 %                                                순 · 평균
 
 지켜야 할 것
   - 순 주기 값은 그 순 첫날(1·11·21일), 월 값은 1일에 둔다
@@ -34,10 +38,11 @@ from datetime import date
 import numpy as np
 import pandas as pd
 
+import backtest
 import pipeline_retail as pr
 
 CATALOG, VALUES = 'series_catalog', 'series_value'
-CATEGORY_ORDER = ('가격', '수급', '기상', '거시', '관심도')
+CATEGORY_ORDER = ('가격', '예측', '수급', '기상', '거시', '관심도')
 INSERT_CHUNK = 5000
 # ASOS 지점 번호 → 이름 (백엔드 StationWeatherCollectService 의 수집 지점과 같다)
 STATIONS = {165: '무안', 264: '창녕', 247: '함양', 184: '제주', 100: '평창', 188: '구좌',
@@ -113,6 +118,21 @@ def read_csv(path):
     return pd.read_csv(path, encoding='utf-8-sig')
 
 
+def table_exists(conn, name):
+    """예측 테이블처럼 다른 배치가 만드는 테이블은 아직 없을 수 있다 — 없으면 그 지표는 건너뛴다"""
+    rows = query(conn, """SELECT COUNT(*) FROM information_schema.tables
+                           WHERE table_schema = DATABASE() AND table_name = %s""", (name,))
+    return bool(rows and rows[0][0])
+
+
+def retail_units(conn):
+    """소매 품목 → 최근 조사 단위 (retail_price)"""
+    return dict(query(conn, """SELECT r.ITEM_NAME, r.UNIT FROM retail_price r
+                                JOIN (SELECT ITEM_NAME, MAX(PRICE_DATE) d FROM retail_price
+                                      WHERE UNIT IS NOT NULL GROUP BY ITEM_NAME) m
+                                  ON r.ITEM_NAME = m.ITEM_NAME AND r.PRICE_DATE = m.d"""))
+
+
 # ---------------------------------------------------------------- 가격
 def load_retail(conn):
     """KAMIS 소매 — 경동·복조리 그날 값 평균(있는 곳만). 단위는 retail_price 의 최근 단위"""
@@ -120,10 +140,7 @@ def load_retail(conn):
     rows = query(conn, f"""SELECT item_name, price_date, AVG(price) FROM retail_market_price
                            WHERE market_name IN ({marks}) AND price > 0 GROUP BY item_name, price_date""",
                  tuple(pr.MARKETS))
-    units = dict(query(conn, """SELECT r.ITEM_NAME, r.UNIT FROM retail_price r
-                                JOIN (SELECT ITEM_NAME, MAX(PRICE_DATE) d FROM retail_price
-                                      WHERE UNIT IS NOT NULL GROUP BY ITEM_NAME) m
-                                  ON r.ITEM_NAME = m.ITEM_NAME AND r.PRICE_DATE = m.d"""))
+    units = retail_units(conn)
     out = []
     for item in sorted({r[0] for r in rows}):
         unit = units.get(item)
@@ -278,6 +295,48 @@ def load_search(conn):
             for kw in sorted({r[0] for r in rows})]
 
 
+# ---------------------------------------------------------------- 예측 (예측 ↔ 실제를 작업대에서 겹쳐 보고 틀린 때를 찾는다)
+def load_retail_forecast(conn):
+    """소매 예측 모델이 순마다 남긴 예측가와 오차(retail_predictions — 운영 예측을 시작한 뒤부터)"""
+    if not table_exists(conn, pr.TABLE):
+        return []
+    rows = query(conn, f"SELECT item_name, target_date, predicted_price, error_pct FROM {pr.TABLE}")
+    units = retail_units(conn)
+    out = []
+    for item in sorted({r[0] for r in rows}):
+        mine = [r for r in rows if r[0] == item]
+        unit = units.get(item)
+        out.append(make(f'forecast:{item}', f'{item} 소매가 예측', '예측', 'AgriForecast 소매 예측(다음 순, 운영 기록)',
+                        f'원/{unit}' if unit else '원', 'soon', 'mean',
+                        series_from([(soon_first_day(t), p) for _, t, p, _ in mine]), item))
+        out.append(make(f'forecast_error:{item}', f'{item} 소매 예측 오차', '예측', 'AgriForecast 소매 예측 · |예측−실제| ÷ 실제',
+                        '%', 'soon', 'mean', series_from([(soon_first_day(t), e) for _, t, _, e in mine if e is not None]), item))
+    return out
+
+
+def load_wholesale_forecast(conn):
+    """도매 예측 모델(backtest.MODELS)의 순별 예측가와 오차. 운영 예측이 우선이고, 운영 전 순은 2026년 백테스트로 채운다"""
+    units = auction_units()
+    out = []
+    for item, key in backtest.MODELS.items():
+        merged = {}
+        for table in (f'{key}_backtest', f'{key}_predictions'):      # 뒤가 앞을 덮는다 → 운영 예측 우선
+            if table_exists(conn, table):
+                for target, pred, err in query(conn, f"SELECT target_date, predicted_price, error_pct FROM {table}"):
+                    merged[str(target)] = (pred, err)
+        if not merged:
+            continue
+        pairs = sorted(merged.items())        # '상'<'중'<'하' 가 유니코드 순서와 같다
+        unit = units.get(item)
+        out.append(make(f'forecast_w:{item}', f'{item} 경매가 예측', '예측', 'AgriForecast 도매 예측(운영 예측 + 2026년 백테스트)',
+                        f'원/{unit}' if unit else '원', 'soon', 'mean',
+                        series_from([(soon_first_day(t), p) for t, (p, _) in pairs]), crop_of(item)))
+        out.append(make(f'forecast_w_error:{item}', f'{item} 도매 예측 오차', '예측', 'AgriForecast 도매 예측 · |예측−실제| ÷ 실제',
+                        '%', 'soon', 'mean', series_from([(soon_first_day(t), e) for t, (_, e) in pairs if e is not None]),
+                        crop_of(item)))
+    return out
+
+
 LOADERS = [
     ('KAMIS 소매', load_retail),
     ('KAMIS 도매', load_wholesale),
@@ -290,6 +349,8 @@ LOADERS = [
     ('소비자물가', lambda conn: load_price_index(conn, 'cpi_data', 'CPI', 'cpi', '소비자물가지수', 'KOSIS 소비자물가지수(품목별)')),
     ('생산자물가', lambda conn: load_price_index(conn, 'ppi_data', 'PPI', 'ppi', '생산자물가지수', 'KOSIS 생산자물가지수(품목별)')),
     ('검색량', load_search),
+    ('소매 예측', load_retail_forecast),
+    ('도매 예측', load_wholesale_forecast),
 ]
 
 

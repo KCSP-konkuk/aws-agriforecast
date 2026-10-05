@@ -12,7 +12,14 @@ export function StaleBadge({ days }) {
     </span>
   );
 }
-const CATEGORY_ICON = { 가격: 'payments', 수급: 'local_shipping', 기상: 'partly_cloudy_day', 거시: 'currency_exchange', 관심도: 'search' };
+const CATEGORY_ICON = {
+  가격: 'payments',
+  예측: 'online_prediction',
+  수급: 'local_shipping',
+  기상: 'partly_cloudy_day',
+  거시: 'currency_exchange',
+  관심도: 'search',
+};
 
 // 데이터 고르기 — 분류·검색으로 지표를 찾고 눌러서 더한다 (목록은 API 에서)
 export default function SeriesPicker({ catalog, selectedIds, onAdd }) {

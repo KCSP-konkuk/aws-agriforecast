@@ -63,6 +63,11 @@ export default function SummaryCards() {
                 <p className="mt-auto pt-3 text-sm text-subtext-light">
                   예측 <b className={dir.text}>{won(h.predicted)}</b> ({signedPct(h.changePct, 1)}){d.unit ? ` · ${d.unit}` : ''}
                 </p>
+                {d.track?.n >= 3 && (
+                  <p className="text-[11px] text-subtext-light">
+                    지난 {d.track.n}순 평균 오차 {d.track.mape}%{d.track.judged > 0 ? ` · 방향 ${d.track.hits}/${d.track.judged}` : ''}
+                  </p>
+                )}
               </Link>
             );
           })}

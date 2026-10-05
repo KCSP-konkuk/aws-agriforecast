@@ -167,6 +167,18 @@ def test_강수_비율은_건기에_튀지_않는다():
     assert r.max() < 1.0
 
 
+def test_예측_기록은_평균_오차와_방향_적중():
+    y = pd.Series({pr.soon_index('202609상순'): 1000.0, pr.soon_index('202609중순'): 1100.0})
+    df = pd.DataFrame({'y': y})
+    rows = [('202609하순', 1150.0, 1050.0),    # 직전 1100 → 예측 +4.5% · 실제 −4.5% → 틀림, 오차 9.5%
+            ('202609중순', 1080.0, 1100.0)]    # 직전 1000 → 예측 +8% · 실제 +10% → 맞음, 오차 1.8%
+    t = pi.track_record(rows, df)
+    assert t['n'] == 2 and t['hits'] == 1 and t['judged'] == 2
+    assert t['mape'] == pytest.approx(5.7, abs=0.05) and t['since'] == '9월 중순'
+    assert pi.track_record([], df) is None
+    assert pi.direction_of(0.005) == 'flat' and pi.direction_of(-0.02) == 'down'
+
+
 def test_파일에_품목_이름이_없다():
     src = open(os.path.join(os.path.dirname(HERE), 'pipeline_insight.py'), encoding='utf-8').read()
     assert [name for name in pr.ITEMS if name in src] == []
