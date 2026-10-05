@@ -1,0 +1,83 @@
+name: Deploy MCP to EC2
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "KCSPmcp/**"
+      - ".github/workflows/deploy-mcp.yml"
+
+jobs:
+  deploy-mcp:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload MCP to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: KCSPmcp/server.py,KCSPmcp/requirements.txt,KCSPmcp/agriforecast-mcp.service
+          target: /home/ubuntu/deploy/mcp
+          strip_components: 1
+          rm: true
+
+      - name: Install, restart and verify on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 10m
+          script: |
+            set -e
+            APP=/opt/agri-forecast/mcp
+            SRC=/home/ubuntu/deploy/mcp
+            sudo mkdir -p $APP && sudo chown ubuntu:ubuntu $APP
+
+            # venv 는 처음 한 번만 만든다. 버전은 requirements.txt 고정값
+            [ -x $APP/venv/bin/python ] || python3 -m venv $APP/venv
+            $APP/venv/bin/pip install -q -r $SRC/requirements.txt
+
+            # 롤백 대상으로 현재 코드 보관
+            [ -f $APP/server.py ] && cp $APP/server.py $APP/server.py.prev
+            cp $SRC/server.py $SRC/requirements.txt $APP/
+
+            sudo cp $SRC/agriforecast-mcp.service /etc/systemd/system/
+            sudo systemctl daemon-reload
+            sudo systemctl enable agriforecast-mcp
+            sudo systemctl restart agriforecast-mcp
+
+            # 헬스체크: tools/list 에 도구가 나오는지 (최대 30초)
+            check() {
+              curl -fsS --max-time 5 -X POST http://127.0.0.1:3001/mcp \
+                -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+                -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | grep -q get_wholesale_forecast
+            }
+            OK=""
+            for i in $(seq 1 10); do
+              if check; then OK=1; break; fi
+              sleep 3
+            done
+
+            if [ -z "$OK" ]; then
+              echo "::error::MCP 헬스체크 실패 - 이전 코드로 롤백합니다"
+              sudo journalctl -u agriforecast-mcp -n 60 --no-pager || true
+              if [ -f $APP/server.py.prev ]; then
+                cp $APP/server.py.prev $APP/server.py
+                sudo systemctl restart agriforecast-mcp
+                echo "롤백 완료"
+              else
+                echo "롤백할 이전 코드가 없습니다"
+              fi
+              exit 1
+            fi
+
+            echo "MCP 배포 성공: ${{ github.sha }}"
+            systemctl is-active agriforecast-mcp
