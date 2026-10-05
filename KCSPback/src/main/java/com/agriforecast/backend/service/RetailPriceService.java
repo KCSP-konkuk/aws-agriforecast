@@ -32,7 +32,10 @@ public class RetailPriceService {
     /** 예측 배치(pipeline_retail.py)가 쓰는 테이블. 품목 모델이 없으면 행이 없다 */
     static final String PREDICTION_TABLE = "retail_predictions";
 
-    /** 조사 단위 — 데이터가 없는 품목에도 카드에 단위를 보이려고 고정해 둔다 */
+    /**
+     * 소매 예측 품목과 조사 단위 — 요약 · 추이 API 는 이 품목만 돌려준다(데이터가 없어도 단위를 보이려고 고정).
+     * 수집 품목 전체는 KamisItems, 작업대는 통합 시계열(series_catalog)에서 읽는다
+     */
     static final Map<String, String> UNITS = Map.of("양파", "1kg", "붉은고추", "100g", "양배추", "1포기",
             "애호박", "1개", "시금치", "100g", "오이", "10개");
 
@@ -50,6 +53,7 @@ public class RetailPriceService {
         List<Summary> out = new ArrayList<>();
         Soon now = Soon.of(LocalDate.now(KST));
         for (String item : KamisRetailService.TARGET_ITEMS.keySet()) {
+            if (!UNITS.containsKey(item)) continue;
             Summary s = summarize(item, UNITS.get(item), recentRows(item));
             Prediction p = prediction(item, now);
             out.add(p == null ? s : new Summary(s.itemName(), s.unit(), s.latestDate(), s.latestPrice(),
@@ -59,7 +63,7 @@ public class RetailPriceService {
     }
 
     public Series series(String itemName, String unit) {
-        if (!KamisRetailService.TARGET_ITEMS.containsKey(itemName)) {
+        if (!UNITS.containsKey(itemName)) {
             throw new IllegalArgumentException("소매가 대상이 아닌 품목: " + itemName);
         }
         List<RetailPrice> rows = recentRows(itemName);

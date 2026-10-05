@@ -139,10 +139,17 @@ export const TEMPLATES = [
   },
 ];
 
-// 첫 화면: 첫 템플릿의 첫 품목 (목록이 비면 null)
+// 품목 순서 — 지표가 많은 품목(가격 · 수급 · 예측 · 물가 · 검색량이 고루 있는)부터. 같으면 원래 순서(가나다)
+export function rankItems(catalog, items) {
+  const count = new Map();
+  for (const c of catalog) if (c.item != null) count.set(c.item, (count.get(c.item) ?? 0) + 1);
+  return [...items].sort((a, b) => (count.get(b) ?? 0) - (count.get(a) ?? 0));
+}
+
+// 첫 화면: 첫 템플릿에서 지표가 가장 많은 품목 (목록이 비면 null)
 export function defaultState(catalog) {
   for (const t of TEMPLATES) {
-    const items = t.items(catalog);
+    const items = rankItems(catalog, t.items(catalog));
     if (items.length) return t.build(catalog, items[0]);
   }
   return null;

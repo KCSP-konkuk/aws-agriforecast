@@ -16,9 +16,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.function.Function;
 
 /**
  * KAMIS Open API「신) 일별 품목별 소매 가격자료」(periodRetailProductList)
@@ -33,6 +33,7 @@ import java.util.regex.Pattern;
  *  - 짧은 구간(예: 2026-09-01~09-23)이 더 자주 멈췄고 '1월 1일 ~ 연말(올해는 오늘)' 통째 조회는
  *    대체로 왔다 → 항상 연 단위로 받아 원하는 구간만 남긴다
  *  - 값이 없는 날은 "-"
+ * 품목 · 품종 코드는 KamisItems. 철마다 품종이 바뀌는 품목은 품종마다 받아 한 줄로 잇는다(mergeKinds)
  */
 @Service
 public class KamisRetailService {
@@ -46,10 +47,11 @@ public class KamisRetailService {
     private static final int MAX_ATTEMPTS = 3;
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
-    /** 품목명 → {부류코드, 품목코드, 품종코드} (KAMIS 품목·등급 코드표 기준) */
-    static final Map<String, String[]> TARGET_ITEMS = createTargetItems();
+    /** 품목명 → 코드 (KamisItems.RETAIL) */
+    static final Map<String, KamisItems.Codes> TARGET_ITEMS = KamisItems.RETAIL;
 
-    private static final Pattern UNIT_IN_PARENS = Pattern.compile("\\(([^()]*)\\)$");
+    /** 같은 품종 조사가 이만큼 넘게 끊기면 다음 철로 본다 */
+    static final int SEASON_GAP_DAYS = 30;
 
     @Value("${kamis.cert-key:test}")
     private String certKey;
@@ -89,7 +91,7 @@ public class KamisRetailService {
     }
 
     public int collectItem(String itemName, LocalDate startDate, LocalDate endDate, boolean skipStoredYears) {
-        String[] codes = TARGET_ITEMS.get(itemName);
+        KamisItems.Codes codes = TARGET_ITEMS.get(itemName);
         if (codes == null) throw new IllegalArgumentException("수집 대상이 아닌 품목: " + itemName);
 
         int changed = 0;
@@ -100,18 +102,11 @@ public class KamisRetailService {
                 continue;
             }
             LocalDate[] query = yearQuery(chunk[0].getYear(), today);
-            String body = fetch(itemName, codes, query, chunk);
-            if (body == null) continue;
+            KindRows year = fetchKinds(itemName, codes, query);
+            if (year == null) continue;
 
-            List<DailyRetail> rows;
-            List<MarketRetail> markets;
-            try {
-                rows = parse(body, chunk[0], chunk[1]);
-                markets = parseMarkets(body, chunk[0], chunk[1]);
-            } catch (Exception e) {
-                logger.warn("KAMIS 소매 응답 파싱 실패 [{} {}~{}]: {}", itemName, chunk[0], chunk[1], e.getMessage());
-                continue;
-            }
+            List<DailyRetail> rows = within(year.averages(), DailyRetail::date, chunk);
+            List<MarketRetail> markets = within(year.markets(), MarketRetail::date, chunk);
             changed += saveAverages(itemName, rows, chunk);
             changed += saveMarkets(itemName, markets, chunk);
             logger.info("KAMIS 소매 [{}] {}~{}: {}일, 판매처별 {}건", itemName, chunk[0], chunk[1], rows.size(), markets.size());
@@ -119,14 +114,33 @@ public class KamisRetailService {
         return changed;
     }
 
+    /**
+     * 품종마다 그 해를 받아 잇는다. 한 품종이라도 끝내 못 받으면 null — 그 해는 통째로 다음 수집 때 다시
+     * (일부 품종만 저장하면 지난 해 건너뛰기에 걸려 그 철이 빈 채로 남는다)
+     */
+    private KindRows fetchKinds(String itemName, KamisItems.Codes codes, LocalDate[] query) {
+        List<KindRows> perKind = new ArrayList<>();
+        for (String kind : codes.kinds()) {
+            String body = fetch(itemName, codes, kind, query);
+            if (body == null) return null;
+            try {
+                perKind.add(new KindRows(parse(body, query[0], query[1]), parseMarkets(body, query[0], query[1])));
+            } catch (Exception e) {
+                logger.warn("KAMIS 소매 응답 파싱 실패 [{} {} {}~{}]: {}", itemName, kind, query[0], query[1], e.getMessage());
+                return null;
+            }
+        }
+        return mergeKinds(perKind);
+    }
+
     /** 무응답·오류면 MAX_ATTEMPTS 번까지 다시 요청. 끝내 실패하면 null (그 해는 건너뛰고 다음 수집 때 다시) */
-    private String fetch(String itemName, String[] codes, LocalDate[] query, LocalDate[] chunk) {
+    private String fetch(String itemName, KamisItems.Codes codes, String kind, LocalDate[] query) {
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
-                return restTemplate.getForObject(buildUrl(codes, query[0], query[1]), String.class);
+                return restTemplate.getForObject(buildUrl(codes, kind, query[0], query[1]), String.class);
             } catch (Exception e) {
-                logger.warn("KAMIS 소매 조회 실패 [{} {}~{}] {}/{}회: {}",
-                        itemName, chunk[0], chunk[1], attempt, MAX_ATTEMPTS, e.getMessage());
+                logger.warn("KAMIS 소매 조회 실패 [{} {} {}~{}] {}/{}회: {}",
+                        itemName, kind, query[0], query[1], attempt, MAX_ATTEMPTS, e.getMessage());
             } finally {
                 sleepQuietly();
             }
@@ -179,14 +193,14 @@ public class KamisRetailService {
         return dirty.size();
     }
 
-    private String buildUrl(String[] codes, LocalDate start, LocalDate end) {
+    private String buildUrl(KamisItems.Codes codes, String kind, LocalDate start, LocalDate end) {
         return UriComponentsBuilder.fromUriString(URL)
                 .queryParam("action", "periodRetailProductList")
                 .queryParam("p_startday", start.toString())
                 .queryParam("p_endday", end.toString())
-                .queryParam("p_itemcategorycode", codes[0])
-                .queryParam("p_itemcode", codes[1])
-                .queryParam("p_kindcode", codes[2])
+                .queryParam("p_itemcategorycode", codes.category())
+                .queryParam("p_itemcode", codes.item())
+                .queryParam("p_kindcode", kind)
                 .queryParam("p_productrankcode", RANK_TOP)
                 .queryParam("p_countrycode", SEOUL)
                 .queryParam("p_convert_kg_yn", "N")
@@ -289,10 +303,100 @@ public class KamisRetailService {
         }
     }
 
-    /** "양파(1kg)" → "1kg", "여름(고랭지)(1포기)" → "1포기" */
+    /** "양파(1kg)" → "1kg", "여름(고랭지)(1포기)" → "1포기", 도매 "여름(고랭지)(10kg(그물망 3포기))" → "10kg(그물망 3포기)" */
     static String unitOf(String kindName) {
-        Matcher m = UNIT_IN_PARENS.matcher(kindName.trim());
-        return m.find() ? m.group(1) : null;
+        String s = kindName.trim();
+        if (!s.endsWith(")")) return null;
+        int depth = 0;
+        for (int i = s.length() - 1; i >= 0; i--) {
+            char c = s.charAt(i);
+            if (c == ')') {
+                depth++;
+            } else if (c == '(' && --depth == 0) {
+                String unit = s.substring(i + 1, s.length() - 1).trim();
+                return unit.isEmpty() ? null : unit;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 철마다 바뀌는 품종(배추 봄 · 여름(고랭지) · 가을 · 월동 등, 단위가 같다)을 한 품목으로 잇는다.
+     * 같은 날 같은 판매처(평균 행 포함)에 두 품종 값이 있으면 그 철 조사가 늦게 시작된 품종 — 새로 나온 작기 — 을 쓴다.
+     * 철 = 조사가 SEASON_GAP_DAYS 넘게 끊기지 않고 이어진 구간. 시작이 같으면 더 오래 이어지는 쪽, 그래도 같으면 앞 품종.
+     * 2023~2025 서울 조사에서 품종끼리 겹친 날은 한 해 0~42일(대부분 열흘 안)이고, 이어 붙이면 조사일이 빠짐없이 찬다
+     */
+    static KindRows mergeKinds(List<KindRows> perKind) {
+        if (perKind.size() == 1) return perKind.get(0);
+        List<Map<LocalDate, LocalDate[]>> seasons = new ArrayList<>();
+        for (KindRows k : perKind) {
+            SortedSet<LocalDate> dates = new TreeSet<>();
+            k.averages().forEach(r -> dates.add(r.date()));
+            k.markets().forEach(r -> dates.add(r.date()));
+            seasons.add(seasonsOf(dates));
+        }
+        List<List<DailyRetail>> averages = new ArrayList<>();
+        List<List<MarketRetail>> markets = new ArrayList<>();
+        perKind.forEach(k -> {
+            averages.add(k.averages());
+            markets.add(k.markets());
+        });
+        return new KindRows(pickNewer(averages, DailyRetail::date, r -> "", seasons),
+                pickNewer(markets, MarketRetail::date, MarketRetail::market, seasons));
+    }
+
+    /** 조사일들 → 날짜마다 그 날이 든 철 {시작, 끝} */
+    static Map<LocalDate, LocalDate[]> seasonsOf(SortedSet<LocalDate> dates) {
+        Map<LocalDate, LocalDate[]> out = new HashMap<>();
+        List<LocalDate> run = new ArrayList<>();
+        for (LocalDate d : dates) {
+            if (!run.isEmpty() && ChronoUnit.DAYS.between(run.get(run.size() - 1), d) > SEASON_GAP_DAYS) {
+                closeSeason(run, out);
+            }
+            run.add(d);
+        }
+        closeSeason(run, out);
+        return out;
+    }
+
+    private static void closeSeason(List<LocalDate> run, Map<LocalDate, LocalDate[]> out) {
+        if (run.isEmpty()) return;
+        LocalDate[] span = {run.get(0), run.get(run.size() - 1)};
+        run.forEach(d -> out.put(d, span));
+        run.clear();
+    }
+
+    /** (날짜, 판매처)마다 새 철 품종의 행 하나만 남긴다. 결과는 날짜 · 판매처 순 */
+    private static <T> List<T> pickNewer(List<List<T>> perKind, Function<T, LocalDate> dateOf,
+                                         Function<T, String> marketOf, List<Map<LocalDate, LocalDate[]>> seasons) {
+        Map<LocalDate, Map<String, Integer>> owner = new TreeMap<>();
+        Map<LocalDate, Map<String, T>> chosen = new TreeMap<>();
+        for (int i = 0; i < perKind.size(); i++) {
+            for (T row : perKind.get(i)) {
+                LocalDate date = dateOf.apply(row);
+                String market = marketOf.apply(row);
+                Integer current = owner.computeIfAbsent(date, d -> new TreeMap<>()).get(market);
+                if (current == null || isNewer(seasons.get(i).get(date), seasons.get(current).get(date))) {
+                    owner.get(date).put(market, i);
+                    chosen.computeIfAbsent(date, d -> new TreeMap<>()).put(market, row);
+                }
+            }
+        }
+        List<T> out = new ArrayList<>();
+        chosen.values().forEach(byMarket -> out.addAll(byMarket.values()));
+        return out;
+    }
+
+    private static boolean isNewer(LocalDate[] season, LocalDate[] than) {
+        int byStart = season[0].compareTo(than[0]);
+        return byStart != 0 ? byStart > 0 : season[1].isAfter(than[1]);
+    }
+
+    /** [chunk 시작, 끝] 안의 행만 */
+    static <T> List<T> within(List<T> rows, Function<T, LocalDate> dateOf, LocalDate[] chunk) {
+        return rows.stream()
+                .filter(r -> !dateOf.apply(r).isBefore(chunk[0]) && !dateOf.apply(r).isAfter(chunk[1]))
+                .toList();
     }
 
     private static void sleepQuietly() {
@@ -303,18 +407,10 @@ public class KamisRetailService {
         }
     }
 
-    private static Map<String, String[]> createTargetItems() {
-        Map<String, String[]> items = new LinkedHashMap<>();
-        items.put("양파", new String[]{"200", "245", "00"});
-        items.put("붉은고추", new String[]{"200", "243", "00"});
-        items.put("양배추", new String[]{"200", "212", "00"});
-        items.put("애호박", new String[]{"200", "224", "01"});
-        items.put("시금치", new String[]{"200", "213", "00"});
-        items.put("오이", new String[]{"200", "223", "02"});   // 다다기계통(10개)
-        return Collections.unmodifiableMap(items);
-    }
-
     record DailyRetail(LocalDate date, int price, String unit, int marketCount) {}
 
     record MarketRetail(LocalDate date, String market, int price) {}
+
+    /** 품종 하나(또는 이어 붙인 결과)의 서울 평균 · 판매처별 값 */
+    record KindRows(List<DailyRetail> averages, List<MarketRetail> markets) {}
 }

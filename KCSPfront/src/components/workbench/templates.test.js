@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultState, TEMPLATES } from './templates';
+import { defaultState, rankItems, TEMPLATES } from './templates';
 
 const entry = (id, item) => ({ id, item, name: id });
 const catalog = [
@@ -30,5 +30,13 @@ describe('시작 템플릿', () => {
 
   it('반입량 템플릿은 반입량이 있는 품목만', () => {
     expect(tpl('supply').items(catalog)).toEqual(['다']);
+  });
+
+  it('품목은 지표가 많은 것부터, 같으면 원래 순서 — 첫 화면도 그 품목', () => {
+    const richer = [...catalog, entry('wholesale:다', '다'), entry('cpi:다', '다'), entry('retail:라', '라')];
+    expect(rankItems(richer, ['가', '다', '라'])).toEqual(['다', '가', '라']);
+    expect(rankItems(catalog, ['다', '가'])).toEqual(['가', '다']);
+    expect(rankItems(catalog, [null])).toEqual([null]);
+    expect(defaultState(richer).series.map((s) => s.id)).toEqual(['retail:다', 'auction:다']);
   });
 });
