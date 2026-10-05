@@ -1,0 +1,4 @@
+# 서버 venv(/opt/agri-forecast/mcp/venv)와 같은 고정 버전
+#  - mcp 2.x 에서 FastMCP 가 MCPServer(mcp.server.mcpserver)로 바뀌었다. 1.x 로는 import 부터 안 된다
+mcp==2.3.0
+httpx==0.28.1

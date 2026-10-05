@@ -1,0 +1,20 @@
+[Unit]
+Description=AgriForecast MCP Server
+After=network-online.target agriforecast.service
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/agri-forecast/mcp
+# 백엔드는 같은 서버라 내부 주소로 부른다. nginx /mcp → 127.0.0.1:3001
+Environment=AGRI_API_BASE_URL=http://127.0.0.1:8080
+ExecStart=/opt/agri-forecast/mcp/venv/bin/python /opt/agri-forecast/mcp/server.py
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=agri-mcp
+
+[Install]
+WantedBy=multi-user.target
