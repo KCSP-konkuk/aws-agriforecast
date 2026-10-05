@@ -200,14 +200,15 @@ export const api = {
   },
 
   // 게시글 작성
-  createPost: (title, category, content) =>
+  // analysisQuery: 붙일 작업대 화면(주소의 쿼리), 없으면 null
+  createPost: (title, category, content, analysisQuery = null) =>
     authorizedRequest(`${API_BASE_URL}/community/posts`,
-      { method: 'POST', body: JSON.stringify({ title, category, content }) }, '게시글 작성에 실패했습니다.'),
+      { method: 'POST', body: JSON.stringify({ title, category, content, analysisQuery }) }, '게시글 작성에 실패했습니다.'),
 
   // 게시글 수정
-  updatePost: (id, title, category, content) =>
+  updatePost: (id, title, category, content, analysisQuery = null) =>
     authorizedRequest(`${API_BASE_URL}/community/posts/${id}`,
-      { method: 'PUT', body: JSON.stringify({ title, category, content }) }, '게시글 수정에 실패했습니다.'),
+      { method: 'PUT', body: JSON.stringify({ title, category, content, analysisQuery }) }, '게시글 수정에 실패했습니다.'),
 
   // 게시글 삭제
   deletePost: (id) =>

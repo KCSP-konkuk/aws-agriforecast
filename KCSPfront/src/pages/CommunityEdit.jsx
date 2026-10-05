@@ -3,12 +3,14 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { api } from '../api/api';
 import LoginRequired from '../components/LoginRequired';
+import AttachAnalysis from '../components/AttachAnalysis';
 import { isLoggedIn, getUser } from '../auth';
 import { ROOMS, DEFAULT_ROOM } from '../community';
 
 export default function CommunityEdit() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [analysisQuery, setAnalysisQuery] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     category: DEFAULT_ROOM,
@@ -42,6 +44,7 @@ export default function CommunityEdit() {
         category: ROOMS.includes(postData.category) ? postData.category : DEFAULT_ROOM,
         content: postData.content,
       });
+      setAnalysisQuery(postData.analysisQuery ?? null);
     } catch (err) {
       console.error('게시글 로드 실패:', err);
       setError('게시글을 불러오는데 실패했습니다.');
@@ -68,7 +71,7 @@ export default function CommunityEdit() {
     setError('');
 
     try {
-      await api.updatePost(id, formData.title, formData.category, formData.content);
+      await api.updatePost(id, formData.title, formData.category, formData.content, analysisQuery);
       navigate(`/community/${id}/my`);
     } catch (err) {
       console.error('글 수정 실패:', err);
@@ -165,6 +168,8 @@ export default function CommunityEdit() {
                 required
               />
             </div>
+
+            <AttachAnalysis value={analysisQuery} onChange={setAnalysisQuery} />
 
             <div className="flex gap-2 pt-2">
               <button

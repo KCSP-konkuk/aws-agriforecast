@@ -3,8 +3,10 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { api } from '../api/api';
 import LoginRequired from '../components/LoginRequired';
+import AttachAnalysis from '../components/AttachAnalysis';
 import { isLoggedIn } from '../auth';
 import { ROOMS, DEFAULT_ROOM } from '../community';
+import { queryFromLink } from '../lib/workbenchLink';
 
 export default function CommunityWrite() {
   const navigate = useNavigate();
@@ -16,6 +18,8 @@ export default function CommunityWrite() {
     category: initialRoom,
     content: '',
   });
+  // 작업대 [커뮤니티에 공유]로 들어오면 그 화면이 붙어 있다
+  const [analysisQuery, setAnalysisQuery] = useState(() => queryFromLink(params.get('analysis')));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   // 로그인 안 했거나 쓰는 도중 로그인이 만료되면 안내 화면으로 바꾼다
@@ -42,7 +46,8 @@ export default function CommunityWrite() {
       const response = await api.createPost(
         formData.title,
         formData.category,
-        formData.content
+        formData.content,
+        analysisQuery
       );
       navigate(`/community/${response.id}`);
     } catch (err) {
@@ -111,6 +116,8 @@ export default function CommunityWrite() {
                 required
               />
             </div>
+
+            <AttachAnalysis value={analysisQuery} onChange={setAnalysisQuery} />
 
             <div className="flex gap-2 pt-2">
               <button

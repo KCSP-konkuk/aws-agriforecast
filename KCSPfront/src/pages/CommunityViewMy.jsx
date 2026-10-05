@@ -1,4 +1,5 @@
 import Layout from '../components/Layout';
+import AnalysisPreview from '../components/AnalysisPreview';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { api } from '../api/api';
@@ -145,6 +146,11 @@ export default function CommunityViewMy() {
               작성자: {post.authorName || '익명'} | 작성일: {formatDate(post.createdAt)} | 조회수: {post.viewCount || 0}
             </p>
             <div className="text-text-main leading-relaxed whitespace-pre-wrap">{post.content}</div>
+            {post.analysisQuery && (
+              <div className="mt-6">
+                <AnalysisPreview query={post.analysisQuery} />
+              </div>
+            )}
           </div>
 
           <section className="mt-8">
