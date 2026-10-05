@@ -14,5 +14,7 @@ public class PostRequest {
     private String title;
     private String category;
     private String content;
+    /** 붙일 분석 작업대 화면(주소의 쿼리). 비우면 붙이지 않는다 */
+    private String analysisQuery;
 }
 

@@ -7,6 +7,7 @@ import com.agriforecast.backend.entity.Post;
 import com.agriforecast.backend.repository.CommentRepository;
 import com.agriforecast.backend.repository.MemberUserRepository;
 import com.agriforecast.backend.repository.PostRepository;
+import com.agriforecast.backend.util.WorkbenchQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,6 +76,7 @@ public class PostService {
         post.setTitle(request.getTitle());
         post.setCategory(request.getCategory());
         post.setContent(request.getContent());
+        post.setAnalysisQuery(WorkbenchQuery.optional(request.getAnalysisQuery()));
         post.setViewCount(0);
         
         Post savedPost = postRepository.save(post);
@@ -100,6 +102,7 @@ public class PostService {
         post.setTitle(request.getTitle());
         post.setCategory(request.getCategory());
         post.setContent(request.getContent());
+        post.setAnalysisQuery(WorkbenchQuery.optional(request.getAnalysisQuery()));
         
         Post updatedPost = postRepository.save(post);
         logger.info("게시글 수정 완료 - ID: {}", updatedPost.getSeqNoA030());
@@ -134,6 +137,7 @@ public class PostService {
             response.setCategory(post.getCategory());
             response.setKind(post.getKind() == null ? "USER" : post.getKind());
             response.setContent(post.getContent());
+            response.setAnalysisQuery(post.getAnalysisQuery());
             response.setViewCount(post.getViewCount());
             response.setCreatedAt(post.getCreatedAt());
             response.setUpdatedAt(post.getUpdatedAt());

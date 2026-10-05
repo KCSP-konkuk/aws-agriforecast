@@ -2,6 +2,7 @@ package com.agriforecast.backend.service;
 
 import com.agriforecast.backend.entity.SavedAnalysis;
 import com.agriforecast.backend.repository.SavedAnalysisRepository;
+import com.agriforecast.backend.util.WorkbenchQuery;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +20,6 @@ public class SavedAnalysisService {
     public static final int MAX_PER_MEMBER = 50;
     static final int MAX_TITLE = 100;
     static final int MAX_MEMO = 500;
-    static final int MAX_QUERY = 2000;
 
     public record View(Long id, String title, String memo, String query, LocalDateTime updatedAt) {
         static View of(SavedAnalysis a) {
@@ -81,14 +81,8 @@ public class SavedAnalysisService {
         return m.isEmpty() ? null : m;
     }
 
-    /** 작업대 쿼리: 앞의 ? 는 떼고, 지표(s=)가 있어야 하고, 공백·줄바꿈은 없다 */
+    /** 작업대 쿼리 검사는 WorkbenchQuery 와 같다(커뮤니티 글 붙이기도 같은 규칙) */
     static String query(String raw) {
-        String q = raw == null ? "" : raw.strip();
-        if (q.startsWith("?")) q = q.substring(1);
-        if (q.isEmpty() || q.length() > MAX_QUERY || q.chars().anyMatch(Character::isWhitespace)
-                || !("&" + q).contains("&s=")) {
-            throw new IllegalArgumentException("작업대 화면 주소가 올바르지 않아요.");
-        }
-        return q;
+        return WorkbenchQuery.normalize(raw);
     }
 }

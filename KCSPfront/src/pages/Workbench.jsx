@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import StatusMessage from '../components/StatusMessage';
 import AnalysisTabs from '../components/AnalysisTabs';
@@ -95,6 +95,7 @@ function initialState(params, catalog) {
 // 상태는 모두 주소(쿼리)에 있어 링크를 받은 사람이 같은 화면을 연다. 지표 목록은 API 에서 받는다
 export default function Workbench() {
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
   const [catalog, setCatalog] = useState({ status: 'loading', data: [] });
   const [store, setStore] = useState({}); // 지표 → 원래 점들. 한 번 받은 지표는 다시 받지 않는다
   const [load, setLoad] = useState({ busy: false, error: false });
@@ -453,6 +454,7 @@ export default function Workbench() {
                   <DataTable
                     rows={rows}
                     match={match}
+                    onShare={() => navigate(`/community/write?analysis=${encodeURIComponent(params.toString())}`)}
                     notes={
                       state.conditions.length
                         ? [`조건: ${state.conditions.map((c) => conditionText(lines.find((l) => l.id === c.id), c)).join(' 그리고 ')}`]

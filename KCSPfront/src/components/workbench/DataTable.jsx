@@ -32,7 +32,7 @@ function download(name, text) {
 
 // 표 미리보기 · CSV 받기 · 링크 복사 — 차트와 같은 값(주기·변환·시차·기간 반영)
 // columns: [{ id, name, source, unit(원래 단위), adjust(맞춘 방법), lagText, color }]
-export default function DataTable({ rows: all, columns, freq, title, notes = [], match }) {
+export default function DataTable({ rows: all, columns, freq, title, notes = [], match, onShare }) {
   const [limit, setLimit] = useState(PAGE);
   const [copied, setCopied] = useState(null);
   const rows = useMemo(() => (match ? all.filter((r) => match.has(r.key)) : all), [all, match]);
@@ -67,7 +67,18 @@ export default function DataTable({ rows: all, columns, freq, title, notes = [],
             {rows.length.toLocaleString('ko-KR')}행 · 최근부터
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {onShare && (
+            <button
+              type="button"
+              onClick={onShare}
+              className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold text-text-main hover:border-primary/50"
+              title="이 화면을 붙여 커뮤니티 글을 써요"
+            >
+              <span className="material-symbols-outlined text-lg">forum</span>
+              커뮤니티에 공유
+            </button>
+          )}
           <button
             type="button"
             onClick={copyLink}
