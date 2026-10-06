@@ -1,25 +1,9 @@
 import { useMemo, useState } from 'react';
 import { toCsv } from '../../lib/series';
+import { copyText } from '../../lib/clipboard';
 import { colorOf, keyLabel, num } from './format';
 
 const PAGE = 30;
-
-// 주소 복사 — https 가 아닌 곳에서는 clipboard API 가 없어 textarea 로 복사한다
-async function copyText(text) {
-  if (navigator.clipboard && window.isSecureContext) {
-    await navigator.clipboard.writeText(text);
-    return true;
-  }
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.select();
-  const ok = document.execCommand('copy');
-  document.body.removeChild(ta);
-  return ok;
-}
 
 function download(name, text) {
   const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
