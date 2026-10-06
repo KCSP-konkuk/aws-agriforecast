@@ -28,8 +28,11 @@ describe('시작 템플릿', () => {
     expect(defaultState(catalog).series.map((s) => s.id)).toEqual(['retail:가', 'auction:나경매']);
   });
 
-  it('반입량 템플릿은 반입량이 있는 품목만', () => {
+  it('반입량 템플릿은 반입량과 경매·도매가가 있는 품목만 — 경매가가 없으면 KAMIS 도매가', () => {
     expect(tpl('supply').items(catalog)).toEqual(['다']);
+    const more = [...catalog, entry('retail:마', '마'), entry('wholesale:마', '마'), entry('supply:마', '마'), entry('supply:바', '바')];
+    expect(tpl('supply').items(more)).toEqual(['다', '마']);
+    expect(tpl('supply').build(more, '마').series.map((s) => s.id)).toEqual(['supply:마', 'wholesale:마']);
   });
 
   it('품목은 지표가 많은 것부터, 같으면 원래 순서 — 첫 화면도 그 품목', () => {

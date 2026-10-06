@@ -86,6 +86,7 @@ jobs:
             --tests 'com.agriforecast.backend.service.KamisRetailSkipTest' \
             --tests 'com.agriforecast.backend.service.KamisWholesaleServiceTest' \
             --tests 'com.agriforecast.backend.service.KamisKindMergeTest' \
+            --tests 'com.agriforecast.backend.service.GarakSupplyServiceTest' \
             --tests 'com.agriforecast.backend.service.RetailPriceServiceTest' \
             --tests 'com.agriforecast.backend.util.SoonTest' \
             --tests 'com.agriforecast.backend.service.CommunityVoteServiceTest' \

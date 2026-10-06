@@ -80,6 +80,7 @@ flowchart LR
 | 대시보드 인사이트 (소매 예측 품목) | 매일 12:40 (+최대 2분) | `KCSPmodel/batch/agriforecast-insight.timer` — 소매 예측(12:10) 뒤. 품목은 `pipeline_retail.ITEMS` 를 따른다 |
 | 분석 작업대 통합 시계열 | 매일 12:50 (+최대 2분) | `KCSPmodel/batch/agriforecast-series.timer` — 가격·수급·기상·거시·검색량을 `series_catalog`·`series_value` 로 모은다 |
 | 검색량 전체 갱신 | 매일 10:30 | `KCSPback` `SearchTrendScheduler` — 2016-01-01\~어제를 한 번에 다시 받는다 |
+| 가락 순별 반입량 (농넷) | 매일 11:40 · 앱 시작 때 2014\~ 빈 구간 | `KCSPback` `GarakSupplyScheduler` — 작업대 수급 지표가 없던 품목(무 · 대파 · 사과 등 12품목), 최근 9순을 다시 받는다 |
 | 가격·반입량 등 그 밖의 수집 | 백엔드 스케줄러 | `KCSPback` 의 `@Scheduled` |
 
 타이머 파일의 `OnCalendar` 는 **UTC** 로 적혀 있다(서버 TZ 가 UTC). KST 로 착각하지 말 것.

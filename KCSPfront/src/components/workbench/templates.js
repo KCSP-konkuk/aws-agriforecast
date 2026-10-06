@@ -44,13 +44,13 @@ export const TEMPLATES = [
   },
   {
     key: 'supply',
-    title: '반입량과 경매가',
+    title: '반입량과 도매가',
     who: '도매상',
-    desc: '물량이 평년보다 적거나 많을 때 경매가가 어땠는지 점으로 봐요',
+    desc: '물량이 평년보다 적거나 많을 때 경매·도매가가 어땠는지 점으로 봐요',
     items: (catalog) =>
-      uniq(catalog.filter((c) => c.id.startsWith('auction:')).map((c) => c.item)).filter((item) => find(catalog, 'supply', item)),
+      uniq(catalog.filter((c) => c.id.startsWith('supply:')).map((c) => c.item)).filter((item) => wholesaleOf(catalog, item)),
     build: (catalog, item) => ({
-      series: [pick(find(catalog, 'supply', item).id, 'normal', 0), pick(find(catalog, 'auction', item).id, 'normal', 1)],
+      series: [pick(find(catalog, 'supply', item).id, 'normal', 0), pick(wholesaleOf(catalog, item).id, 'normal', 1)],
       freq: 's',
       period: 'all',
       chart: 'scatter',
