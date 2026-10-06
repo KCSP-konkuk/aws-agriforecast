@@ -37,7 +37,7 @@ public class RetailPriceService {
      * 수집 품목 전체는 KamisItems, 작업대는 통합 시계열(series_catalog)에서 읽는다
      */
     static final Map<String, String> UNITS = Map.of("양파", "1kg", "붉은고추", "100g", "양배추", "1포기",
-            "애호박", "1개", "시금치", "100g", "오이", "10개");
+            "애호박", "1개", "시금치", "100g", "오이", "10개", "파프리카", "1개");
 
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 

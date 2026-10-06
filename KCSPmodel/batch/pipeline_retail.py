@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-"""서울 전통시장 소매가 순별 예측 파이프라인 (배치 실행) — 붉은고추·양배추·양파·애호박·시금치·오이
+"""서울 전통시장 소매가 순별 예측 파이프라인 (배치 실행) — 붉은고추·양배추·양파·애호박·시금치·오이·파프리카
 
 모델 근거는 KCSP-konkuk/model-research(구 redpepper) 의 docs/RETAIL.md. 1순 뒤, 시험 2022~2025
   붉은고추 MASE 0.620 / MAPE 5.65% (5절), 양배추 0.663 / 4.54% (6절), 양파 0.684 / 1.67% (8절),
-  애호박 0.639 / 6.31%, 시금치 0.591 / 6.43% (12절), 오이 0.676 / 6.70% (12.5절). 운영 모델 한눈에: 레포 docs/MODELS.md
-  피쳐 구성은 다섯 품목이 같고(시금치만 달력 3개가 더 붙는다) 파라미터만 다르다. 오이만 소매 막판이 빠진다
+  애호박 0.639 / 6.31%, 시금치 0.591 / 6.43% (12절), 오이 0.676 / 6.70% (12.5절), 파프리카 0.652 / 5.12% (12.6절).
+  운영 모델 한눈에: 레포 docs/MODELS.md
+  피쳐 구성은 여섯 품목이 같고(시금치만 달력 3개가 더 붙는다) 파라미터만 다르다. 오이만 소매 막판이 빠진다
 
   1. DB retail_market_price 에서 경동·복조리 일별 소매가 (백엔드 KamisRetailService 가 09:30·17:30 KST 수집)
   2. 가락 일별 가격 g
      - 붉은고추·양배추·양파: 농넷 가락 경매가(상) = 레포 hist_daily_*.csv + DB agri_price (백엔드가 11:00 KST 에 전날분)
        붉은고추 ← 홍고추 hist_daily_redpepper.csv(2001~), 양배추·양파 ← hist_daily_headcabbage.csv·hist_daily_onion.csv
        (2013-12~, 2018 이전은 농넷 백필)
-     - 애호박·시금치·오이: KAMIS 16번 도매 '가락도매'(중도매인 판매가) = DB wholesale_market_price 만
+     - 애호박·시금치·오이·파프리카: KAMIS 16번 도매 '가락도매'(중도매인 판매가) = DB wholesale_market_price 만
        (백엔드 KamisWholesaleService 가 2014~ 적재, 09:30·17:30 KST 최근 14일). 농넷 백필 대신 쓴다(RETAIL.md 12.1)
   3. 순 단위 표 → 피쳐(소매 자기이력 + 가락 + 소매 막판, 품목별 GROUPS) → XGBoost 비율 타깃, 파라미터 5개 × 시드 12 평균
   4. retail_predictions upsert + 지난 순의 actual_price/error_pct 갱신
@@ -50,7 +51,7 @@ GARAK = {'붉은고추': ('hist_daily_redpepper.csv', '홍고추'),
          '양배추': ('hist_daily_headcabbage.csv', '양배추'),
          '양파': ('hist_daily_onion.csv', '양파')}
 # g 를 KAMIS 도매(DB wholesale_market_price, 가락도매)로 쓰는 품목
-KAMIS_G = ('애호박', '시금치', '오이')
+KAMIS_G = ('애호박', '시금치', '오이', '파프리카')
 WHOLESALE_MARKET = '가락도매'
 ITEMS = (*GARAK, *KAMIS_G)
 
@@ -129,8 +130,20 @@ MODELS_CUCUMBER = [
     (None, dict(max_depth=5, n_estimators=1000, learning_rate=0.03, subsample=0.6, colsample_bytree=0.7,
                 min_child_weight=6, reg_lambda=0.5)),
 ]
+MODELS_PAPRIKA = [
+    (15, dict(max_depth=2, n_estimators=600, learning_rate=0.02, subsample=0.8, colsample_bytree=0.7,
+              min_child_weight=1, reg_lambda=0.5)),
+    (15, dict(max_depth=2, n_estimators=600, learning_rate=0.05, subsample=0.8, colsample_bytree=0.9,
+              min_child_weight=1, reg_lambda=3.0)),
+    (15, dict(max_depth=3, n_estimators=300, learning_rate=0.08, subsample=1.0, colsample_bytree=0.9,
+              min_child_weight=1, reg_lambda=0.5)),
+    (None, dict(max_depth=2, n_estimators=1000, learning_rate=0.05, subsample=0.8, colsample_bytree=0.5,
+                min_child_weight=1, reg_lambda=0.5)),
+    (None, dict(max_depth=3, n_estimators=300, learning_rate=0.08, subsample=1.0, colsample_bytree=0.9,
+                min_child_weight=1, reg_lambda=0.5)),
+]
 MODELS = {'붉은고추': MODELS_PEPPER, '양배추': MODELS_CABBAGE, '양파': MODELS_ONION,
-          '애호박': MODELS_ZUCCHINI, '시금치': MODELS_SPINACH, '오이': MODELS_CUCUMBER}
+          '애호박': MODELS_ZUCCHINI, '시금치': MODELS_SPINACH, '오이': MODELS_CUCUMBER, '파프리카': MODELS_PAPRIKA}
 # 피쳐 그룹 — best_{품목}5.json 의 groups, 이 순서대로 이어 붙인다. 없으면 DEFAULT_GROUPS
 DEFAULT_GROUPS = ('retail', 'garak', 'rlast')
 GROUPS = {'시금치': ('retail', 'garak', 'rlast', 'cal'),

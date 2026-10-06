@@ -33,7 +33,7 @@
 | 도매 적중 이력 | `GET /api/price/agri/prediction-history?itemName=배추` | `{backtest[], live[], summary:{backtestMape, liveMape, ...}}` |
 | 도매 실제가 그래프 | `GET /api/price/agri/graph?itemName=&startDate=&endDate=` | `{priceData:[{date, price}]}` |
 
-- 소매 품목: 붉은고추 · 양배추 · 양파 · 애호박 · 시금치 · 오이 (`RetailPriceService.UNITS`)
+- 소매 품목: 붉은고추 · 양배추 · 양파 · 애호박 · 시금치 · 오이 · 파프리카 (`RetailPriceService.UNITS`)
 - 도매 품목(운영 중): 배추 · 양파 · 홍고추. `PredictionService.ITEM_TABLE` 에 당근·양배추도 있지만 운영 모델이 없어 빈 목록이 나온다 (`docs/MODELS.md` 1절)
 
 **결론: MCP 서버는 DB나 모델을 직접 건드릴 필요 없이, 위 REST API를 감싸는 얇은 어댑터면 된다.**
