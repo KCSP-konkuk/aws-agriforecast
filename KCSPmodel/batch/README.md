@@ -5,7 +5,7 @@
 | 배추 | `pipeline.py` | `cabbage_predictions` | 05:30 (+최대 10분) | `journalctl -u agriforecast-predict` |
 | 양파 | `pipeline_onion.py` | `onion_predictions` | 05:50 (+최대 10분) | `journalctl -u agriforecast-predict-onion` |
 | 홍고추 | `pipeline_redpepper.py` | `redpepper_predictions` | 06:10 (+최대 10분) | `journalctl -u agriforecast-predict-redpepper` |
-| 소매 (붉은고추·양배추·양파·애호박·시금치·오이) | `pipeline_retail.py` | `retail_predictions` (품목·순) | 12:10 (+최대 5분) | `journalctl -u agriforecast-predict-retail` |
+| 소매 (붉은고추·양배추·양파·애호박·시금치·오이·파프리카) | `pipeline_retail.py` | `retail_predictions` (품목·순) | 12:10 (+최대 5분) | `journalctl -u agriforecast-predict-retail` |
 | 대시보드 인사이트 (소매 품목 전부) | `pipeline_insight.py` | `item_insight` (품목당 JSON) | 12:40 (+최대 2분) | `journalctl -u agriforecast-insight` |
 | 분석 작업대 통합 시계열 | `pipeline_series.py` | `series_catalog` · `series_value` | 12:50 (+최대 2분) | `journalctl -u agriforecast-series` |
 
@@ -13,7 +13,7 @@
 - 인사이트는 예측이 아니라 대시보드 화면용 요약이다. `pipeline_retail` 의 품목·데이터 읽기·피쳐·모델 설정을 import 해 요인 기여도를 계산하므로(시드만 2개) 소매 품목이 늘면 다음 실행부터 따라온다. 파일에 품목 이름이 없다는 것을 테스트가 지킨다
 - 품목마다 입력·모델이 다르다. 차이는 각 파이프라인 파일 맨 위 설명에 적혀 있다 — **다른 품목 코드를 복사해 쓰기 전에 읽을 것**
   - 홍고추는 가격을 직접 맞히지 않고 비율을 맞힌다, DB 대신 농넷·데이터랩을 직접 받는다, 서버 캐시(`data/cache_*.csv`)를 쓴다
-  - 소매는 **서울 경동·복조리 전통시장 평균 소매가**(KAMIS)를 맞힌다. 외부 요청 없이 DB(`retail_market_price`·`agri_price`·`wholesale_market_price`)와 `hist_daily_*.csv` 만 읽는다. 애호박·시금치·오이는 가락 경매가 대신 KAMIS 도매(`wholesale_market_price`)를 쓴다. 근거는 model-research `docs/RETAIL.md`
+  - 소매는 **서울 경동·복조리 전통시장 평균 소매가**(KAMIS)를 맞힌다. 외부 요청 없이 DB(`retail_market_price`·`agri_price`·`wholesale_market_price`)와 `hist_daily_*.csv` 만 읽는다. 애호박·시금치·오이·파프리카는 가락 경매가 대신 KAMIS 도매(`wholesale_market_price`)를 쓴다. 근거는 model-research `docs/RETAIL.md`
 - 운영 중인 모델 8개(도매 3·소매 5)의 입력·설정·성능 요약: 루트 [`docs/MODELS.md`](../../docs/MODELS.md)
 - 테스트: `python -m pytest tests` (외부 요청·DB 없이 돈다, PR 마다 CI). 현재 홍고추·소매만 있다 — 배추·양파를 고칠 때 붙일 것
 - 배포·타이머·주의점은 루트 `CONTRIBUTING.md` 3·6절
