@@ -10,6 +10,7 @@
   wholesale:{품목}       KAMIS 도매 서울 도매시장 한 곳 (wholesale_market_price)           일 · 평균
   auction:{품목}         가락시장 경매가 상 (agri_price + 레포 hist_daily_*.csv)          일 · 평균
   supply:{품목}          가락시장 반입량 (supply_data 일별 합 + hist_supply*.csv 순별)     순 · 합계
+                         그 밖의 품목은 농넷 순별 반입량 (garak_supply_soon, 2014~)
   station_temp|rain:{지점}  기상청 ASOS 관측소 일별 (station_weather_data)               일 · 평균|합계
   area_temp|rain:{지점}     산지 기상 순별 (weather_*.csv)                              순 · 평균|합계
   fx:usd · fx:cny        환율 (hist_exchange.csv 순 + exchange_rate_daily)              순 · 평균
@@ -244,6 +245,24 @@ def load_supply(conn):
                         'soon', 'sum',
                         join_history(history.get(item, pd.Series(dtype=float)), to_soon(daily, 'sum', complete_only=True)),
                         crop_of(item)))
+    return out + load_supply_soon(conn, {s['item'] for s in out})
+
+
+def load_supply_soon(conn, covered):
+    """농넷 가락 순별 반입량(garak_supply_soon, 백엔드 GarakSupplyService) — 위 출처에 없는 품목만.
+    값이 없는 순(VOLUME NULL)과 진행 중인 순(어제까지 합)은 뺀다. 받은 범위 메모(예: 마늘 전체)는 출처에 붙인다"""
+    if not table_exists(conn, 'garak_supply_soon'):
+        return []
+    rows = query(conn, "SELECT ITEM_NAME, SOON_START, VOLUME, SCOPE FROM garak_supply_soon WHERE VOLUME IS NOT NULL")
+    current = soon_first_day(pr.soon_code(pr.kst_today()))
+    out = []
+    for item in sorted({r[0] for r in rows} - set(covered)):
+        mine = [r for r in rows if r[0] == item]
+        values = series_from([(d, v) for _, d, v, _ in mine])
+        scope = next((sc for *_, sc in mine if sc), None)
+        out.append(make(f'supply:{item}', f'{item} 반입량', '수급',
+                        '가락시장 반입량(농넷 순별' + (f' · {scope}' if scope else '') + ')', '톤', 'soon', 'sum',
+                        values[values.index < current], item))
     return out
 
 

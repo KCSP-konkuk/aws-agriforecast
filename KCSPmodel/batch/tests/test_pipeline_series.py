@@ -120,6 +120,27 @@ def test_반입량은_끝난_순만_순_첫날에_합계로(monkeypatch):
     assert dict(s['values']) == {date(2026, 8, 21): 6.0}
 
 
+def test_농넷_순별_반입량은_다른_출처에_없는_품목만_진행_중인_순은_빼고(monkeypatch):
+    monkeypatch.setattr(pr, 'kst_today', lambda: date(2026, 10, 6))
+    monkeypatch.setattr(ps, 'supply_history', lambda: {})
+    conn = FakeConn({'information_schema.tables': [(1,)],
+                     'supply_data': [('가상가락', 2026, 9, 1, 10.0)],
+                     'garak_supply_soon': [('가상품목', date(2026, 9, 11), 4070.0, '마늘 전체'),
+                                           ('가상품목', date(2026, 9, 21), 4833.0, '마늘 전체'),
+                                           ('가상품목', date(2026, 10, 1), 2386.0, '마늘 전체'),   # 진행 중
+                                           ('가상가락', date(2026, 9, 11), 999.0, None)]})       # 위 출처에 있다
+    got = by_id(ps.load_supply(conn))
+    s = got['supply:가상품목']
+    assert s['item'] == '가상품목' and s['unit'] == '톤' and s['freq'] == 'soon' and s['agg'] == 'sum'
+    assert s['source'] == '가락시장 반입량(농넷 순별 · 마늘 전체)'
+    assert dict(s['values']) == {date(2026, 9, 11): 4070.0, date(2026, 9, 21): 4833.0}
+    assert got['supply:가상가락']['source'] == '가락시장 반입량(서울시농수산식품공사)'
+
+
+def test_농넷_순별_반입량_테이블이_없으면_건너뛴다():
+    assert ps.load_supply_soon(FakeConn({'information_schema.tables': [(0,)]}), set()) == []
+
+
 def test_반입량_레포_과거분은_파일_안_품목명으로_찾는다():
     history = ps.supply_history()
     assert history and all(d.day in (1, 11, 21) for s in history.values() for d in s.index)
