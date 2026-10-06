@@ -3,6 +3,10 @@ import { useState, useEffect } from 'react';
 import Logo from './Logo';
 import Avatar from './Avatar';
 import { getUser } from '../auth';
+import { copyText } from '../lib/clipboard';
+
+// 원격 MCP 서버 주소 (KCSPmcp). Claude 등 MCP 클라이언트에 이 주소를 등록해 도매 예측을 묻는다
+const MCP_URL = 'https://agriforecast.duckdns.org/mcp';
 
 const NAV_ITEMS = [
   { to: '/', label: '홈', end: true },
@@ -17,6 +21,7 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(null);
 
   const checkLoginStatus = () => {
     // 토큰이 없거나 만료됐으면 로그아웃 상태
@@ -48,6 +53,18 @@ export default function Header() {
     navigate(isLoggedIn ? '/mypage' : '/login');
   };
 
+  const copyMcpUrl = async () => {
+    try {
+      setCopied((await copyText(MCP_URL)) ? 'ok' : 'fail');
+    } catch {
+      setCopied('fail');
+    }
+    setTimeout(() => setCopied(null), 2500);
+  };
+
+  const mcpLabel = copied === 'ok' ? '복사했어요' : copied === 'fail' ? '복사하지 못했어요' : 'MCP 주소 복사';
+  const mcpIcon = copied === 'ok' ? 'check' : 'content_copy';
+
   const navClass = ({ isActive }) =>
     `text-sm font-medium transition-colors ${isActive ? 'text-primary font-bold' : 'text-text-main hover:text-primary'}`;
 
@@ -76,6 +93,15 @@ export default function Header() {
             ))}
           </nav>
           {account}
+          <button
+            type="button"
+            onClick={copyMcpUrl}
+            title={`${MCP_URL} — Claude 등 MCP 클라이언트에 등록하세요`}
+            className="-ml-6 flex items-center gap-1 text-sm font-semibold text-primary border border-primary/40 hover:bg-primary-light px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <span className="material-symbols-outlined text-lg leading-none">{mcpIcon}</span>
+            {mcpLabel}
+          </button>
         </div>
 
         <button
@@ -105,6 +131,14 @@ export default function Header() {
             className="mt-2 px-3 py-2.5 rounded-lg text-left text-sm font-semibold text-primary border border-primary/30"
           >
             {isLoggedIn ? `${user?.name || '내'} 계정` : '로그인'}
+          </button>
+          <button
+            type="button"
+            onClick={copyMcpUrl}
+            className="flex items-center gap-1 px-3 py-2.5 rounded-lg text-left text-sm font-semibold text-primary border border-primary/30"
+          >
+            <span className="material-symbols-outlined text-lg leading-none">{mcpIcon}</span>
+            {mcpLabel}
           </button>
         </nav>
       )}
