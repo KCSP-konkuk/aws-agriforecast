@@ -27,6 +27,7 @@
   - 지표마다 통째로 다시 쓴다(두 번 돌려도 같다). 원본이 비면 그 지표는 건너뛰고 기존 값을 둔다
   - 레포 과거분(CSV)과 DB 를 잇는 지표는 CSV 가 우선, DB 는 CSV 마지막 날 뒤만 (pipeline_retail.load_garak 과 같다)
 
+적재 뒤 같은 지표로 홈 하이라이트(home_highlights.py → home_highlights 테이블)를 계산한다.
 systemd 타이머로 매일 12:50 KST (인사이트 12:40 뒤).
 """
 import glob
@@ -35,12 +36,13 @@ import os
 import sys
 import time
 from collections import Counter
-from datetime import date
+from datetime import date, datetime
 
 import numpy as np
 import pandas as pd
 
 import backtest
+import home_highlights
 import pipeline_retail as pr
 
 CATALOG, VALUES = 'series_catalog', 'series_value'
@@ -473,6 +475,15 @@ def main():
     try:
         series, failed = collect(conn)
         n = save(conn, series)
+        try:
+            payload = home_highlights.build(series, home_highlights.load_insights(conn),
+                                            datetime.now(pr.KST).isoformat(timespec='seconds'))
+            home_highlights.save(conn, payload)
+            log.info('홈 하이라이트: 질문 %d개(%s), 시장 칸 %d개', len(payload['questions']),
+                     ', '.join(q['key'] for q in payload['questions']), len(payload['market']))
+        except Exception:   # noqa: BLE001 — 지표 적재는 끝났으니 실패만 알린다
+            log.exception('홈 하이라이트 계산 실패')
+            failed.append('홈 하이라이트')
     finally:
         conn.close()
     log.info('적재 지표 %d개, 실패 출처 %s, %.0fs', n, failed or '없음', time.time() - t)

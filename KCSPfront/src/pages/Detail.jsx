@@ -3,7 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import PredictionHistory from '../components/PredictionHistory';
 import { api } from '../api/api';
@@ -147,6 +147,8 @@ function KpiCard({ label, value, sub, valueColor, loading }) {
 export default function Detail() {
   // items: agri_price의 품목명 문자열 배열 ['배추', '양파', ...]
   const [items, setItems] = useState([]);
+  const [searchParams] = useSearchParams();
+  const [wantedItem] = useState(() => searchParams.get('item')); // 처음 들어온 주소의 품목만 본다
   const [selectedItemName, setSelectedItemName] = useState(null);
   const [period, setPeriod] = useState('1month');
   const [unit, setUnit] = useState('daily');
@@ -213,11 +215,12 @@ export default function Detail() {
     api.getAgriItems()
       .then((data) => {
         setItems(data);
-        const first = ITEM_ORDER.find((n) => data.includes(n));
+        // 홈 오늘의 시장 칸에서 ?item= 으로 들어오면 그 품목부터
+        const first = data.includes(wantedItem) && ITEM_ORDER.includes(wantedItem) ? wantedItem : ITEM_ORDER.find((n) => data.includes(n));
         if (first) setSelectedItemName(first);
       })
       .catch((err) => console.error('품목 로드 실패:', err));
-  }, []);
+  }, [wantedItem]);
 
   // 직접 지정은 시작일·종료일이 모두 있고 순서가 맞을 때만 조회한다
   const customInvalid = period === 'custom' && customStart && customEnd && customStart > customEnd;

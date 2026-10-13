@@ -4,9 +4,7 @@ import Logo from './Logo';
 import Avatar from './Avatar';
 import { getUser } from '../auth';
 import { copyText } from '../lib/clipboard';
-
-// 원격 MCP 서버 주소 (KCSPmcp). Claude 등 MCP 클라이언트에 이 주소를 등록해 도매 예측을 묻는다
-const MCP_URL = 'https://agriforecast.duckdns.org/mcp';
+import { MCP_URL } from '../lib/mcp';
 
 const NAV_ITEMS = [
   { to: '/', label: '홈', end: true },
