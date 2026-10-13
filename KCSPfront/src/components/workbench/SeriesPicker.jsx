@@ -7,19 +7,11 @@ const NATIVE = { daily: 'd', soon: 's', monthly: 'm' };
 // 원본 갱신이 늦어진 지표 표시
 export function StaleBadge({ days }) {
   return (
-    <span className="shrink-0 rounded bg-accent/25 px-1 text-[10px] font-semibold text-text-main" title={`마지막 값이 ${days}일 전이에요 — 원본 갱신이 늦어지고 있어요`}>
+    <span className="shrink-0 rounded bg-accent/25 px-1 text-xs font-semibold text-text-main" title={`마지막 값이 ${days}일 전이에요 — 원본 갱신이 늦어지고 있어요`}>
       멈춤
     </span>
   );
 }
-const CATEGORY_ICON = {
-  가격: 'payments',
-  예측: 'online_prediction',
-  수급: 'local_shipping',
-  기상: 'partly_cloudy_day',
-  거시: 'currency_exchange',
-  관심도: 'search',
-};
 
 // 데이터 고르기 — 분류·품목·검색으로 지표를 찾고 눌러서 더한다 (목록은 API 에서)
 export default function SeriesPicker({ catalog, selectedIds, onAdd }) {
@@ -43,13 +35,13 @@ export default function SeriesPicker({ catalog, selectedIds, onAdd }) {
   }, [catalog, query, item]);
 
   return (
-    <div className="rounded-xl bg-white border border-gray-200 p-4">
+    <div className="rounded-xl bg-white border border-border-light p-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-bold text-text-main">데이터 고르기</h3>
+        <h2 className="text-[15px] font-bold text-text-main">데이터 고르기</h2>
         <span className="text-xs text-subtext-light">{catalog.length}개 지표</span>
       </div>
       <div className="mt-3 space-y-2">
-        <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 focus-within:border-primary">
+        <label className="flex items-center gap-2 rounded-lg border border-border-light px-3 py-2 focus-within:border-primary">
           <span className="material-symbols-outlined text-lg text-subtext-light">search</span>
           <input
             id="series-search"
@@ -64,7 +56,7 @@ export default function SeriesPicker({ catalog, selectedIds, onAdd }) {
             aria-label="품목"
             value={item}
             onChange={(e) => setItem(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-text-main focus:border-primary focus:outline-none"
+            className="w-full rounded-lg border border-border-light bg-white px-3 py-2 text-sm text-text-main focus:border-primary focus:outline-none"
           >
             <option value="">모든 품목</option>
             {items.map((i) => (
@@ -81,14 +73,13 @@ export default function SeriesPicker({ catalog, selectedIds, onAdd }) {
         {groups.map(([category, list]) => {
           const isOpen = query.trim() !== '' || item !== '' || Boolean(open[category]);
           return (
-            <div key={category} className="border-b border-gray-100 pb-2">
+            <div key={category} className="border-b border-line pb-2">
               <button
                 type="button"
                 onClick={() => setOpen((o) => ({ ...o, [category]: !o[category] }))}
-                className="flex w-full items-center gap-2 py-1.5 text-sm font-semibold text-text-main"
+                className="flex w-full items-center gap-1.5 py-2 text-sm font-semibold text-text-main"
                 aria-expanded={isOpen}
               >
-                <span className="material-symbols-outlined text-lg text-primary">{CATEGORY_ICON[category] ?? 'dataset'}</span>
                 {category}
                 <span className="text-xs font-normal text-subtext-light">{list.length}</span>
                 <span className="material-symbols-outlined ml-auto text-lg text-subtext-light">{isOpen ? 'expand_less' : 'expand_more'}</span>
@@ -111,8 +102,8 @@ export default function SeriesPicker({ catalog, selectedIds, onAdd }) {
                             {c.name}
                             {picked && <span className="material-symbols-outlined text-base text-primary">check</span>}
                           </span>
-                          <span className="block text-[11px] text-subtext-light truncate">{c.source}</span>
-                          <span className="flex items-center gap-1 text-[11px] text-subtext-light">
+                          <span className="block text-xs text-subtext-light truncate">{c.source}</span>
+                          <span className="flex items-center gap-1 text-xs text-subtext-light">
                             <span className="truncate">
                               {FREQ_LABEL[NATIVE[c.freq]] ?? ''}별 · {coverage(c)} · {c.unit}
                             </span>

@@ -46,7 +46,7 @@ export default function FindId() {
       </form>
 
       {ids && (
-        <div className="mt-6 rounded-lg border border-primary/20 bg-primary-light p-4" role="status">
+        <div className="mt-6 rounded-lg bg-primary-light p-4" role="status">
           {ids.length === 0 ? (
             <p className="text-sm text-text-main">입력한 이름과 이메일로 가입한 계정이 없습니다.</p>
           ) : (
@@ -54,7 +54,7 @@ export default function FindId() {
               <p className="text-sm text-subtext-light mb-2">가입한 아이디 (일부는 가려서 보여드려요)</p>
               <ul className="space-y-1">
                 {ids.map((id) => (
-                  <li key={id} className="text-lg font-bold text-primary tracking-wide">{id}</li>
+                  <li key={id} className="text-lg font-bold text-text-main">{id}</li>
                 ))}
               </ul>
             </>
@@ -63,9 +63,9 @@ export default function FindId() {
       )}
 
       <p className="mt-8 flex justify-center gap-4 text-sm">
-        <Link to="/login" className="font-bold text-primary hover:underline">로그인</Link>
-        <span className="text-gray-300">|</span>
-        <Link to="/reset-password" className="font-bold text-primary hover:underline">비밀번호 재설정</Link>
+        <Link to="/login" className="font-medium text-subtext-light hover:text-text-main">로그인</Link>
+        <span className="text-border-light">|</span>
+        <Link to="/reset-password" className="font-medium text-subtext-light hover:text-text-main">비밀번호 재설정</Link>
       </p>
     </AuthLayout>
   );

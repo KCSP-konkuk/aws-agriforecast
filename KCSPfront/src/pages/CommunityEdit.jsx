@@ -100,8 +100,8 @@ export default function CommunityEdit() {
   if (needsLogin) {
     return (
       <Layout>
-        <main className="flex-1 py-10">
-          <div className="mx-auto w-full max-w-[960px] px-4 sm:px-6">
+        <main className="flex-1 pb-16 pt-8">
+          <div className="mx-auto w-full max-w-[880px] px-4 sm:px-6">
             <LoginRequired title="로그인하면 글을 수정할 수 있어요" description="내가 쓴 글은 로그인한 뒤에 고치거나 지울 수 있습니다." />
           </div>
         </main>
@@ -112,9 +112,9 @@ export default function CommunityEdit() {
   if (loadingPost) {
     return (
       <Layout>
-        <main className="flex-1 py-10">
-          <div className="mx-auto w-full max-w-[960px] px-4 sm:px-6">
-            <div className="text-center py-10 text-subtext-light">로딩 중...</div>
+        <main className="flex-1 pb-16 pt-8">
+          <div className="mx-auto w-full max-w-[880px] px-4 sm:px-6">
+            <p className="py-12 text-center text-sm text-subtext-light" role="status">불러오는 중이에요</p>
           </div>
         </main>
       </Layout>
@@ -123,12 +123,12 @@ export default function CommunityEdit() {
 
   return (
     <Layout>
-      <main className="flex-1 py-10">
-        <div className="mx-auto w-full max-w-[960px] px-4 sm:px-6">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-text-main mb-6">글 수정</h1>
+      <main className="flex-1 pb-16 pt-8">
+        <div className="mx-auto w-full max-w-[880px] px-4 sm:px-6">
+          <h1 className="mb-6 text-2xl font-bold tracking-[-0.02em] text-text-main">글 수정</h1>
           
           {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700" role="alert">
               {error}
             </div>
           )}
@@ -136,23 +136,25 @@ export default function CommunityEdit() {
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-text-main mb-1">제목</label>
+                <label htmlFor="post-title" className="mb-1.5 block text-sm font-medium text-text-main">제목</label>
                 <input
+                  id="post-title"
                   type="text"
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-lg border border-border-light bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-lg border border-border-light bg-white px-4 py-2.5 text-[15px] text-text-main focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-text-main mb-1">카테고리</label>
+                <label htmlFor="post-category" className="mb-1.5 block text-sm font-medium text-text-main">이야기방</label>
                 <select
+                  id="post-category"
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-lg border border-border-light bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-lg border border-border-light bg-white px-4 py-2.5 text-[15px] text-text-main focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   {ROOMS.map((r) => <option key={r}>{r}</option>)}
                 </select>
@@ -160,13 +162,14 @@ export default function CommunityEdit() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-main mb-1">내용</label>
+              <label htmlFor="post-content" className="mb-1.5 block text-sm font-medium text-text-main">내용</label>
               <textarea
+                id="post-content"
                 rows="12"
                 name="content"
                 value={formData.content}
                 onChange={handleChange}
-                className="w-full px-4 py-2 rounded-lg border border-border-light bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full rounded-lg border border-border-light bg-white px-4 py-2.5 text-[15px] text-text-main focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 required
               />
             </div>
@@ -177,20 +180,20 @@ export default function CommunityEdit() {
               <button
                 type="submit"
                 disabled={loading}
-                className="px-5 h-10 rounded-lg bg-primary text-white font-bold hover:bg-primary-hover disabled:opacity-50"
+                className="h-10 rounded-lg bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
               >
                 {loading ? '수정 중...' : '수정 완료'}
               </button>
               <button
                 type="button"
                 onClick={handleDelete}
-                className="px-5 h-10 rounded-lg bg-red-500 text-white font-bold hover:bg-red-600"
+                className="h-10 rounded-lg px-5 text-sm font-semibold text-red-700 hover:bg-red-50"
               >
                 글 삭제
               </button>
               <Link
                 to={`/community/${id || ''}/my`}
-                className="px-5 h-10 inline-flex items-center rounded-lg bg-primary-light text-text-main hover:bg-primary/15"
+                className="inline-flex h-10 items-center rounded-lg bg-background-light px-5 text-sm font-semibold text-text-main hover:bg-border-light"
               >
                 취소
               </Link>

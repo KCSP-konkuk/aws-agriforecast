@@ -9,7 +9,7 @@ export default function LoginRequired({ title, description, compact = false }) {
 
   if (compact) {
     return (
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border-light bg-white px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-background-light px-4 py-3">
         <p className="text-sm text-subtext-light">{title}</p>
         <Link to={loginPath(next)} className="text-sm font-bold text-primary hover:underline">로그인하기</Link>
       </div>
@@ -17,15 +17,14 @@ export default function LoginRequired({ title, description, compact = false }) {
   }
 
   return (
-    <div className="flex flex-col items-center text-center rounded-xl border border-border-light bg-white px-6 py-12">
-      <span className="material-symbols-outlined text-5xl text-primary">lock_person</span>
-      <h2 className="mt-4 text-xl font-bold text-text-main">{title}</h2>
+    <div className="flex flex-col items-center rounded-2xl bg-background-light px-6 py-14 text-center">
+      <h2 className="text-xl font-bold tracking-[-0.02em] text-text-main">{title}</h2>
       {description && <p className="mt-2 text-sm text-subtext-light">{description}</p>}
       <div className="mt-6 flex flex-wrap justify-center gap-2">
-        <Link to={loginPath(next)} className="h-10 px-5 inline-flex items-center rounded-lg bg-primary text-white font-bold hover:bg-primary-hover">
+        <Link to={loginPath(next)} className="inline-flex h-10 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover">
           로그인
         </Link>
-        <Link to="/signup" className="h-10 px-5 inline-flex items-center rounded-lg bg-primary-light text-text-main font-semibold hover:bg-primary/15">
+        <Link to="/signup" className="inline-flex h-10 items-center rounded-lg border border-border-light bg-white px-5 text-sm font-semibold text-text-main hover:bg-background-light">
           회원가입
         </Link>
       </div>

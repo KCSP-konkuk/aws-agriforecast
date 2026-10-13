@@ -70,7 +70,7 @@ export default function Login() {
   return (
     <AuthLayout title="로그인" subtitle="AgriForecast 계정으로 로그인하세요.">
       {banner && (
-        <p className="mb-5 rounded-lg border border-primary/20 bg-primary-light px-4 py-3 text-sm text-text-main" role="status">
+        <p className="mb-5 rounded-lg bg-primary-light px-4 py-3 text-sm text-text-main" role="status">
           {banner}
         </p>
       )}
@@ -84,12 +84,12 @@ export default function Login() {
       <div className="mt-8 text-center text-sm space-y-3">
         <p className="text-subtext-light">
           아직 회원이 아니신가요?
-          <Link className="font-bold text-primary hover:underline ml-1" to={next ? `/signup?next=${encodeURIComponent(next)}` : '/signup'}>회원가입</Link>
+          <Link className="font-semibold text-primary hover:underline ml-1" to={next ? `/signup?next=${encodeURIComponent(next)}` : '/signup'}>회원가입</Link>
         </p>
         <div className="flex justify-center gap-4">
-          <Link className="font-bold text-primary hover:underline" to="/find-id">아이디 찾기</Link>
-          <span className="text-gray-300">|</span>
-          <Link className="font-bold text-primary hover:underline" to="/reset-password">비밀번호 재설정</Link>
+          <Link className="font-medium text-subtext-light hover:text-text-main" to="/find-id">아이디 찾기</Link>
+          <span className="text-border-light">|</span>
+          <Link className="font-medium text-subtext-light hover:text-text-main" to="/reset-password">비밀번호 재설정</Link>
         </div>
       </div>
     </AuthLayout>

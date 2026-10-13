@@ -102,7 +102,7 @@ export default function Signup() {
 
       <p className="mt-8 text-center text-sm text-subtext-light">
         이미 계정이 있으신가요?
-        <Link to={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} className="font-bold text-primary hover:underline ml-1">로그인</Link>
+        <Link to={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} className="font-semibold text-primary hover:underline ml-1">로그인</Link>
       </p>
     </AuthLayout>
   );

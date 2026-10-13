@@ -18,7 +18,7 @@ function Bound({ label, value, placeholder, onCommit }) {
       aria-label={label}
       onBlur={commit}
       onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-      className="w-24 rounded border border-gray-200 px-2 py-1 text-xs text-text-main"
+      className="w-24 h-8 rounded-md border border-border-light bg-white px-2 text-[13px] text-text-main"
     />
   );
 }
@@ -34,10 +34,9 @@ export default function FilterBar({ lines, rows, conditions, match, onChange }) 
     onChange(conditions.map((c) => (c.id === id ? { ...c, ...patch } : c)).filter((c) => c.min != null || c.max != null));
 
   return (
-    <div className="space-y-2 rounded-lg border border-gray-100 p-3">
+    <div className="space-y-2 rounded-xl bg-background-light p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="material-symbols-outlined text-lg text-primary">filter_alt</span>
-        <span className="text-sm font-semibold text-text-main">조건 걸기</span>
+        <span className="text-[15px] font-semibold text-text-main">조건 걸기</span>
         {match && (
           <span className="text-xs text-subtext-light">
             맞는 칸 {match.size.toLocaleString('ko-KR')}개 / {rows.length.toLocaleString('ko-KR')}개
@@ -53,7 +52,7 @@ export default function FilterBar({ lines, rows, conditions, match, onChange }) 
             id="condition-add"
             value=""
             onChange={(e) => e.target.value && add(e.target.value)}
-            className="ml-auto rounded border border-gray-200 bg-white px-1.5 py-1 text-xs text-text-main"
+            className="ml-auto h-8 rounded-md border border-border-light bg-white px-2 text-[13px] text-text-main"
           >
             <option value="">+ 조건 추가</option>
             {free.map((l) => (
@@ -65,7 +64,7 @@ export default function FilterBar({ lines, rows, conditions, match, onChange }) 
         )}
       </div>
       {conditions.length === 0 ? (
-        <p className="text-xs text-subtext-light">
+        <p className="text-[13px] leading-relaxed text-subtext-light">
           &ldquo;반입량이 평년보다 15% 넘게 적고 산지 기온은 평년보다 1.5℃ 넘게 높았던 때&rdquo;처럼 지표별 범위를 걸면, 맞는 칸을 차트에서 강조하고 표·CSV 에는 그 칸만 남겨요.
           평행 좌표에서는 축을 끌어서 걸 수 있어요.
         </p>
@@ -80,7 +79,7 @@ export default function FilterBar({ lines, rows, conditions, match, onChange }) 
               <li key={`${c.id}|${c.min}|${c.max}`} className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="inline-block h-2 w-2 rounded-full" style={{ background: colorOf(line.color) }} />
                 <span className="text-text-main">{line.name}</span>
-                <span className="text-[11px] text-subtext-light">{line.unitLabel}</span>
+                <span className="text-xs text-subtext-light">{line.unitLabel}</span>
                 <Bound label={`${line.name} 최소`} value={c.min} placeholder={lo == null ? '최소' : `최소 ${num(lo)}`} onCommit={(v) => set(c.id, { min: v })} />
                 <span className="text-subtext-light">~</span>
                 <Bound label={`${line.name} 최대`} value={c.max} placeholder={hi == null ? '최대' : `최대 ${num(hi)}`} onCommit={(v) => set(c.id, { max: v })} />

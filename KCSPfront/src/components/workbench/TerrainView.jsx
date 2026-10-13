@@ -7,9 +7,9 @@ const SOON = ['상', '중', '하'];
 const MONTHS = Array.from({ length: 12 }, (_, i) => `${i + 1}월`);
 const colLabel = (i, f) => (f === 'm' ? MONTHS[i] : `${MONTHS[Math.floor(i / 3)]} ${SOON[i % 3]}`);
 const DIVERGING = [
-  [0, '#337AB7'],
-  [0.5, '#F1F5F9'],
-  [1, '#D9534F'],
+  [0, '#2E6BC6'],
+  [0.5, '#F4F6F4'],
+  [1, '#CC2F2F'],
 ];
 const SEQUENTIAL = [
   [0, '#F0F5F0'],
@@ -71,7 +71,7 @@ export default function TerrainView({ lines, store, catById, base, freq, onBase 
           hovertemplate: `%{y}년 %{customdata}<br>%{z:,.1f} ${unit}<extra></extra>`,
           colorscale: diverging ? DIVERGING : SEQUENTIAL,
           ...(diverging ? { cmid: 0 } : {}),
-          colorbar: { title: { text: unit, font: { size: 11 } }, thickness: 12, len: 0.6 },
+          colorbar: { title: { text: unit, font: { size: 12 } }, thickness: 12, len: 0.6 },
           contours: { z: { show: false } },
         },
       ],
@@ -101,7 +101,7 @@ export default function TerrainView({ lines, store, catById, base, freq, onBase 
             id="terrain-series"
             value={lines.indexOf(line)}
             onChange={(e) => onBase(Number(e.target.value))}
-            className="max-w-[220px] rounded border border-gray-200 bg-white px-1.5 py-1 text-xs text-text-main"
+            className="max-w-[220px] h-8 rounded-md border border-border-light bg-white px-2 text-[13px] text-text-main"
           >
             {lines.map((l, i) => (
               <option key={l.id} value={i}>
@@ -110,7 +110,7 @@ export default function TerrainView({ lines, store, catById, base, freq, onBase 
             ))}
           </select>
         </label>
-        <div className="flex rounded-lg border border-gray-200 bg-white p-0.5" role="group" aria-label="보기">
+        <div className="flex rounded-lg border border-border-light bg-white p-0.5" role="group" aria-label="보기">
           {[
             ['3d', '3D'],
             ['flat', '평면'],
@@ -140,7 +140,7 @@ export default function TerrainView({ lines, store, catById, base, freq, onBase 
       ) : (
         <div className="overflow-x-auto">
           <div
-            className="grid min-w-[640px] gap-[2px] text-[10px]"
+            className="grid min-w-[640px] gap-[2px] text-xs"
             style={{ gridTemplateColumns: `44px repeat(${grid.cols}, minmax(0,1fr))` }}
           >
             <div />

@@ -35,7 +35,7 @@ function AnalysisRow({ item, onChanged, onDeleted }) {
   };
 
   return (
-    <li className="rounded-lg border border-border-light p-4">
+    <li className="py-4">
       {editing ? (
         <form onSubmit={save} className="space-y-2" noValidate>
           <input
@@ -43,7 +43,7 @@ function AnalysisRow({ item, onChanged, onDeleted }) {
             maxLength={100}
             onChange={(e) => setTitle(e.target.value)}
             aria-label="분석 이름"
-            className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm text-text-main"
+            className="w-full rounded-lg border border-border-light px-3 py-2 text-sm text-text-main focus:border-primary"
           />
           <textarea
             value={memo}
@@ -51,10 +51,10 @@ function AnalysisRow({ item, onChanged, onDeleted }) {
             rows={2}
             onChange={(e) => setMemo(e.target.value)}
             aria-label="메모"
-            className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm text-text-main"
+            className="w-full rounded-lg border border-border-light px-3 py-2 text-sm text-text-main focus:border-primary"
           />
           <div className="flex gap-2">
-            <button type="submit" disabled={!title.trim()} className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
+            <button type="submit" disabled={!title.trim()} className="h-9 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50">
               저장
             </button>
             <button
@@ -64,7 +64,7 @@ function AnalysisRow({ item, onChanged, onDeleted }) {
                 setTitle(item.title);
                 setMemo(item.memo ?? '');
               }}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-text-main"
+              className="h-9 rounded-lg bg-background-light px-4 text-sm font-semibold text-text-main hover:bg-border-light"
             >
               취소
             </button>
@@ -73,28 +73,27 @@ function AnalysisRow({ item, onChanged, onDeleted }) {
       ) : (
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="font-semibold text-text-main">{item.title}</p>
+            <p className="text-[15px] font-semibold text-text-main">{item.title}</p>
             {item.memo && <p className="mt-0.5 whitespace-pre-line text-sm text-subtext-light">{item.memo}</p>}
             <p className="mt-1 text-xs text-subtext-light">{dateText(item.updatedAt)} 저장</p>
           </div>
           <div className="flex flex-wrap gap-1.5">
             <Link
               to={`/analysis?${item.query}`}
-              className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-white hover:bg-primary-hover"
+              className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-[13px] font-semibold text-white hover:bg-primary-hover"
             >
-              <span className="material-symbols-outlined text-base">construction</span>
               작업대에서 열기
             </Link>
-            <button type="button" onClick={() => setEditing(true)} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-text-main hover:bg-background-light">
+            <button type="button" onClick={() => setEditing(true)} className="h-8 rounded-lg bg-background-light px-3 text-[13px] font-semibold text-text-main hover:bg-border-light">
               이름·메모
             </button>
-            <button type="button" onClick={remove} className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50">
+            <button type="button" onClick={remove} className="h-8 rounded-lg px-3 text-[13px] font-semibold text-red-700 hover:bg-red-50">
               지우기
             </button>
           </div>
         </div>
       )}
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-[13px] text-red-700" role="alert">{error}</p>}
     </li>
   );
 }
@@ -121,8 +120,8 @@ export default function MyAnalyses() {
 
   return (
     <Layout>
-      <div className="flex flex-1 justify-center py-5 sm:py-10 px-4 sm:px-6 lg:px-10">
-        <div className="flex w-full max-w-6xl flex-1 flex-col lg:flex-row gap-8">
+      <div className="flex flex-1 justify-center px-4 pb-16 pt-8 sm:px-6 lg:px-10">
+        <div className="flex w-full max-w-6xl flex-1 flex-col gap-8 lg:flex-row lg:gap-16">
           <MyPageSidebar
             user={user}
             onLogout={() => {
@@ -131,10 +130,10 @@ export default function MyAnalyses() {
             }}
           />
           <main className="flex-1 min-w-0">
-            <div className="bg-white p-6 sm:p-8 rounded-lg border border-border-light flex flex-col gap-6">
+            <div className="flex flex-col gap-6">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-text-main">내 분석</h2>
-                <p className="text-base text-subtext-light mt-1">작업대에서 저장한 화면이에요. 열면 지표 · 변환 · 시차 · 차트 · 조건이 저장한 그대로 열려요.</p>
+                <h1 className="text-2xl font-bold tracking-[-0.02em] text-text-main">내 분석</h1>
+                <p className="mt-2 text-[15px] text-subtext-light">작업대에서 저장한 화면이에요. 열면 지표 · 변환 · 시차 · 차트 · 조건이 저장한 그대로 열려요.</p>
               </div>
               {list.status !== 'ready' || list.data.length === 0 ? (
                 <div>
@@ -153,7 +152,7 @@ export default function MyAnalyses() {
                   )}
                 </div>
               ) : (
-                <ul className="space-y-3">
+                <ul className="divide-y divide-line border-y border-line">
                   {list.data.map((item) => (
                     <AnalysisRow
                       key={item.id}

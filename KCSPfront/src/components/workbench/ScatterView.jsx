@@ -28,7 +28,7 @@ function ScatterTip({ active, payload, xl, yl, freq }) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (
-    <div className="rounded-lg bg-white border border-gray-200 shadow px-3 py-2 text-xs">
+    <div className="rounded-lg bg-white border border-border-light shadow px-3 py-2 text-xs">
       <p className="font-semibold text-text-main mb-1">{keyLabel(p.key, freq)}</p>
       <p className="text-text-main">
         가로 · {xl.name} <b>{num(p.x)}</b>
@@ -48,7 +48,7 @@ function AxisSelect({ id, label, value, lines, onChange }) {
         id={id}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="max-w-[220px] rounded border border-gray-200 bg-white px-1.5 py-1 text-xs text-text-main"
+        className="max-w-[220px] h-8 rounded-md border border-border-light bg-white px-2 text-[13px] text-text-main"
       >
         {lines.map((l, i) => (
           <option key={l.id} value={i}>
@@ -115,7 +115,7 @@ export default function ScatterView({ rows, lines, x, y, freq, match, onAxes }) 
               <Scatter data={[latest]} fill={yearColor(latest.year, y0, y1)} stroke={AXIS.now} strokeWidth={2} isAnimationActive={false} />
             </ScatterChart>
           </ResponsiveContainer>
-          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-subtext-light">
+          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-subtext-light">
             {y0 < y1 && (
               <span className="flex items-center gap-1.5">
                 {y0}

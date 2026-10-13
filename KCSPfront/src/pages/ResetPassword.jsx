@@ -88,7 +88,7 @@ export default function ResetPassword() {
   return (
     <AuthLayout title="비밀번호 재설정" subtitle="가입한 이메일로 인증 코드를 보내 드려요.">
       {available === false ? (
-        <div className="rounded-lg border border-border-light bg-white p-5 text-sm text-text-main" role="status">
+        <div className="rounded-xl bg-background-light p-5 text-sm text-text-main" role="status">
           <p className="font-semibold">지금은 비밀번호 재설정 메일을 보낼 수 없어요.</p>
           <p className="mt-1 text-subtext-light">메일 발송을 준비 중입니다. 급하시면 관리자에게 문의해 주세요.</p>
         </div>
@@ -101,7 +101,7 @@ export default function ResetPassword() {
         </form>
       ) : (
         <form onSubmit={confirm} className="flex flex-col gap-5" noValidate>
-          <p className="rounded-lg border border-primary/20 bg-primary-light px-4 py-3 text-sm text-text-main" role="status">{notice}</p>
+          <p className="rounded-lg bg-primary-light px-4 py-3 text-sm text-text-main" role="status">{notice}</p>
           <TextField label="인증 코드" id="code" value={form.code} onChange={handleChange} placeholder="6자리 숫자" inputMode="numeric" maxLength={6} autoComplete="one-time-code" {...fieldError('code', '')} />
           <PasswordField label="새 비밀번호" id="newPassword" value={form.newPassword} onChange={handleChange} onBlur={handleBlur} placeholder="새 비밀번호를 입력하세요" autoComplete="new-password"
 {...newPasswordState} />
@@ -120,9 +120,9 @@ export default function ResetPassword() {
       )}
 
       <p className="mt-8 flex justify-center gap-4 text-sm">
-        <Link to="/login" className="font-bold text-primary hover:underline">로그인</Link>
-        <span className="text-gray-300">|</span>
-        <Link to="/find-id" className="font-bold text-primary hover:underline">아이디 찾기</Link>
+        <Link to="/login" className="font-medium text-subtext-light hover:text-text-main">로그인</Link>
+        <span className="text-border-light">|</span>
+        <Link to="/find-id" className="font-medium text-subtext-light hover:text-text-main">아이디 찾기</Link>
       </p>
     </AuthLayout>
   );

@@ -61,9 +61,9 @@ export default function CommunityWrite() {
 
   return (
     <Layout>
-      <main className="flex-1 py-10">
-        <div className="mx-auto w-full max-w-[960px] px-4 sm:px-6">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-text-main mb-6">글 쓰기</h1>
+      <main className="flex-1 pb-16 pt-8">
+        <div className="mx-auto w-full max-w-[880px] px-4 sm:px-6">
+          <h1 className="mb-6 text-2xl font-bold tracking-[-0.02em] text-text-main">글 쓰기</h1>
           {needsLogin ? (
             <LoginRequired
               title="로그인하면 글을 쓸 수 있어요"
@@ -72,7 +72,7 @@ export default function CommunityWrite() {
           ) : (<>
           
           {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700" role="alert">
               {error}
             </div>
           )}
@@ -80,24 +80,26 @@ export default function CommunityWrite() {
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-text-main mb-1">제목</label>
+                <label htmlFor="post-title" className="mb-1.5 block text-sm font-medium text-text-main">제목</label>
                 <input
+                  id="post-title"
                   type="text"
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-lg border border-border-light bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-lg border border-border-light bg-white px-4 py-2.5 text-[15px] text-text-main focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="제목을 입력하세요"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-text-main mb-1">카테고리</label>
+                <label htmlFor="post-category" className="mb-1.5 block text-sm font-medium text-text-main">이야기방</label>
                 <select
+                  id="post-category"
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-lg border border-border-light bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-lg border border-border-light bg-white px-4 py-2.5 text-[15px] text-text-main focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   {ROOMS.map((r) => <option key={r}>{r}</option>)}
                 </select>
@@ -105,13 +107,14 @@ export default function CommunityWrite() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-main mb-1">내용</label>
+              <label htmlFor="post-content" className="mb-1.5 block text-sm font-medium text-text-main">내용</label>
               <textarea
+                id="post-content"
                 rows="12"
                 name="content"
                 value={formData.content}
                 onChange={handleChange}
-                className="w-full px-4 py-2 rounded-lg border border-border-light bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full rounded-lg border border-border-light bg-white px-4 py-2.5 text-[15px] text-text-main focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="내용을 입력하세요"
                 required
               />
@@ -123,13 +126,13 @@ export default function CommunityWrite() {
               <button
                 type="submit"
                 disabled={loading}
-                className="px-5 h-10 rounded-lg bg-primary text-white font-bold hover:bg-primary-hover disabled:opacity-50"
+                className="h-10 rounded-lg bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
               >
                 {loading ? '등록 중...' : '등록'}
               </button>
               <Link
                 to="/community"
-                className="px-5 h-10 inline-flex items-center rounded-lg bg-primary-light text-text-main hover:bg-primary/15"
+                className="inline-flex h-10 items-center rounded-lg bg-background-light px-5 text-sm font-semibold text-text-main hover:bg-border-light"
               >
                 취소
               </Link>

@@ -109,17 +109,17 @@ export default function ParallelView({ rows, lines, conditions, match, freq, onC
           const band = live ?? (c ? [c.max == null ? PAD.top : clampY(yOf(i, c.max)), c.min == null ? BOTTOM : clampY(yOf(i, c.min))] : null);
           return (
             <g key={dim.line.id}>
-              <text x={x} y={16} textAnchor="middle" className="fill-text-main text-[11px] font-semibold">
+              <text x={x} y={16} textAnchor="middle" className="fill-text-main text-xs font-semibold">
                 {cut(dim.line.name)}
               </text>
-              <text x={x} y={30} textAnchor="middle" className="fill-subtext-light text-[10px]">
+              <text x={x} y={30} textAnchor="middle" className="fill-subtext-light text-xs">
                 {cut(dim.line.unitLabel)}
               </text>
-              <line x1={x} x2={x} y1={PAD.top} y2={BOTTOM} stroke="#64748B" strokeWidth={1} />
-              <text x={x} y={PAD.top - 6} textAnchor="middle" className="fill-subtext-light text-[10px]">
+              <line x1={x} x2={x} y1={PAD.top} y2={BOTTOM} stroke="#5D6560" strokeWidth={1} />
+              <text x={x} y={PAD.top - 6} textAnchor="middle" className="fill-subtext-light text-xs">
                 {num(dim.hi)}
               </text>
-              <text x={x} y={BOTTOM + 16} textAnchor="middle" className="fill-subtext-light text-[10px]">
+              <text x={x} y={BOTTOM + 16} textAnchor="middle" className="fill-subtext-light text-xs">
                 {num(dim.lo)}
               </text>
               {band && (

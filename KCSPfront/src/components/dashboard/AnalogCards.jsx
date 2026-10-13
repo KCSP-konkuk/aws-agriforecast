@@ -6,21 +6,22 @@ import { COLOR, signedPct } from './format';
 export default function AnalogCards({ data, actions }) {
   const { items, summary } = data.analogs;
   return (
-    <DashboardCard icon="history" actions={actions} title="비슷했던 과거" subtitle="같은 계절에서 지금과 상황이 가장 비슷했던 때와, 그 뒤 소매가예요">
+    <DashboardCard actions={actions} title="비슷했던 과거" subtitle="같은 계절에서 지금과 상황이 가장 비슷했던 때와, 그 뒤 소매가예요">
       {items.length === 0 ? (
         <p className="text-sm text-subtext-light">비교할 만큼 비슷한 때를 찾지 못했어요.</p>
       ) : (
         <>
-          <p className="text-sm font-semibold text-text-main mb-3">{summary}</p>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <p className="mb-3 text-[15px] font-semibold text-text-main">{summary}</p>
+          <ul className="divide-y divide-line border-y border-line">
             {items.map((a) => {
               const color = a.next > 0 ? 'text-price-up' : a.next < 0 ? 'text-price-down' : 'text-text-main';
               return (
-                <div key={a.soon} className="rounded-lg border border-gray-100 p-3">
-                  <p className="text-xs text-subtext-light">{a.label}</p>
-                  <p className="text-[11px] text-subtext-light">닮은 정도 {Math.round(a.similarity * 100)}%</p>
-                  <p className={`text-base font-bold mt-1 ${color}`}>그다음 순 {signedPct(a.next)}</p>
-                  <div className="h-12 mt-2">
+                <li key={a.soon} className="flex items-center gap-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-semibold text-text-main">{a.label}</p>
+                    <p className="text-[13px] text-subtext-light">닮은 정도 {Math.round(a.similarity * 100)}%</p>
+                  </div>
+                  <div className="h-10 w-24 shrink-0" aria-hidden="true">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={a.path.map((v, i) => ({ i, v }))} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
                         <YAxis hide domain={['auto', 'auto']} />
@@ -28,11 +29,15 @@ export default function AnalogCards({ data, actions }) {
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
-                  <p className="text-[11px] text-subtext-light">그 뒤 세 순 흐름</p>
-                </div>
+                  <div className="w-20 shrink-0 text-right">
+                    <p className="text-xs text-subtext-light">그다음 순</p>
+                    <p className={`text-base font-bold ${color}`}>{signedPct(a.next)}</p>
+                  </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
+          <p className="mt-2 text-xs text-subtext-light">가운데 선은 그 뒤 세 순의 소매가 흐름이에요.</p>
         </>
       )}
     </DashboardCard>

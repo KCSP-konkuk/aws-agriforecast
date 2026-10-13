@@ -9,7 +9,7 @@ function PreviewTip({ active, payload, lines, f }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
   return (
-    <div className="rounded-lg bg-white border border-gray-200 shadow px-3 py-2 text-xs">
+    <div className="rounded-lg bg-white border border-border-light shadow px-3 py-2 text-xs">
       <p className="font-semibold text-text-main mb-1">{keyLabel(row.key, f)}</p>
       {lines.map(
         (l) =>
@@ -81,26 +81,24 @@ export default function AnalysisPreview({ query }) {
   const chartName = CHARTS.find(([k]) => k === state.chart)?.[1] ?? '시계열';
 
   return (
-    <div className="rounded-xl border border-primary/20 bg-primary-light p-4">
+    <div className="rounded-xl border border-border-light bg-white p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="flex items-center gap-1.5 text-sm font-semibold text-text-main">
-          <span className="material-symbols-outlined text-lg text-primary">construction</span>
-          붙인 분석 · {chartName}
+        <p className="text-[15px] font-semibold text-text-main">
+          붙인 분석 <span className="font-normal text-subtext-light">· {chartName}</span>
         </p>
         <Link
           to={`/analysis?${query}`}
-          className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover"
+          className="inline-flex h-8 items-center rounded-lg bg-background-light px-3 text-[13px] font-semibold text-text-main hover:bg-border-light"
         >
           작업대에서 열기
-          <span className="material-symbols-outlined text-sm">arrow_forward</span>
         </Link>
       </div>
       {!view ? (
-        <p className="py-8 text-center text-xs text-subtext-light">미리보기를 불러오는 중이에요</p>
+        <p className="py-8 text-center text-[13px] text-subtext-light">미리보기를 불러오는 중이에요</p>
       ) : view.lines.length === 0 ? (
-        <p className="py-8 text-center text-xs text-subtext-light">붙인 분석의 지표를 지금 목록에서 찾지 못했어요.</p>
+        <p className="py-8 text-center text-[13px] text-subtext-light">붙인 분석의 지표를 지금 목록에서 찾지 못했어요.</p>
       ) : (
-        <div className="mt-2 rounded-lg bg-white p-3">
+        <div className="mt-3">
           <div className="mb-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-subtext-light">
             <span className="font-semibold text-text-main">{view.unit}</span>
             {view.lines.map((l) => (
@@ -123,7 +121,7 @@ export default function AnalysisPreview({ query }) {
             </ResponsiveContainer>
           </div>
           {(view.asIndex || state.chart !== 'line' || state.conditions.length > 0) && (
-            <p className="mt-1 text-[11px] text-subtext-light">
+            <p className="mt-1 text-xs text-subtext-light">
               미리보기는 시계열{view.asIndex ? '(단위가 달라 지수로 겹쳐)' : ''}로 보여 줘요. 작업대에서 열면 {chartName}
               {state.conditions.length > 0 ? ' · 조건' : ''}까지 그대로 보여요.
             </p>
