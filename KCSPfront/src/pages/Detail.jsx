@@ -5,13 +5,16 @@ import {
 } from 'recharts';
 import { Link, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
+import PageHeading from '../components/PageHeading';
+import ItemJourney from '../components/ItemJourney';
+import Icon from '../components/Icon';
 import PredictionHistory from '../components/PredictionHistory';
 import { api } from '../api/api';
 import { toLocalDate } from '../date';
 
 // 실제 = 진한 회색 실선, AI 예측 = 브랜드 초록 점선 (PredictionHistory 와 같은 색)
-const COLOR_ACTUAL = '#191F1C';
-const COLOR_PRED = '#2C5E1A';
+const COLOR_ACTUAL = '#182D26';
+const COLOR_PRED = '#174F3C';
 
 // 예측 모델이 있는 품목만 보여준다 (백엔드 PredictionService.ITEM_TABLE 과 맞출 것)
 // agri_price 에는 당근·양배추 가격도 있지만 예측 모델을 채택하지 않았다
@@ -143,13 +146,14 @@ function PriceSummary({ kpi, unit, loading }) {
       '-'
     );
   return (
-    <section className="flex flex-wrap items-end justify-between gap-x-10 gap-y-5 border-b border-line pb-6" aria-busy={loading}>
+    <section className="flex flex-col items-start justify-center gap-5 panel h-full" aria-busy={loading}>
       <div>
-        <p className="text-[13px] text-subtext-light">최근 경매가 · 상 등급</p>
+        <p className="text-[13px] text-subtext-light">조회 기간 마지막 경매가 · 상 등급</p>
         <p className="mt-1.5 flex items-baseline gap-2">
-          <span className="text-[32px] font-bold leading-none tracking-[-0.02em] text-text-main">{value(kpi?.current, true)}</span>
+          <span className="text-[38px] font-semibold leading-none tracking-[-0.02em] text-text-main">{value(kpi?.current, true)}</span>
           <span className="text-sm text-subtext-light">/ {unit}</span>
         </p>
+        {!loading && kpi?.date && <p className="mt-2 text-xs text-subtext-light">{kpi.date} 기준</p>}
         {!loading && kpi && kpi.change !== null && (
           <p className={`mt-2 text-[15px] font-semibold ${tone}`}>
             전일 대비 {kpi.change > 0 ? '+' : kpi.change < 0 ? '−' : ''}
@@ -157,7 +161,7 @@ function PriceSummary({ kpi, unit, loading }) {
           </p>
         )}
       </div>
-      <dl className="flex gap-10">
+      <dl className="flex w-full gap-8 border-t border-line pt-4">
         <div>
           <dt className="text-[13px] text-subtext-light">기간 최고</dt>
           <dd className="mt-1 text-lg font-bold text-text-main">{value(kpi?.max)}</dd>
@@ -174,8 +178,8 @@ function PriceSummary({ kpi, unit, loading }) {
 export default function Detail() {
   // items: agri_price의 품목명 문자열 배열 ['배추', '양파', ...]
   const [items, setItems] = useState([]);
-  const [searchParams] = useSearchParams();
-  const [wantedItem] = useState(() => searchParams.get('item')); // 처음 들어온 주소의 품목만 본다
+  const [searchParams, setSearchParams] = useSearchParams();
+  const wantedItem = searchParams.get('item');
   const [selectedItemName, setSelectedItemName] = useState(null);
   const [period, setPeriod] = useState('1month');
   const [unit, setUnit] = useState('daily');
@@ -185,6 +189,9 @@ export default function Detail() {
   const [loading, setLoading] = useState(false);
   const [tableSearch, setTableSearch] = useState('');
   const [predictionData, setPredictionData] = useState([]);
+  const [predictionStatus, setPredictionStatus] = useState('loading');
+  const [priceError, setPriceError] = useState(false);
+  const [itemsAttempt, setItemsAttempt] = useState(0);
   // 지금 화면 데이터를 받아 온 기간 { start, end } ('YYYY-MM-DD')
   const [range, setRange] = useState(null);
   // 작업대 지표 목록 — 이 품목의 '예측은 얼마나 맞았나' 템플릿 링크용(가락 이름 → 작업대 품목 묶음)
@@ -227,27 +234,31 @@ export default function Detail() {
 
     const requestId = ++latestRequest.current;
     setLoading(true);
+    setPriceError(false);
     api.getAgriPriceGraph(itemName, startDate, endDate)
       .then((data) => {
         if (requestId !== latestRequest.current) return;
         setPriceData(data);
         setRange({ start: toLocalDate(startDate), end: toLocalDate(endDate) });
       })
-      .catch((err) => console.error('가격 데이터 로드 실패:', err))
+      .catch(() => { if (requestId === latestRequest.current) { setPriceError(true); setPriceData(null); setRange(null); } })
       .finally(() => { if (requestId === latestRequest.current) setLoading(false); });
   }, []);
 
-  // 초기 품목 목록 로드 (agri_price 기반) → 첫 번째 품목 선택
+  // 목록은 처음과 재시도 때만 조회하고 URL의 품목은 별도로 동기화한다.
   useEffect(() => {
+    let cancelled = false;
+    setPriceError(false);
     api.getAgriItems()
-      .then((data) => {
-        setItems(data);
-        // 홈 오늘의 시장 칸에서 ?item= 으로 들어오면 그 품목부터
-        const first = data.includes(wantedItem) && ITEM_ORDER.includes(wantedItem) ? wantedItem : ITEM_ORDER.find((n) => data.includes(n));
-        if (first) setSelectedItemName(first);
-      })
-      .catch((err) => console.error('품목 로드 실패:', err));
-  }, [wantedItem]);
+      .then((data) => { if (!cancelled) setItems(data); })
+      .catch(() => { if (!cancelled) setPriceError(true); });
+    return () => { cancelled = true; };
+  }, [itemsAttempt]);
+
+  useEffect(() => {
+    const next = sortedItems.includes(wantedItem) ? wantedItem : sortedItems[0];
+    if (next) setSelectedItemName(next);
+  }, [wantedItem, sortedItems]);
 
   // 직접 지정은 시작일·종료일이 모두 있고 순서가 맞을 때만 조회한다
   const customInvalid = period === 'custom' && customStart && customEnd && customStart > customEnd;
@@ -262,9 +273,11 @@ export default function Detail() {
   useEffect(() => {
     if (!selectedItemName) return;
     let cancelled = false;
+    setPredictionData([]);
+    setPredictionStatus('loading');
     api.getPredictions(selectedItemName)
-      .then((data) => { if (!cancelled) setPredictionData(data.predictions ?? []); })
-      .catch(() => { if (!cancelled) setPredictionData([]); });
+      .then((data) => { if (!cancelled) { setPredictionData(data.predictions ?? []); setPredictionStatus('ready'); } })
+      .catch(() => { if (!cancelled) { setPredictionData([]); setPredictionStatus('error'); } });
     return () => { cancelled = true; };
   }, [selectedItemName]);
 
@@ -282,6 +295,7 @@ export default function Detail() {
     const pct = prev ? ((change / prev.price) * 100).toFixed(1) : null;
     return {
       current: last.price,
+      date: last.date,
       change,
       pct: pct === null ? null : parseFloat(pct),
       max: Math.max(...allPrices),
@@ -379,9 +393,6 @@ export default function Detail() {
   const forecastItem = catalog.find((c) => c.id === `forecast_w:${selectedItem}`)?.item;
   const currentUnit = ITEM_UNIT[selectedItemName] ?? 'kg';
 
-  // 눈금을 8개 안팎으로. 주별·월별처럼 점이 적으면 모두 보여준다
-  const xAxisInterval = useMemo(() => Math.max(0, Math.ceil(chartData.length / 8) - 1), [chartData.length]);
-
   // 기간·단위 고르기 — 회색 바탕에 고른 칸만 흰색
   const segment = (active, onClick, label) => (
     <button
@@ -398,53 +409,36 @@ export default function Detail() {
   const periodBtn = (p, label) => segment(period === p, () => setPeriod(p), label);
   const unitBtn = (u, label) => segment(unit === u, () => setUnit(u), label);
 
+  const latestForecast = predictionData.find((p) => Number.isFinite(Number(p.predictedPrice)) && Number(p.predictedPrice) > 0);
+
   return (
     <Layout>
-      <main className="w-full px-4 pb-16 pt-8 sm:px-6 lg:px-10">
+      <main className="page-shell">
         <div className="space-y-8">
-          {/* 페이지 헤딩 */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-col gap-1">
-              <h1 className="text-2xl font-bold leading-tight tracking-[-0.02em] text-text-main">
-                도매가 예측{selectedItem ? ` · ${selectedItem}` : ''}
-              </h1>
-              <p className="mt-1 text-[15px] text-subtext-light">
-                가락시장 경매가 추이와 다음 순 AI 예측, 그리고 지난 예측이 얼마나 맞았는지 봐요.
-              </p>
-              <p className="text-[13px] text-subtext-light">
-                가격 기준: 서울 가락시장 도매 경매가 · 상 등급 · 출처 농넷(서울시농수산식품공사). AI 예측도 같은 기준입니다.
-              </p>
-            </div>
-            {forecastItem && (
-              <Link
-                to={`/analysis?tpl=forecast&item=${encodeURIComponent(forecastItem)}`}
-                className="inline-flex h-9 items-center rounded-lg bg-background-light px-3.5 text-sm font-semibold text-text-main hover:bg-border-light"
-              >
-                작업대에서 예측과 실제 겹쳐 보기
-              </Link>
-            )}
+          <PageHeading title="도매 시세와 전망" description="가락시장의 가격 흐름과 AI 예측을 함께 확인하세요.">
+            {forecastItem && <Link to={`/analysis?tpl=forecast&item=${encodeURIComponent(forecastItem)}`} className="button-secondary">예측과 실제 비교<Icon className="size-4" /></Link>}
+          </PageHeading>
+          <div className="crop-tabs" role="group" aria-label="도매 품목">
+            {sortedItems.map((name) => <button type="button" key={name} aria-pressed={selectedItemName === name} onClick={() => { setSelectedItemName(name); setSearchParams({ item: name }); }} className={`crop-tab ${selectedItemName === name ? 'crop-tab-active' : ''}`}>{name}</button>)}
           </div>
-
+          <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+            <PriceSummary kpi={kpi} unit={currentUnit} loading={loading} />
+            <section className="rounded-2xl border border-primary/10 bg-primary-light p-6">
+              <span className="pill !border-primary/15 !bg-white/60 !text-primary">AI 순 평균 예측</span>
+              {predictionStatus === 'loading' ? <p className="mt-5 text-sm text-subtext-light" role="status">예측을 불러오고 있어요</p> : latestForecast ? <>
+                <h2 className="mt-4 text-[15px] font-medium text-primary">{selectedItem} · {periodCodeToDisplay(latestForecast.date)?.replaceAll('-', ' ') ?? latestForecast.date}</h2>
+                <p className="mt-1 text-[38px] font-semibold tracking-[-0.04em] tabular-nums text-forest">{Math.round(Number(latestForecast.predictedPrice)).toLocaleString()}<span className="ml-1 text-base">원</span></p>
+                <p className="mt-1 text-sm text-subtext-light">/ {currentUnit} · 상 등급</p>
+              </> : <p className="mt-5 text-sm text-subtext-light" role={predictionStatus === 'error' ? 'alert' : 'status'}>{predictionStatus === 'error' ? '예측을 불러오지 못했어요.' : '아직 공개된 예측이 없어요.'}</p>}
+              <p className="mt-4 text-xs leading-relaxed text-subtext-light">상순 1~10일 · 중순 11~20일 · 하순 21일~말일.<br />표시된 구간의 평균 가격을 예측하며 실제 가격과 다를 수 있어요.</p>
+            </section>
+          </div>
+          <p className="data-note">서울 가락시장 경매가 · 상 등급 · 농넷(서울시농수산식품공사). 실제 가격과 AI 예측 모두 같은 기준입니다.</p>
+          <ItemJourney item={selectedItem} current="wholesale" />
+          <div className="panel space-y-7">
           {/* 필터 & 컨트롤 패널 */}
           <div>
             <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
-
-              {/* 품종 선택 */}
-              <div className="flex flex-col gap-2">
-                <label className="text-[13px] font-medium text-subtext-light" htmlFor="item-select">
-                  품목
-                </label>
-                <select
-                  id="item-select"
-                  className="h-10 min-w-[160px] rounded-lg border border-border-light bg-white px-3 text-[15px] text-text-main focus:border-primary"
-                  value={selectedItemName ?? ''}
-                  onChange={(e) => setSelectedItemName(e.target.value)}
-                >
-                  {sortedItems.map((name) => (
-                    <option key={name} value={name}>{name}</option>
-                  ))}
-                </select>
-              </div>
 
               {/* 기간 설정 */}
               <div className="flex flex-col gap-2">
@@ -473,6 +467,7 @@ export default function Detail() {
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <input
                   type="date"
+                  aria-label="조회 시작일"
                   className="h-10 rounded-lg border border-border-light bg-white px-3 text-sm text-text-main focus:border-primary"
                   value={customStart}
                   onChange={(e) => setCustomStart(e.target.value)}
@@ -480,6 +475,7 @@ export default function Detail() {
                 <span className="text-subtext-light font-medium">~</span>
                 <input
                   type="date"
+                  aria-label="조회 종료일"
                   className="h-10 rounded-lg border border-border-light bg-white px-3 text-sm text-text-main focus:border-primary"
                   value={customEnd}
                   onChange={(e) => setCustomEnd(e.target.value)}
@@ -493,8 +489,6 @@ export default function Detail() {
             )}
           </div>
 
-          {/* 시세 머리 */}
-          <PriceSummary kpi={kpi} unit={currentUnit} loading={loading} />
 
           {/* 가격 추이 차트 */}
           <section>
@@ -517,7 +511,7 @@ export default function Detail() {
               </div>
             </div>
 
-            {loading ? (
+            {priceError ? <p role="alert" className="py-12 text-center text-sm text-red-700">가격을 불러오지 못했어요. <button className="underline" onClick={() => selectedItemName ? fetchPriceData(selectedItemName, period, customStart, customEnd) : setItemsAttempt((n) => n + 1)}>다시 시도</button></p> : loading ? (
               <div className="flex h-[300px] items-center justify-center gap-2.5 text-sm text-subtext-light" role="status">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-border-light border-t-primary" aria-hidden="true" />
                 불러오는 중이에요
@@ -530,17 +524,21 @@ export default function Detail() {
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                  <CartesianGrid stroke="#EDF0ED" vertical={false} />
+                  <CartesianGrid stroke="#EAF0EB" vertical={false} />
                   <XAxis
                     dataKey="date"
-                    tickFormatter={(d, index) => (chartData[index]?.price == null && chartData[index]?.predictionLabel) || formatXTick(d, unit)}
-                    tick={{ fontSize: 12, fill: '#5D6560' }}
-                    interval={xAxisInterval}
+                    tickFormatter={(d) => {
+                      const point = chartData.find((row) => row.date === d);
+                      return formatXTick(unit === 'daily' && point?.price == null && point?.predictionLabel ? point.predictionLabel : d, unit);
+                    }}
+                    tick={{ fontSize: 12, fill: '#60736A' }}
+                    interval="preserveStartEnd"
+                    minTickGap={24}
                   />
                   <YAxis
                     tickFormatter={(v) => `${v.toLocaleString()}`}
-                    tick={{ fontSize: 12, fill: '#5D6560' }}
-                    width={75}
+                    tick={{ fontSize: 12, fill: '#60736A' }}
+                    width={60}
                   />
                   <Tooltip content={<CustomTooltip unit={currentUnit} />} />
                   <Line
@@ -576,11 +574,13 @@ export default function Detail() {
             )}
           </section>
 
+          </div>
+
           {/* 예측 적중 이력 */}
           {selectedItem && <PredictionHistory itemName={selectedItem} unit={currentUnit} />}
 
           {/* 상세 데이터 테이블 */}
-          <section className="border-t border-line pt-8">
+          <section className="panel">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-4">
               <h2 className="text-lg font-bold tracking-[-0.02em] text-text-main">상세 데이터</h2>
               <div className="relative w-full md:w-64">
@@ -624,7 +624,7 @@ export default function Detail() {
                           <td className="py-3 pr-4 text-right font-semibold tabular-nums text-text-main">{row.price?.toLocaleString()}</td>
                           <td className="py-3 pr-4 text-subtext-light">{row.grade ?? '-'}</td>
                           <td
-                            className={`py-3 text-right tabular-nums ${
+                            className={`whitespace-nowrap py-3 text-right tabular-nums ${
                               pct === null
                                 ? 'text-subtext-light '
                                 : parseFloat(pct) > 0

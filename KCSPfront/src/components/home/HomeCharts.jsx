@@ -8,11 +8,11 @@ const W = 600;
 const H = 300;
 const UP = '#CC2F2F';
 const DOWN = '#2E6BC6';
-const GRID = '#EDF0ED';
+const GRID = '#EAF0EB';
 const BASE = '#C9CFCA';
 const MUTED = '#A9B0AB';
-const PRIMARY = '#2C5E1A';
-const TEXT = '#191F1C';
+const PRIMARY = '#174F3C';
+const TEXT = '#182D26';
 
 const scale = (d0, d1, r0, r1) => (v) => r0 + ((v - d0) / (d1 - d0 || 1)) * (r1 - r0);
 const pathOf = (pts) => pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join('');
@@ -47,7 +47,7 @@ function YGrid({ values, y, x0 = 52, x1 = W - 16, format = String, base }) {
   return values.map((v) => (
     <g key={v}>
       <line x1={x0} x2={x1} y1={y(v)} y2={y(v)} stroke={v === base ? BASE : GRID} strokeDasharray={v === base ? '4 4' : undefined} />
-      <text x={x0 - 8} y={y(v) + 4} textAnchor="end" fontSize="12" fill="#5D6560">
+      <text x={x0 - 8} y={y(v) + 4} textAnchor="end" fontSize="12" fill="#60736A">
         {format(v)}
       </text>
     </g>
@@ -71,7 +71,7 @@ function Legend({ items, note }) {
         );
       })}
       {note && (
-        <text x={W - 16} y={19} textAnchor="end" fontSize="12" fill="#5D6560">
+        <text x={W - 16} y={19} textAnchor="end" fontSize="12" fill="#60736A">
           {note}
         </text>
       )}
@@ -87,7 +87,7 @@ function MonthLabels({ dates, x, y = H - 8 }) {
     if (![1, 4, 7, 10].includes(mm) || seen.has(`${yy}${mm}`)) return null;
     seen.add(`${yy}${mm}`);
     return (
-      <text key={d} x={x(i)} y={y} textAnchor="middle" fontSize="12" fill="#5D6560">
+      <text key={d} x={x(i)} y={y} textAnchor="middle" fontSize="12" fill="#60736A">
         {`${yy}.${mm}`}
       </text>
     );
@@ -128,13 +128,13 @@ function Lag({ chart }) {
             <text x={x(k)} y={r >= 0 ? top - 6 : bottom + 14} textAnchor="middle" fontSize="12" fontWeight="600" fill={hot ? PRIMARY : TEXT}>
               {r.toFixed(2)}
             </text>
-            <text x={x(k)} y={H - 18} textAnchor="middle" fontSize="12" fill="#5D6560">
+            <text x={x(k)} y={H - 18} textAnchor="middle" fontSize="12" fill="#60736A">
               {k === 0 ? '같은 순' : `${k}순 뒤`}
             </text>
           </g>
         );
       })}
-      <text x={W - 16} y={19} textAnchor="end" fontSize="12" fill="#5D6560">
+      <text x={W - 16} y={19} textAnchor="end" fontSize="12" fill="#60736A">
         도매 쪽 변화 → 소매 변화 상관 (전년 대비)
       </text>
     </Frame>
@@ -166,7 +166,7 @@ function Scatter({ chart }) {
       <rect x={right} y={30} width={W - 16 - right} height={H - 66} fill={DOWN} opacity="0.06" />
       <YGrid values={ty} y={y} x0={60} base={0} format={(v) => pct(v)} />
       {tx.map((v) => (
-        <text key={v} x={x(v)} y={H - 16} textAnchor="middle" fontSize="12" fill="#5D6560">
+        <text key={v} x={x(v)} y={H - 16} textAnchor="middle" fontSize="12" fill="#60736A">
           {pct(v)}
         </text>
       ))}
@@ -176,7 +176,7 @@ function Scatter({ chart }) {
       })}
       {median(chart.low, UP, 60, left, -8)}
       {median(chart.high, DOWN, right, W - 16, 18)}
-      <text x={W - 16} y={19} textAnchor="end" fontSize="12" fill="#5D6560">
+      <text x={W - 16} y={19} textAnchor="end" fontSize="12" fill="#60736A">
         가로 {chart.names[0]} · 세로 {chart.names[1]} (전년 대비)
       </text>
     </Frame>
@@ -198,18 +198,18 @@ function Heat({ chart }) {
       )}
       {chart.years.map((yv, i) =>
         i === 0 || i === n - 1 || yv % 5 === 0 ? (
-          <text key={yv} x={x0 - 8} y={top + i * ch + ch / 2 + 4} textAnchor="end" fontSize="12" fill="#5D6560">
+          <text key={yv} x={x0 - 8} y={top + i * ch + ch / 2 + 4} textAnchor="end" fontSize="12" fill="#60736A">
             {yv}
           </text>
         ) : null,
       )}
       {[1, 3, 5, 7, 9, 11].map((m) => (
-        <text key={m} x={x0 + (m - 1) * 3 * cw + cw * 1.5} y={top + n * ch + 16} textAnchor="middle" fontSize="12" fill="#5D6560">
+        <text key={m} x={x0 + (m - 1) * 3 * cw + cw * 1.5} y={top + n * ch + 16} textAnchor="middle" fontSize="12" fill="#60736A">
           {m}월
         </text>
       ))}
       <rect x={x0 + chart.peak * cw - 1} y={top - 3} width={cw + 1} height={n * ch + 4} fill="none" stroke={TEXT} strokeWidth="1.5" />
-      <g fontSize="12" fill="#5D6560">
+      <g fontSize="12" fill="#60736A">
         <text x={W - 140} y={19} textAnchor="end">
           그해 평균보다
         </text>
@@ -240,7 +240,7 @@ function Parallel({ chart }) {
         <line key={ax} x1={ax} x2={ax} y1={y(hi)} y2={y(lo)} stroke={BASE} />
       ))}
       {t.map((v) => (
-        <text key={v} x={axes[0] - 8} y={y(v) + 4} textAnchor="end" fontSize="12" fill="#5D6560">
+        <text key={v} x={axes[0] - 8} y={y(v) + 4} textAnchor="end" fontSize="12" fill="#60736A">
           {pct(v)}
         </text>
       ))}
@@ -256,7 +256,7 @@ function Parallel({ chart }) {
           {name}
         </text>
       ))}
-      <text x={W / 2} y={H - 14} textAnchor="middle" fontSize="12" fill="#5D6560">
+      <text x={W / 2} y={H - 14} textAnchor="middle" fontSize="12" fill="#60736A">
         세 축 모두 전년 같은 순 대비 · 진한 선 = 반입량 {chart.cut}% 아래
       </text>
     </Frame>

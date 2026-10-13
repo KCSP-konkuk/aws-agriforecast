@@ -1,4 +1,5 @@
 import { CartesianGrid, Line, LineChart, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { useState } from 'react';
 import DashboardCard from './DashboardCard';
 import { COLOR, won } from './format';
 
@@ -30,12 +31,13 @@ function TimelineTooltip({ active, payload, events, unit }) {
 
 // ④ 무슨 일이 있었나 — 최근 2년 소매가와 자동 감지한 사건
 export default function EventTimeline({ data, actions }) {
+  const [expanded, setExpanded] = useState(false);
   const { series, events } = data.timeline;
   const bySoon = Object.fromEntries(series.map((s) => [s.soon, s]));
   const dots = events.filter((e) => bySoon[e.soon]?.retail != null);
 
   return (
-    <DashboardCard actions={actions} title="무슨 일이 있었나" subtitle="최근 2년 소매가 흐름과 그 사이 있었던 일이에요. 점에 마우스를 올리면 내용이 보여요">
+    <DashboardCard actions={actions} title="가격에 남은 주요 순간" subtitle="최근 2년의 가격과 시장 변화. 차트의 점을 선택해 살펴보세요.">
       <ResponsiveContainer width="100%" height={240}>
         <LineChart data={series} margin={{ top: 10, right: 12, left: 0, bottom: 5 }}>
           <CartesianGrid stroke={COLOR.grid} strokeOpacity={0.5} vertical={false} />
@@ -61,7 +63,7 @@ export default function EventTimeline({ data, actions }) {
         <p className="text-sm text-subtext-light mt-3">최근 2년 동안 눈에 띄는 일이 없었어요.</p>
       ) : (
         <ul className="mt-4 divide-y divide-line border-t border-line">
-          {[...events].reverse().map((e) => (
+          {[...events].reverse().slice(0, expanded ? events.length : 3).map((e) => (
             <li key={`${e.soon}-${e.title}`} className="flex gap-3 py-3 sm:gap-4">
               <p className="flex w-24 shrink-0 items-center gap-2 self-start text-[13px] text-subtext-light sm:w-28">
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: KIND_COLOR[e.kind] ?? COLOR.main }} />
@@ -76,6 +78,7 @@ export default function EventTimeline({ data, actions }) {
           ))}
         </ul>
       )}
+      {events.length > 3 && <button type="button" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded} className="mt-4 w-full rounded-xl bg-background-light py-3 text-sm font-medium text-primary">{expanded ? '접기' : `지난 기록 ${events.length - 3}개 더 보기`}</button>}
     </DashboardCard>
   );
 }

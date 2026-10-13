@@ -3,7 +3,7 @@ import { toCsv } from '../../lib/series';
 import { copyText } from '../../lib/clipboard';
 import { colorOf, keyLabel, num } from './format';
 
-const PAGE = 30;
+const PAGE = 8;
 
 function download(name, text) {
   const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
@@ -42,10 +42,10 @@ export default function DataTable({ rows: all, columns, freq, title, notes = [],
   };
 
   return (
-    <section className="rounded-xl border border-border-light bg-white p-4 sm:p-5">
+    <section className="panel">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-[17px] font-bold text-text-main">표로 보기</h2>
+          <h2 className="text-[17px] font-bold text-text-main">분석 데이터</h2>
           <p className="mt-0.5 text-[13px] text-subtext-light">
             차트와 같은 값이에요 · {match ? '조건에 맞는 ' : ''}
             {rows.length.toLocaleString('ko-KR')}행 · 최근부터
@@ -56,7 +56,7 @@ export default function DataTable({ rows: all, columns, freq, title, notes = [],
             <button
               type="button"
               onClick={onShare}
-              className="flex h-8 items-center rounded-lg bg-background-light px-3 text-[13px] font-semibold text-text-main hover:bg-border-light"
+              className="flex min-h-10 items-center rounded-lg bg-background-light px-3 text-[13px] font-semibold text-text-main hover:bg-border-light"
               title="이 화면을 붙여 커뮤니티 글을 써요"
             >
               커뮤니티에 공유
@@ -65,7 +65,7 @@ export default function DataTable({ rows: all, columns, freq, title, notes = [],
           <button
             type="button"
             onClick={copyLink}
-            className="flex h-8 items-center rounded-lg bg-background-light px-3 text-[13px] font-semibold text-text-main hover:bg-border-light"
+            className="flex min-h-10 items-center rounded-lg bg-background-light px-3 text-[13px] font-semibold text-text-main hover:bg-border-light"
           >
             {copied === 'ok' ? '복사했어요' : copied === 'fail' ? '복사하지 못했어요' : '링크 복사'}
           </button>
@@ -73,14 +73,14 @@ export default function DataTable({ rows: all, columns, freq, title, notes = [],
             type="button"
             onClick={saveCsv}
             disabled={!rows.length}
-            className="flex h-8 items-center rounded-lg bg-primary px-3 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
+            className="flex min-h-10 items-center rounded-lg bg-primary px-3 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
           >
             CSV 받기
           </button>
         </div>
       </div>
       {rows.length === 0 ? (
-        <p className="py-6 text-center text-sm text-subtext-light">{match ? '조건에 맞는 칸이 없어요.' : '고른 기간에 값이 없어요.'}</p>
+        <p className="py-6 text-center text-sm text-subtext-light">{match ? '조건에 맞는 칸이 없어요.' : '선택한 기간에 값이 없어요.'}</p>
       ) : (
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-sm">
@@ -103,9 +103,9 @@ export default function DataTable({ rows: all, columns, freq, title, notes = [],
             <tbody>
               {latestFirst.slice(0, limit).map((r) => (
                 <tr key={r.key} className="border-b border-line">
-                  <td className="whitespace-nowrap py-1.5 pr-3 text-xs text-subtext-light">{keyLabel(r.key, freq)}</td>
+                  <td className="whitespace-nowrap py-3 pr-3 text-xs text-subtext-light">{keyLabel(r.key, freq)}</td>
                   {columns.map((c) => (
-                    <td key={c.id} className="py-1.5 pr-3 text-right tabular-nums text-text-main">
+                    <td key={c.id} className="py-3 pr-3 text-right tabular-nums text-text-main">
                       {num(r[c.id])}
                     </td>
                   ))}

@@ -14,7 +14,7 @@ const DIVERGING = [
 ];
 const SEQUENTIAL = [
   [0, '#F0F5F0'],
-  [1, '#2C5E1A'],
+  [1, '#174F3C'],
 ];
 const relative = (line) => line.kind === 'yoy' || line.kind === 'normal';
 
@@ -106,7 +106,7 @@ export default function Scatter3DView({ rows, lines, x, y, z, cz, freq, match, o
           color: '#FFFFFF',
           size: 7,
           symbol: 'diamond',
-          line: { color: '#191F1C', width: 2 },
+          line: { color: '#182D26', width: 2 },
         }),
       );
     }

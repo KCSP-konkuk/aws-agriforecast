@@ -16,7 +16,7 @@ function Segmented({ label, options, value, onChange, disabled = () => false, di
               disabled={off}
               title={off ? disabledTitle : undefined}
               onClick={() => onChange(key)}
-              className={`flex h-7 items-center rounded-md px-2.5 text-[13px] transition-colors ${
+              className={`flex min-h-9 items-center rounded-md px-2.5 text-[13px] transition-colors ${
                 value === key
                   ? 'bg-white font-semibold text-text-main ring-1 ring-border-light'
                   : off
@@ -36,7 +36,7 @@ function Segmented({ label, options, value, onChange, disabled = () => false, di
 // 차트 종류 · 주기 · 기간. 주기는 고른 지표 중 가장 거친 주기보다 촘촘하게는 못 고른다
 export default function Controls({ chart, freq, allowed, period, from, to, bounds, onChange, onExport, exporting, onSave }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-4 border-b border-line pb-5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <Segmented label="차트" options={CHARTS} value={chart} onChange={(c) => onChange({ chart: c })} />
         <div className="flex flex-wrap gap-1.5">
@@ -44,7 +44,7 @@ export default function Controls({ chart, freq, allowed, period, from, to, bound
           <button
             type="button"
             onClick={onSave}
-            className="flex h-8 items-center rounded-lg bg-background-light px-3 text-[13px] font-semibold text-text-main hover:bg-border-light"
+            className="flex min-h-10 items-center rounded-lg bg-background-light px-3 text-[13px] font-semibold text-text-main hover:bg-border-light"
             title="지금 화면을 이름·메모와 함께 내 분석에 저장해요(로그인)"
           >
             분석 저장
@@ -55,7 +55,7 @@ export default function Controls({ chart, freq, allowed, period, from, to, bound
             type="button"
             onClick={onExport}
             disabled={exporting}
-            className="flex h-8 items-center rounded-lg bg-background-light px-3 text-[13px] font-semibold text-text-main hover:bg-border-light disabled:opacity-60"
+            className="flex min-h-10 items-center rounded-lg bg-background-light px-3 text-[13px] font-semibold text-text-main hover:bg-border-light disabled:opacity-60"
             title="지금 차트를 제목·출처와 함께 PNG 로 저장해요"
           >
             {exporting ? '저장 중…' : '이미지 저장'}

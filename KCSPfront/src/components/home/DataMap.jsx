@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-// 홈 · 모으는 데이터와 작업대에서 하는 것 — 지표 목록(catalog)을 분류별로 세고 출처를 묶는다. 숫자는 목록에서 센다
+// 홈 · 수록 데이터와 분석 도구 — 지표 목록(catalog)을 분류별로 세고 출처를 묶는다. 숫자는 목록에서 센다
 const ORDER = ['가격', '수급', '기상', '거시', '관심도', '예측'];
 const TOOLS = [
   ['시계열', '주기 · 단위를 맞춰 겹쳐 보기'],
@@ -37,10 +37,11 @@ export default function DataMap({ catalog }) {
 
   if (!groups.length) return null;
   return (
-    <section aria-labelledby="map-title" className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+    <section aria-labelledby="map-title" className="border-t border-border-light pt-8">
+      <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
       <div>
         <h2 id="map-title" className="text-xl font-bold tracking-[-0.02em] text-text-main">
-          모으는 데이터 <span className="tabular-nums text-primary">{catalog.length}</span>개
+          수록 데이터 <span className="tabular-nums text-primary">{catalog.length}</span>개
         </h2>
         <table className="mt-3 w-full text-[15px]">
           <tbody>
@@ -57,7 +58,7 @@ export default function DataMap({ catalog }) {
         </table>
       </div>
       <div>
-        <h2 className="text-xl font-bold tracking-[-0.02em] text-text-main">작업대에서 하는 것</h2>
+        <h2 className="text-xl font-bold tracking-[-0.02em] text-text-main">분석 도구</h2>
         <ul className="mt-3">
           {TOOLS.map(([name, what]) => (
             <li key={name} className="flex items-baseline justify-between gap-4 border-b border-line py-3 text-[15px] last:border-0">
@@ -66,6 +67,7 @@ export default function DataMap({ catalog }) {
             </li>
           ))}
         </ul>
+      </div>
       </div>
     </section>
   );

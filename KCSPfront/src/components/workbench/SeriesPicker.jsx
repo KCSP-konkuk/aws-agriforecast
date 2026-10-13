@@ -14,7 +14,7 @@ export function StaleBadge({ days }) {
 }
 
 // 데이터 고르기 — 분류·품목·검색으로 지표를 찾고 눌러서 더한다 (목록은 API 에서)
-export default function SeriesPicker({ catalog, selectedIds, onAdd }) {
+export default function SeriesPicker({ catalog, selectedIds, onAdd, embedded = false }) {
   const today = todayIso();
   const [query, setQuery] = useState('');
   const [item, setItem] = useState('');
@@ -35,7 +35,7 @@ export default function SeriesPicker({ catalog, selectedIds, onAdd }) {
   }, [catalog, query, item]);
 
   return (
-    <div className="rounded-xl bg-white border border-border-light p-4">
+    <div className={embedded ? 'min-w-0' : 'compact-panel'}>
       <div className="flex items-center justify-between">
         <h2 className="text-[15px] font-bold text-text-main">데이터 고르기</h2>
         <span className="text-xs text-subtext-light">{catalog.length}개 지표</span>
@@ -45,6 +45,7 @@ export default function SeriesPicker({ catalog, selectedIds, onAdd }) {
           <span className="material-symbols-outlined text-lg text-subtext-light">search</span>
           <input
             id="series-search"
+            aria-label="품목·지표·출처 검색"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="품목·지표·출처 검색"

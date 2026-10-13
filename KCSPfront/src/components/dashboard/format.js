@@ -3,11 +3,11 @@
 export const COLOR = {
   up: '#CC2F2F', // price-up (상승 빨강)
   down: '#2E6BC6', // price-down (하락 파랑)
-  primary: '#2C5E1A',
+  primary: '#174F3C',
   accent: '#FFC700',
-  main: '#191F1C', // text-main
-  sub: '#5D6560', // subtext-light
-  grid: '#EDF0ED', // line
+  main: '#182D26', // text-main
+  sub: '#60736A', // subtext-light
+  grid: '#EAF0EB', // line
 };
 
 // 토큰 색에 투명도만 입힌다 (1년 달력 칸)

@@ -12,9 +12,9 @@ const CONFIG = {
 const BASE_LAYOUT = {
   autosize: true,
   margin: { l: 0, r: 0, t: 8, b: 0 },
-  font: { family: 'Pretendard Variable, Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif', size: 12, color: '#191F1C' },
+  font: { family: 'Pretendard Variable, Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif', size: 12, color: '#182D26' },
   paper_bgcolor: 'rgba(0,0,0,0)',
-  hoverlabel: { bgcolor: '#FFFFFF', bordercolor: '#E3E7E3', font: { color: '#191F1C', size: 12 } },
+  hoverlabel: { bgcolor: '#FFFFFF', bordercolor: '#E3E7E3', font: { color: '#182D26', size: 12 } },
 };
 
 // data·layout 은 부모가 useMemo 로 넘긴다(바뀔 때만 다시 그림). layout.uirevision 이 같으면 돌려 놓은 시점을 지킨다

@@ -1,24 +1,20 @@
 import { useState } from 'react';
 import TemplateCards from './TemplateCards';
 import { TEMPLATES } from './templates';
+import Icon from '../Icon';
 
-// 작업대 위 시작 템플릿 — 접었다 펼 수 있다
 export default function TemplateBar({ catalog, onApply }) {
-  const [open, setOpen] = useState(true);
-  if (!TEMPLATES.some((t) => t.items(catalog).length)) return null;
-
+  const [open, setOpen] = useState(false);
+  const available = TEMPLATES.filter((t) => t.items(catalog).length);
+  if (!available.length) return null;
   return (
-    <section className="border-b border-line pb-4">
-      <button type="button" onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-2 text-left" aria-expanded={open}>
-        <span className="text-base font-bold text-text-main">시작 템플릿</span>
-        <span className="hidden text-sm text-subtext-light sm:inline">자주 쓰는 분석을 품목만 골라 바로 열어요</span>
-        <span className="material-symbols-outlined ml-auto text-xl text-subtext-light">{open ? 'expand_less' : 'expand_more'}</span>
+    <section className="rounded-2xl border border-border-light bg-white p-4 sm:px-5">
+      <button type="button" onClick={() => setOpen((v) => !v)} className="flex min-h-10 w-full items-center gap-3 text-left" aria-expanded={open} aria-controls="analysis-templates">
+        <span className="flex size-9 items-center justify-center rounded-xl bg-primary-light text-primary"><Icon name="grid" className="size-4" /></span>
+        <span className="flex-1"><span className="block text-sm font-semibold">어디서 시작할지 고민이라면</span><span className="mt-0.5 block text-xs text-subtext-light">{available.length}가지 분석 템플릿에서 골라보세요</span></span>
+        <span className="text-sm font-medium text-primary">{open ? '접기' : '템플릿 보기'}</span>
       </button>
-      {open && (
-        <div className="mt-3">
-          <TemplateCards catalog={catalog} onApply={onApply} />
-        </div>
-      )}
+      {open && <div id="analysis-templates" className="mt-4 border-t border-line pt-4"><TemplateCards catalog={catalog} onApply={(t, item) => { onApply(t, item); setOpen(false); }} /></div>}
     </section>
   );
 }

@@ -100,8 +100,8 @@ export default function CommunityEdit() {
   if (needsLogin) {
     return (
       <Layout>
-        <main className="flex-1 pb-16 pt-8">
-          <div className="mx-auto w-full max-w-[880px] px-4 sm:px-6">
+        <main className="page-shell">
+          <div className="mx-auto w-full max-w-[900px]">
             <LoginRequired title="로그인하면 글을 수정할 수 있어요" description="내가 쓴 글은 로그인한 뒤에 고치거나 지울 수 있습니다." />
           </div>
         </main>
@@ -112,8 +112,8 @@ export default function CommunityEdit() {
   if (loadingPost) {
     return (
       <Layout>
-        <main className="flex-1 pb-16 pt-8">
-          <div className="mx-auto w-full max-w-[880px] px-4 sm:px-6">
+        <main className="page-shell">
+          <div className="mx-auto w-full max-w-[900px]">
             <p className="py-12 text-center text-sm text-subtext-light" role="status">불러오는 중이에요</p>
           </div>
         </main>
@@ -123,9 +123,9 @@ export default function CommunityEdit() {
 
   return (
     <Layout>
-      <main className="flex-1 pb-16 pt-8">
-        <div className="mx-auto w-full max-w-[880px] px-4 sm:px-6">
-          <h1 className="mb-6 text-2xl font-bold tracking-[-0.02em] text-text-main">글 수정</h1>
+      <main className="page-shell">
+        <div className="mx-auto w-full max-w-[900px]">
+          <h1 className="mb-6 text-[28px] font-semibold tracking-[-0.02em] text-text-main">이야기 수정</h1>
           
           {error && (
             <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700" role="alert">
@@ -133,7 +133,7 @@ export default function CommunityEdit() {
             </div>
           )}
           
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          <form className="form-surface space-y-6" onSubmit={handleSubmit}>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
                 <label htmlFor="post-title" className="mb-1.5 block text-sm font-medium text-text-main">제목</label>

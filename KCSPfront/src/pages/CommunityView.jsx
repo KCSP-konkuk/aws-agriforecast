@@ -89,8 +89,8 @@ export default function CommunityView() {
   if (loading) {
     return (
       <Layout>
-        <main className="flex-1 pb-16 pt-8">
-          <div className="mx-auto w-full max-w-[880px] px-4 sm:px-6">
+        <main className="page-shell">
+          <div className="mx-auto w-full max-w-[900px]">
             <p className="py-12 text-center text-sm text-subtext-light" role="status">불러오는 중이에요</p>
           </div>
         </main>
@@ -101,8 +101,8 @@ export default function CommunityView() {
   if (error || !post) {
     return (
       <Layout>
-        <main className="flex-1 pb-16 pt-8">
-          <div className="mx-auto w-full max-w-[880px] px-4 sm:px-6">
+        <main className="page-shell">
+          <div className="mx-auto w-full max-w-[900px]">
             <p className="py-12 text-center text-sm text-red-700" role="alert">{error || '글을 찾을 수 없어요.'}</p>
             <p className="text-center"><Link to="/community" className="text-sm font-semibold text-primary hover:underline">커뮤니티 목록으로</Link></p>
           </div>
@@ -113,20 +113,20 @@ export default function CommunityView() {
 
   return (
     <Layout>
-      <main className="flex-1 pb-16 pt-8">
-        <div className="mx-auto w-full max-w-[880px] px-4 sm:px-6">
+      <main className="page-shell">
+        <div className="mx-auto w-full max-w-[900px]">
           <Link
             to={post.category ? `/community?room=${encodeURIComponent(post.category)}` : '/community'}
             className="text-sm font-medium text-subtext-light hover:text-text-main"
           >
             커뮤니티{post.category ? ` · ${post.category}` : ''}
           </Link>
-          <article className="mt-3 border-b border-line pb-8">
-            <h1 className="text-2xl font-bold leading-snug tracking-[-0.02em] text-text-main">{post.title}</h1>
+          <article className="reading-surface mt-5">
+            <h1 className="text-[28px] font-semibold leading-snug tracking-[-0.02em] text-text-main">{post.title}</h1>
             <p className="mt-2 text-sm text-subtext-light">
               {post.authorName || '익명'} · {formatDate(post.createdAt)} · 조회 {post.viewCount || 0}
             </p>
-            <div className="mt-6 whitespace-pre-wrap text-[15px] leading-relaxed text-text-main">{post.content}</div>
+            <div className="mt-7 whitespace-pre-wrap text-[16px] leading-[1.9] text-text-main">{post.content}</div>
             {post.analysisQuery && (
               <div className="mt-6">
                 <AnalysisPreview query={post.analysisQuery} />
@@ -134,7 +134,7 @@ export default function CommunityView() {
             )}
           </article>
 
-          <section className="mt-8">
+          <section className="panel mt-5">
             <h2 className="text-lg font-bold tracking-[-0.02em] text-text-main">댓글 {comments.length}</h2>
             {comments.length === 0 ? (
               <p className="mt-3 border-t border-line py-6 text-sm text-subtext-light">아직 댓글이 없어요.</p>
@@ -162,7 +162,8 @@ export default function CommunityView() {
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 className="h-11 min-w-0 flex-1 rounded-lg border border-border-light bg-white px-4 text-[15px] text-text-main focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                placeholder="댓글을 입력하세요"
+                aria-label="댓글 내용"
+                placeholder="이 시장에 대한 생각을 남겨주세요"
                 disabled={commentLoading}
               />
               <button

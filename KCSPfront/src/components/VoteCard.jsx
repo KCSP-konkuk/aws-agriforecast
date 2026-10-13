@@ -65,10 +65,11 @@ export default function VoteCard({ itemName }) {
   const pct = (key) => (total > 0 ? Math.round((counts[key] / total) * 100) : 0);
 
   return (
-    <section className="rounded-2xl bg-background-light p-5 sm:p-6">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-bold tracking-[-0.02em] text-text-main sm:text-xl">{target.label} {itemName}값, 오를까요?</h2>
-        <span className="shrink-0 text-sm font-semibold text-primary">{target.dday === 0 ? '오늘 마감' : `마감 D-${target.dday}`}</span>
+    <section className="rounded-2xl border border-primary/10 bg-primary-light p-5 sm:p-6">
+      <p className="mb-4 text-xs font-semibold text-primary">함께 보는 시장 전망</p>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold leading-snug tracking-[-0.03em] text-text-main">{target.label} {itemName}값, 오를까요?</h2>
+        <span className="rounded-full bg-white/70 px-2.5 py-1 text-xs font-medium text-primary">{target.dday === 0 ? '오늘 마감' : `마감 D-${target.dday}`}</span>
       </div>
 
       <div className="grid grid-cols-3 gap-2">

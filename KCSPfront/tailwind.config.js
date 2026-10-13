@@ -8,20 +8,21 @@ export default {
     extend: {
       // 색은 여기 정의한 토큰만 쓴다. 페이지에 hex 를 직접 적지 말 것
       colors: {
-        // 정석 제품 화면(토스증권 · 네이버 증권 수준). 초록은 주요 동작 · 선택 · 강조에만. 회색은 초록 쪽으로 아주 살짝 기운다
-        // 글자 대비(흰 바탕): 본문 16.8 · 보조 6.0 · 오름 5.2 · 내림 5.2 — 작은 글자도 4.5 이상
+        // 밝은 농식품 테크: forest · mint · warm white. 등락 색은 브랜드 색과 구분한다
         "primary": {
-          DEFAULT: "#2C5E1A",
-          hover: "#234B15",
-          light: "#EEF4EA",
+          DEFAULT: "#174F3C",
+          hover: "#103C2D",
+          light: "#E4F3EB",
         },
-        "accent": "#FFC700",
-        "text-main": "#191F1C",
-        "subtext-light": "#5D6560",
-        "border-light": "#E3E7E3",
-        "line": "#EDF0ED",
+        "accent": "#D9A441",
+        "mint": "#D6EDE1",
+        "forest": "#103C2D",
+        "text-main": "#182D26",
+        "subtext-light": "#60736A",
+        "border-light": "#DCE6DF",
+        "line": "#EAF0EB",
         "surface-light": "#FFFFFF",
-        "background-light": "#F4F6F4",
+        "background-light": "#F3F6F2",
         // 한국 시세 표기 관례: 상승 빨강, 하락 파랑
         "price-up": "#CC2F2F",
         "price-down": "#2E6BC6",
