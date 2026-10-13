@@ -3,8 +3,8 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { api } from '../api/api';
 
 // 상세 가격 차트와 같은 색: 실제 = 진한 회색 실선, 예측 = 브랜드 초록 점선
-const COLOR_ACTUAL = '#191F1C';
-const COLOR_PRED = '#2C5E1A';
+const COLOR_ACTUAL = '#182D26';
+const COLOR_PRED = '#174F3C';
 const RANK = { 상순: 1, 중순: 2, 하순: 3 };
 
 // "202603중순" → 정렬 키 / "3월 중순"
@@ -77,11 +77,11 @@ export default function PredictionHistory({ itemName, unit }) {
   const latest = rows[rows.length - 1];
 
   return (
-    <section className="border-t border-line pt-8">
+    <section className="panel">
       <div className="mb-5">
         <h2 className="text-lg font-bold tracking-[-0.02em] text-text-main">{itemName} 예측 적중 이력</h2>
         <p className="mt-0.5 text-[13px] text-subtext-light">
-          2026년 각 순을 그 직전까지의 데이터로만 학습해 예측하고, 실제 순 평균 가격(가락시장 경매가 · 상 등급)과 비교했습니다.
+          각 순 시작 전 데이터로 예측한 값과 실제 순 평균을 비교해요. 가락시장 경매가 · 상 등급 기준.
         </p>
       </div>
 
@@ -111,9 +111,9 @@ export default function PredictionHistory({ itemName, unit }) {
 
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={rows} margin={{ top: 5, right: 16, left: 4, bottom: 5 }}>
-              <CartesianGrid stroke="#EDF0ED" vertical={false} />
-              <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#5D6560' }} interval="preserveStartEnd" minTickGap={16} />
-              <YAxis tickFormatter={(v) => v.toLocaleString()} tick={{ fontSize: 12, fill: '#5D6560' }} width={70} />
+              <CartesianGrid stroke="#EAF0EB" vertical={false} />
+              <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#60736A' }} interval="preserveStartEnd" minTickGap={16} />
+              <YAxis tickFormatter={(v) => v.toLocaleString()} tick={{ fontSize: 12, fill: '#60736A' }} width={70} />
               <Tooltip content={<HistoryTooltip unit={unit} />} cursor={{ stroke: '#A9B0AB', strokeDasharray: '3 3' }} />
               <Line type="monotone" dataKey="actual" stroke={COLOR_ACTUAL} strokeWidth={2} dot={{ r: 3, fill: COLOR_ACTUAL }} activeDot={{ r: 5 }} isAnimationActive={false} />
               <Line type="monotone" dataKey="pred" stroke={COLOR_PRED} strokeWidth={2} strokeDasharray="5 4" dot={{ r: 3, fill: COLOR_PRED }} activeDot={{ r: 5 }} connectNulls isAnimationActive={false} />

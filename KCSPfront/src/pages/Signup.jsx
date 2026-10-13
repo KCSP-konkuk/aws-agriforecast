@@ -89,7 +89,7 @@ export default function Signup() {
   const bind = (name) => ({ value: formData[name], onChange: handleChange, onBlur: handleBlur, ...fieldState(name) });
 
   return (
-    <AuthLayout title="회원가입" subtitle="몇 가지 정보만 입력하면 바로 시작할 수 있어요.">
+    <AuthLayout title="회원가입" subtitle="나만의 분석을 저장하고, 시장의 이야기에 참여하세요.">
       <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
         <TextField label="이름" id="fullname" placeholder="예: 김농부" autoComplete="name" {...bind('fullname')} />
         <TextField label="아이디" id="username" placeholder="예: farmer_01" autoComplete="username" {...bind('username')} />

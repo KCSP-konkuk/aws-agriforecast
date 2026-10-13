@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 const inputClass = (invalid) =>
-  `h-12 w-full rounded-lg border bg-white px-4 text-base text-text-main transition-colors placeholder:text-subtext-light focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary ${
+  `h-12 w-full rounded-xl border bg-white px-4 text-base text-text-main transition-colors placeholder:text-subtext-light focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary ${
     invalid ? 'border-red-500' : 'border-border-light'
   }`;
 
@@ -56,7 +56,7 @@ export function SubmitButton({ loading, loadingText, disabled, children }) {
     <button
       type="submit"
       disabled={loading || disabled}
-      className="flex h-12 w-full items-center justify-center rounded-lg bg-primary text-base font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+      className="flex h-12 w-full items-center justify-center rounded-xl bg-primary text-base font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
     >
       {loading ? loadingText : children}
     </button>

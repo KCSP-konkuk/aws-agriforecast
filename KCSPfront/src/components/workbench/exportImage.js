@@ -73,11 +73,11 @@ export async function saveChartImage(node, { title, subtitle, footer, fileName }
       y += height;
     }
   };
-  draw(head.title, FONTS.title, '#191F1C', LINE.title);
-  draw(head.sub, FONTS.sub, '#5D6560', LINE.sub);
+  draw(head.title, FONTS.title, '#182D26', LINE.title);
+  draw(head.sub, FONTS.sub, '#60736A', LINE.sub);
   ctx.drawImage(chart, PAD, top);
   y = top + chart.height + 10 * SCALE;
-  draw(foot, FONTS.foot, '#5D6560', LINE.foot);
+  draw(foot, FONTS.foot, '#60736A', LINE.foot);
 
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
   const url = URL.createObjectURL(blob);

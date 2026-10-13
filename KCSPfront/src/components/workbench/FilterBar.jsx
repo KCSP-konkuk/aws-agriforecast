@@ -50,6 +50,7 @@ export default function FilterBar({ lines, rows, conditions, match, onChange }) 
         {free.length > 0 && (
           <select
             id="condition-add"
+            aria-label="조건을 추가할 지표"
             value=""
             onChange={(e) => e.target.value && add(e.target.value)}
             className="ml-auto h-8 rounded-md border border-border-light bg-white px-2 text-[13px] text-text-main"
@@ -65,8 +66,7 @@ export default function FilterBar({ lines, rows, conditions, match, onChange }) 
       </div>
       {conditions.length === 0 ? (
         <p className="text-[13px] leading-relaxed text-subtext-light">
-          &ldquo;반입량이 평년보다 15% 넘게 적고 산지 기온은 평년보다 1.5℃ 넘게 높았던 때&rdquo;처럼 지표별 범위를 걸면, 맞는 칸을 차트에서 강조하고 표·CSV 에는 그 칸만 남겨요.
-          평행 좌표에서는 축을 끌어서 걸 수 있어요.
+          원하는 값의 범위를 정하면 해당 시점만 강조해요. 표와 CSV에도 같은 조건이 적용돼요.
         </p>
       ) : (
         <ul className="space-y-1.5">

@@ -24,21 +24,22 @@ export default function Headline({ data }) {
   const h = data.headline;
   const d = DIRECTION[h.direction] ?? DIRECTION.flat;
   return (
-    <section className="rounded-2xl bg-background-light p-5 sm:p-6">
-      <p className="text-[22px] font-bold leading-snug tracking-[-0.02em] text-text-main sm:text-2xl">{h.text}</p>
-      {h.reason && <p className="mt-1.5 text-[15px] text-subtext-light">{h.reason}</p>}
-      <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtext-light">
-        <span>
-          {data.previousLabel} 평균 <b className="text-text-main">{won(h.previous)}</b>
-        </span>
-        <span>
-          {data.targetLabel} 예측 <b className={d.text}>{won(h.predicted)}</b> ({signedPct(h.changePct, 1)})
-        </span>
-        {data.unit && <span>{data.unit} 기준</span>}
+    <section className="rounded-[24px] border border-primary/10 bg-primary-light p-6 sm:p-8">
+      <div className="grid items-center gap-7 lg:grid-cols-[1fr_auto]">
+        <div>
+          <span className="pill !border-primary/15 !bg-white/60 !text-primary">{data.targetLabel} · AI 가격 전망</span>
+          <h2 className="mt-4 max-w-xl text-[24px] font-semibold leading-snug tracking-[-0.035em] text-forest sm:text-[30px]">{h.text}</h2>
+          {h.reason && <p className="mt-3 text-[15px] leading-relaxed text-subtext-light">{h.reason}</p>}
+        </div>
+        <dl className="min-w-0 border-t border-primary/15 pt-5 lg:min-w-[240px] lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+          <dt className="text-sm text-primary">{data.targetLabel} 예상 평균가</dt>
+          <dd className="mt-1 text-[38px] font-semibold leading-tight tracking-[-0.05em] tabular-nums text-forest sm:text-[44px]">{won(h.predicted)}</dd>
+          <dd className="mt-1 text-sm text-subtext-light">{data.unit} 기준</dd>
+          <dd className={`mt-4 text-[17px] font-semibold tabular-nums ${d.text}`}>{signedPct(h.changePct, 1)}<span className="ml-2 text-xs font-normal text-subtext-light">지난 순 대비</span></dd>
+          <dd className="mt-1 text-xs text-subtext-light">{data.previousLabel} 평균 {won(h.previous)}</dd>
+        </dl>
       </div>
-      {h.source !== 'retail_model' && (
-        <p className="text-xs text-subtext-light mt-2">이번 순 운영 예측이 아직 없어 요약 계산값을 보여드려요.</p>
-      )}
+      {h.source !== 'retail_model' && <p className="mt-4 text-xs text-subtext-light">이번 순 운영 예측이 아직 없어 요약 계산값을 보여드려요.</p>}
       <TrackRecord track={data.track} />
     </section>
   );

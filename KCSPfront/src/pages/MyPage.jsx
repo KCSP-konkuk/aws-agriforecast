@@ -17,7 +17,7 @@ function Result({ result }) {
 
 function Section({ title, description, children }) {
   return (
-    <section className="flex flex-col gap-5 border-t border-line pt-8">
+    <section className="panel flex flex-col gap-5">
       <div>
         <h2 className="text-lg font-bold tracking-[-0.02em] text-text-main">{title}</h2>
         {description && <p className="mt-1 text-sm text-subtext-light">{description}</p>}
@@ -144,14 +144,14 @@ export default function MyPage() {
 
   return (
     <Layout>
-      <div className="flex flex-1 justify-center px-4 pb-16 pt-8 sm:px-6 lg:px-10">
-        <div className="flex w-full max-w-6xl flex-1 flex-col gap-8 lg:flex-row lg:gap-16">
+      <div className="page-shell flex flex-1 justify-center">
+        <div className="flex w-full max-w-6xl flex-1 flex-col gap-8 lg:flex-row lg:gap-10">
           <MyPageSidebar user={user} onLogout={handleLogout} />
 
           <main className="flex-1 min-w-0">
             <div className="flex flex-col gap-8">
               <div>
-                <h1 className="text-2xl font-bold tracking-[-0.02em] text-text-main">계정 정보</h1>
+                <h1 className="text-[30px] font-semibold tracking-[-0.02em] text-text-main">계정 정보</h1>
                 <p className="mt-2 text-[15px] text-subtext-light">이름과 비밀번호를 바꾸거나 탈퇴할 수 있어요.</p>
               </div>
 

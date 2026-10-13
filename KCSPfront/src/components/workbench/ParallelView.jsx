@@ -115,7 +115,7 @@ export default function ParallelView({ rows, lines, conditions, match, freq, onC
               <text x={x} y={30} textAnchor="middle" className="fill-subtext-light text-xs">
                 {cut(dim.line.unitLabel)}
               </text>
-              <line x1={x} x2={x} y1={PAD.top} y2={BOTTOM} stroke="#5D6560" strokeWidth={1} />
+              <line x1={x} x2={x} y1={PAD.top} y2={BOTTOM} stroke="#60736A" strokeWidth={1} />
               <text x={x} y={PAD.top - 6} textAnchor="middle" className="fill-subtext-light text-xs">
                 {num(dim.hi)}
               </text>
@@ -123,7 +123,7 @@ export default function ParallelView({ rows, lines, conditions, match, freq, onC
                 {num(dim.lo)}
               </text>
               {band && (
-                <rect x={x - 7} y={band[0]} width={14} height={Math.max(2, band[1] - band[0])} rx={3} fill="#2C5E1A" fillOpacity={0.22} stroke="#2C5E1A" />
+                <rect x={x - 7} y={band[0]} width={14} height={Math.max(2, band[1] - band[0])} rx={3} fill="#174F3C" fillOpacity={0.22} stroke="#174F3C" />
               )}
               <rect
                 x={x - 16}

@@ -68,7 +68,7 @@ export default function Login() {
   };
 
   return (
-    <AuthLayout title="로그인" subtitle="AgriForecast 계정으로 로그인하세요.">
+    <AuthLayout title="로그인" subtitle="저장한 분석과 나의 시장 이야기를 이어가세요.">
       {banner && (
         <p className="mb-5 rounded-lg bg-primary-light px-4 py-3 text-sm text-text-main" role="status">
           {banner}
