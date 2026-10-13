@@ -62,7 +62,7 @@ flowchart LR
 | 워크플로 | 트리거 경로 | 하는 일 | 실패 판정 |
 |---|---|---|---|
 | `deploy-backend.yml` | `KCSPback/**` | Gradle 빌드 → jar 업로드 → `releases/backend-<sha>.jar` 로 교체 → `agriforecast` 서비스 재시작 | 90초 안에 `/api/price/items` 가 응답하지 않으면 **이전 jar 로 자동 롤백** 후 실패 |
-| `deploy-frontend.yml` | `KCSPfront/**` | `npm ci && npm run build` → `dist/` 업로드 → nginx 정적 경로에 rsync → `nginx -t` 후 reload | 빌드 실패 또는 `nginx -t` 실패 |
+| `deploy-frontend.yml` | `KCSPfront/**` | `npm ci && npm run build` → `dist/` 업로드 → nginx 정적 경로에 rsync(`assets/` 는 지우지 않고 7일 지난 것만 정리) → `nginx -t` 후 reload | 빌드 실패 또는 `nginx -t` 실패 |
 | `deploy-model-batch.yml` | `KCSPmodel/batch/**` | 파이프라인·`hist_*.csv`·systemd 유닛 복사 → 타이머 등록 → **품목별 파이프라인을 실제로 1회 실행** | 한 품목이라도 실행 결과가 `success` 가 아니면 실패 |
 
 - 세 워크플로 모두 Actions 탭에서 **수동 실행(`workflow_dispatch`)** 도 된다. 코드 변경 없이 다시 배포할 때 쓴다
@@ -144,7 +144,8 @@ Ubuntu 자동 업데이트(`apt-daily-upgrade`)가 매일 **06:00\~07:00 UTC(15\
 
 - `/opt/agri-forecast/application-secret.properties` — API 키·DB 계정. **절대 커밋하지 않는다**
 - `/etc/systemd/system/agriforecast.service` — 백엔드 서비스 유닛(JVM 옵션 `-Duser.timezone=Asia/Seoul` 포함)
-- nginx 설정, `ops/backup` 타이머
+- nginx 설정(`/etc/nginx/sites-available/agriforecast`, HTTPS 는 certbot 관리), `ops/backup` 타이머
+- nginx 압축 · 캐시 조각 `/etc/nginx/snippets/agriforecast-perf.conf` — 원본은 `ops/nginx/`, 바꾸면 서버에 다시 올린다(`ops/nginx/README.md`)
 
 **모델 배치**
 

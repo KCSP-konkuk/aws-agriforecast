@@ -12,6 +12,8 @@
 
 ## 적용(1회)
 
+2026-10-13 운영 서버에 적용했다(`client_max_body_size` 줄 아래 include). 조각을 고치면 아래 scp · `nginx -t` · reload 만 다시 한다.
+
 ```
 scp -i <키> ops/nginx/agriforecast-perf.conf ubuntu@<서버>:/tmp/
 ssh -i <키> ubuntu@<서버>
