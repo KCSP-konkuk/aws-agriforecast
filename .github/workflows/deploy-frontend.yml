@@ -49,6 +49,10 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             sudo mkdir -p /var/www/react-app
-            sudo rsync -a --delete /home/ubuntu/deploy/frontend/ /var/www/react-app/
+            # assets/ 는 지우지 않고 덮어쓴다. 배포 전에 열어 둔 탭·옛 index.html 캐시가
+            # 이전 해시 파일을 찾으면 흰 화면이 되므로, 지난 배포분은 7일 지나서 치운다
+            sudo rsync -a --delete --exclude 'assets/' /home/ubuntu/deploy/frontend/ /var/www/react-app/
+            sudo rsync -a /home/ubuntu/deploy/frontend/assets/ /var/www/react-app/assets/
+            sudo find /var/www/react-app/assets -type f -mtime +7 -delete
             sudo nginx -t
             sudo systemctl reload nginx
