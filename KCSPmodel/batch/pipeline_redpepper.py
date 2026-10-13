@@ -4,7 +4,7 @@
 모델 근거는 KCSP-konkuk/redpepper 의 METHOD.md 11절. 시험 2021~2025 MASE 0.659 / MAPE 16.1%.
 
   1. 농넷 순별 API 로 홍고추·풋고추·청피망 최근 9순 가격·평년·전년 (품목당 1회)
-  2. 농넷 일별(garak.do) 로 예측 대상 순 직전 8거래일 홍고추 상 가격 (1회)
+  2. 농넷 일별(garak.do) 로 예측 대상 순 직전 8거래일 홍고추 상 가격 (1회, 창 끝날이 휴장이면 하루씩 당겨서)
   3. 네이버 데이터랩 검색량 2016-01-01 ~ 어제 (1회)
   4. 과거분(레포 CSV, 2001~)과 결합 → 피쳐 → XGBoost 비율 타깃, 시드 12 평균
   5. redpepper_predictions upsert + 지난 순의 actual_price/error_pct 갱신
@@ -70,6 +70,7 @@ PARAMS = dict(max_depth=5, n_estimators=1200, learning_rate=0.08, subsample=0.8,
               objective='reg:absoluteerror')
 SEEDS = 12
 DLAST_MAX_GAP = 10   # 막판 가격: 순 시작일과 마지막 거래일 간격 상한(일)
+DAILY_BACK = 6       # 일별 창 끝날에 거래가 없으면 하루씩 당겨 다시 조회하는 최대 일수(거래일 간격 최대 6일)
 
 REQ_GAP = 2.0          # 외부 요청 사이 최소 간격(초)
 REQ_TRY = 3
@@ -214,6 +215,16 @@ def fetch_daily(http, day):
                     rec[g] = np.nan
             out.append(rec)
     return pd.DataFrame(out)
+
+
+def fetch_window(http, end):
+    """순 시작 전날까지 8거래일. 그날 거래가 없으면 garak.do 가 표를 주지 않으므로(2026-10-10 토요일)
+    하루씩 당겨 거래가 있는 날로 다시 조회한다 — 받은 8거래일에 그 순의 마지막 거래일이 들어 있다"""
+    for k in range(DAILY_BACK + 1):
+        got = fetch_daily(http, end - timedelta(days=k))
+        if len(got):
+            return got, k + 1
+    return got, DAILY_BACK + 1
 
 
 def fetch_trend(http, props, end):
@@ -429,14 +440,23 @@ def fill_daily(http, daily, anchors, hist_end, df, target, today):
     """각 순의 막판 가격에는 '순 시작 전날까지 8거래일' 창이 필요하다.
     레포 과거분(hist_end 까지)이 덮는 창과 이미 확정 조회한 창(anchors)은 건너뛰고 나머지만 조회한다.
     새벽 실행이라 창 끝날(= 어제) 값이 아직 덜 올라왔을 수 있다 → 창 끝보다 이틀 이상 지나서 받은 창만
-    확정으로 치고, 그 전에 받은 창은 다음 실행에서 한 번 더 받아 덮는다"""
+    확정으로 치고, 그 전에 받은 창은 다음 실행에서 한 번 더 받아 덮는다.
+    창 끝 DAILY_BACK 일 안에 값이 하나도 없으면 확정으로 치지 않고, 예전에 확정으로 친 창이라도 다시 받는다
+    (빈 응답을 확정으로 쳐서 그 순 내내 막판 가격이 비던 문제 — 2026-10 중순)"""
+    def covered(d, data):
+        have = set(data.dropna(subset=['상']).date)
+        return any(d - timedelta(days=k) in have for k in range(DAILY_BACK + 1))
+
     ends = {s.date() - timedelta(days=1) for c, s in zip(df.DATE, df.start) if c <= target}
-    need = sorted(d for d in ends if d > hist_end and d not in anchors)
-    got = [fetch_daily(http, d) for d in need]
-    if got:
-        daily = pd.concat([daily] + got, ignore_index=True).drop_duplicates('date', keep='last')
-    done = {d for d in need if (today - d).days >= 2}
-    return daily, anchors | done, len(need)
+    need = sorted(d for d in ends if d > hist_end and (d not in anchors or not covered(d, daily)))
+    calls = 0
+    for d in need:
+        got, n = fetch_window(http, d)
+        calls += n
+        if len(got):
+            daily = pd.concat([daily, got], ignore_index=True).drop_duplicates('date', keep='last')
+    done = {d for d in need if (today - d).days >= 2 and covered(d, daily)}
+    return daily, anchors | done, calls
 
 
 def save_cache(soon, daily, anchors, target):
