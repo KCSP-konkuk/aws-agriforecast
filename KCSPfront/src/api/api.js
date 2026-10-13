@@ -265,6 +265,14 @@ export const api = {
     return await response.json();
   },
 
+  // 홈 — 질문 · 답 · 차트 값과 오늘의 시장 칸 (배치가 매일 12:50 KST 계산). 아직 계산 전이면 null
+  getHome: async () => {
+    const response = await fetch(`${API_BASE_URL}/home`);
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error('홈 데이터를 불러오는데 실패했습니다.');
+    return await response.json();
+  },
+
   // 대시보드 — 인사이트가 계산된 품목 목록 (배치가 매일 12:40 KST 계산)
   getDashboardItems: async () => {
     const response = await fetch(`${API_BASE_URL}/dashboard/items`);
