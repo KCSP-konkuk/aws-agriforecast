@@ -18,7 +18,7 @@ export default function MyPageSidebar({ user, onLogout }) {
   ];
 
   return (
-    <aside className="w-full flex-shrink-0 lg:w-56">
+    <aside className="panel h-fit w-full flex-shrink-0 lg:sticky lg:top-[96px] lg:w-60">
       <div className="flex items-center gap-3">
         <Avatar name={user?.name} size="size-11" />
         <div className="min-w-0">
@@ -35,7 +35,7 @@ export default function MyPageSidebar({ user, onLogout }) {
               to={item.path}
               aria-current={isActive ? 'page' : undefined}
               className={`rounded-lg px-3 py-2.5 text-[15px] transition-colors ${
-                isActive ? 'bg-background-light font-semibold text-text-main' : 'font-medium text-subtext-light hover:bg-background-light hover:text-text-main'
+                isActive ? 'bg-primary-light font-semibold text-primary' : 'font-medium text-subtext-light hover:bg-background-light hover:text-text-main'
               }`}
             >
               {item.label}

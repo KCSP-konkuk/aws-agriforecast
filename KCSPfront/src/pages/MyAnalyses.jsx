@@ -120,8 +120,8 @@ export default function MyAnalyses() {
 
   return (
     <Layout>
-      <div className="flex flex-1 justify-center px-4 pb-16 pt-8 sm:px-6 lg:px-10">
-        <div className="flex w-full max-w-6xl flex-1 flex-col gap-8 lg:flex-row lg:gap-16">
+      <div className="page-shell flex flex-1 justify-center">
+        <div className="flex w-full max-w-6xl flex-1 flex-col gap-8 lg:flex-row lg:gap-10">
           <MyPageSidebar
             user={user}
             onLogout={() => {
@@ -132,8 +132,8 @@ export default function MyAnalyses() {
           <main className="flex-1 min-w-0">
             <div className="flex flex-col gap-6">
               <div>
-                <h1 className="text-2xl font-bold tracking-[-0.02em] text-text-main">내 분석</h1>
-                <p className="mt-2 text-[15px] text-subtext-light">작업대에서 저장한 화면이에요. 열면 지표 · 변환 · 시차 · 차트 · 조건이 저장한 그대로 열려요.</p>
+                <h1 className="text-[30px] font-semibold tracking-[-0.02em] text-text-main">내 분석</h1>
+                <p className="mt-2 text-[15px] text-subtext-light">저장한 설정으로 분석을 이어가세요. 데이터는 최신 값으로 불러와요.</p>
               </div>
               {list.status !== 'ready' || list.data.length === 0 ? (
                 <div>
@@ -152,7 +152,7 @@ export default function MyAnalyses() {
                   )}
                 </div>
               ) : (
-                <ul className="divide-y divide-line border-y border-line">
+                <ul className="panel divide-y divide-line">
                   {list.data.map((item) => (
                     <AnalysisRow
                       key={item.id}

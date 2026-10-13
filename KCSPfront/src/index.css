@@ -67,3 +67,53 @@
 ::-webkit-scrollbar-thumb:hover {
   background-color: #a9b0ab;
 }
+
+@layer components {
+  .page-shell { @apply w-full px-4 pb-16 pt-8 sm:px-7 lg:px-10 lg:pt-10; }
+  .page-heading { @apply mb-7 flex flex-wrap items-end justify-between gap-4; }
+  .page-heading h1 { @apply text-[28px] font-semibold leading-tight tracking-[-0.04em] sm:text-[34px]; }
+  .page-heading p { @apply mt-2 max-w-2xl text-[15px] leading-relaxed text-subtext-light; }
+  .panel { @apply min-w-0 rounded-lg border border-border-light bg-white p-5 sm:p-6; }
+  .section-title { @apply text-[23px] font-semibold leading-snug tracking-[-0.035em] sm:text-[28px]; }
+  .button-primary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50; }
+  .button-secondary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-border-light bg-white px-4 py-2.5 text-sm font-semibold text-text-main transition-colors hover:bg-background-light; }
+  .text-link { @apply inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline; }
+  .pill { @apply inline-flex items-center gap-2 rounded-full border border-border-light bg-white px-3 py-1.5 text-xs font-medium text-subtext-light; }
+  .item-journey { @apply flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-light bg-background-light/60 p-4; }
+  .journey-link { @apply inline-flex min-h-9 items-center gap-3 rounded-lg bg-white px-3 text-sm font-medium text-primary transition-colors hover:bg-primary-light; }
+  .choice-tabs { @apply flex gap-1 overflow-x-auto rounded-xl bg-background-light p-1; }
+  .choice-tab { @apply flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium text-subtext-light transition-colors hover:text-primary; }
+  .choice-tab-active { @apply bg-white font-semibold text-primary shadow-sm; }
+  .crop-tabs { @apply flex gap-2 overflow-x-auto py-1; }
+  .crop-tab { @apply min-h-11 shrink-0 rounded-full border border-border-light bg-white px-5 text-[15px] font-medium text-subtext-light transition-colors hover:border-primary hover:text-primary; }
+  .crop-tab-active { @apply border-primary bg-primary text-white hover:text-white; }
+  .data-note { @apply text-[13px] leading-relaxed text-subtext-light; }
+  .site-footer { @apply mt-auto border-t border-border-light bg-background-light/60; }
+  .site-footer-inner { @apply mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-5 px-4 py-7 sm:px-7 lg:px-10; }
+  .workbench-sidebar { @apply space-y-3; }
+  .compact-panel { @apply rounded-lg border border-border-light bg-white p-4; }
+  .reading-surface { @apply rounded-lg border border-border-light bg-white p-5 sm:p-8; }
+  .form-surface { @apply rounded-lg border border-border-light bg-white p-5 sm:p-8; }
+}
+
+@layer base {
+  body { overflow-wrap: anywhere; }
+  button, input, select, textarea { font: inherit; }
+  button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+  input, select, textarea { accent-color: #174f3c; }
+  input:disabled, select:disabled { cursor: not-allowed; }
+  summary { cursor: pointer; }
+  summary::marker { color: #60736a; }
+  h1, h2, h3 { text-wrap: balance; }
+}
+
+.app-body { min-width: 0; }
+.app-body table { font-variant-numeric: tabular-nums; }
+.app-body thead { background: #f6f8f5; }
+.app-body thead th:first-child { border-radius: 8px 0 0 8px; padding-left: 12px; }
+.app-body thead th:last-child { border-radius: 0 8px 8px 0; padding-right: 12px; }
+.app-body tbody tr:hover { background: #f8faf7; }
+.app-body [role="tabpanel"] { min-width: 0; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

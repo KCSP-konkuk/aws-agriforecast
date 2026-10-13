@@ -61,9 +61,9 @@ export default function CommunityWrite() {
 
   return (
     <Layout>
-      <main className="flex-1 pb-16 pt-8">
-        <div className="mx-auto w-full max-w-[880px] px-4 sm:px-6">
-          <h1 className="mb-6 text-2xl font-bold tracking-[-0.02em] text-text-main">글 쓰기</h1>
+      <main className="page-shell">
+        <div className="mx-auto w-full max-w-[900px]">
+          <h1 className="mb-6 text-[28px] font-semibold tracking-[-0.02em] text-text-main">이야기 쓰기</h1>
           {needsLogin ? (
             <LoginRequired
               title="로그인하면 글을 쓸 수 있어요"
@@ -77,7 +77,7 @@ export default function CommunityWrite() {
             </div>
           )}
           
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          <form className="form-surface space-y-6" onSubmit={handleSubmit}>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
                 <label htmlFor="post-title" className="mb-1.5 block text-sm font-medium text-text-main">제목</label>

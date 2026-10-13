@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import StatusMessage from '../components/StatusMessage';
-import AnalysisTabs from '../components/AnalysisTabs';
+import PageHeading from '../components/PageHeading';
+import Icon from '../components/Icon';
 import { api } from '../api/api';
 import {
   align,
@@ -107,6 +108,7 @@ export default function Workbench() {
   const [exporting, setExporting] = useState(false);
   const [exportFailed, setExportFailed] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
 
   useEffect(() => {
     api
@@ -324,7 +326,7 @@ export default function Workbench() {
 
   let body;
   if (!series.length) {
-    body = <p className="py-16 text-center text-sm text-subtext-light">왼쪽 목록에서 지표를 고르거나, 위 시작 템플릿을 눌러 보세요.</p>;
+    body = <p className="py-16 text-center text-sm text-subtext-light">지표 설정에서 데이터를 고르거나, 시작 템플릿을 열어보세요.</p>;
   } else if (load.error && !hasData) {
     body = (
       <div className="py-12 text-center">
@@ -399,15 +401,11 @@ export default function Workbench() {
   }
 
   return (
-    <Layout>
-      <main className="space-y-6 px-4 pb-16 pt-8 sm:px-6 lg:px-10">
-        <div>
-          <h1 className="text-2xl font-bold leading-tight tracking-[-0.02em] text-text-main">분석 작업대</h1>
-          <p className="mt-2 text-[15px] text-subtext-light">
-            흩어진 시세·수급·날씨·거시 데이터를 한곳에 모았어요. 지표를 골라 겹쳐 보고, 관계를 확인하고, 표로 가져가세요.
-          </p>
-        </div>
-        <AnalysisTabs />
+    <Layout wide>
+      <main className="page-shell space-y-5">
+        <PageHeading title="분석 작업대" description="지표를 겹쳐 보고, 가격의 움직임을 직접 확인하세요.">
+          <Link to="/mypage/analyses" className="button-secondary">내 분석<Icon className="size-4" /></Link>
+        </PageHeading>
 
         {!ready || catalog.data.length === 0 ? (
           <StatusMessage
@@ -420,16 +418,21 @@ export default function Workbench() {
           <>
             <TemplateBar catalog={catalog.data} onApply={applyTemplate} />
             {dropped > 0 && <p className="text-xs text-subtext-light">링크에 있던 지표 {dropped}개는 지금 목록에 없어 뺐어요.</p>}
-            {/* 넓은 화면: 왼쪽에 고른 지표·데이터 고르기, 오른쪽에 차트·표. 좁은 화면: 고른 지표 → 차트·표 → 데이터 고르기 */}
-            <div className="grid items-start gap-5 lg:grid-cols-[300px_minmax(0,1fr)] lg:grid-rows-[auto_1fr]">
-              <div className="lg:col-start-1 lg:row-start-1">
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border-light bg-white p-3 lg:hidden">
+              <p className="text-sm text-subtext-light">선택한 지표 <strong className="text-primary">{series.length}/{MAX_SERIES}</strong></p>
+              <button type="button" className="button-secondary !min-h-10" aria-expanded={toolsOpen} aria-controls="workbench-tools" onClick={() => setToolsOpen((v) => !v)}><Icon name={toolsOpen ? 'close' : 'plus'} className="size-4" />{toolsOpen ? '설정 닫기' : '지표 설정'}</button>
+            </div>
+            <div className="grid items-start gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+              <aside id="workbench-tools" aria-label="지표 선택과 설정" className={`${toolsOpen ? 'block' : 'hidden'} workbench-sidebar lg:sticky lg:top-[92px] lg:block lg:max-h-[calc(100dvh-112px)] lg:overflow-y-auto lg:pr-1`}>
                 <SelectedSeries series={series} catById={catById} freq={freq} onChange={changeSeries} onRemove={removeSeries} />
-              </div>
-              <div className="lg:col-start-1 lg:row-start-2 order-last lg:order-none">
-                <SeriesPicker catalog={catalog.data} selectedIds={series.map((s) => s.id)} onAdd={addSeries} />
-              </div>
-              <div className="min-w-0 space-y-5 lg:col-start-2 lg:row-start-1 lg:row-span-2">
-                <section className="space-y-4 rounded-xl border border-border-light bg-white p-4 sm:p-5">
+                <details className="compact-panel" open={series.length === 0 || undefined}>
+                  <summary className="flex min-h-10 items-center justify-between text-sm font-semibold">지표 추가<Icon name="plus" className="size-4" /></summary>
+                  <div className="mt-2"><SeriesPicker catalog={catalog.data} selectedIds={series.map((s) => s.id)} onAdd={addSeries} embedded /></div>
+                </details>
+                <button type="button" onClick={() => { setToolsOpen(false); requestAnimationFrame(() => { const chart = document.getElementById('workbench-chart'); chart?.focus({ preventScroll: true }); chart?.scrollIntoView({ block: 'start' }); }); }} className="button-primary w-full lg:hidden">차트로 돌아가기<Icon className="size-4" /></button>
+              </aside>
+              <div className="min-w-0 space-y-5">
+                <section id="workbench-chart" tabIndex={-1} aria-label="분석 차트" className="panel scroll-mt-24 space-y-5">
                   <Controls
                     chart={state.chart}
                     freq={freq}

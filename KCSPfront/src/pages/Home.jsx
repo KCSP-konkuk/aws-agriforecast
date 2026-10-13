@@ -1,36 +1,34 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import HomeHero from '../components/home/HomeHero';
 import AskPanel from '../components/home/AskPanel';
 import DataMap from '../components/home/DataMap';
 import MarketStrip from '../components/home/MarketStrip';
 import EndBand from '../components/home/EndBand';
+import StatusMessage from '../components/StatusMessage';
+import Icon from '../components/Icon';
 import { api } from '../api/api';
 
-// 홈 — 질문 하나 · 차트 하나 · 문장 하나. 무엇을 하는 곳인지(첫 화면) → 무엇을 알 수 있는지(질문) → 어떤 데이터인지(지도)
-// → 지금 시장(예측 칸) → 출구. 질문 · 시장 칸은 배치(home_highlights)가 매일 계산하고, 못 받으면 그 구역만 숨긴다
 export default function Home() {
   const [catalog, setCatalog] = useState([]);
   const [home, setHome] = useState(null);
-
+  const [status, setStatus] = useState('loading');
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
-    api
-      .getSeriesCatalog()
-      .then(setCatalog)
-      .catch(() => setCatalog([]));
-    api
-      .getHome()
-      .then(setHome)
-      .catch(() => setHome(null));
-  }, []);
-
+    let alive = true;
+    setStatus('loading');
+    api.getSeriesCatalog().then((data) => alive && setCatalog(data)).catch(() => alive && setCatalog([]));
+    api.getHome().then((data) => { if (alive) { setHome(data); setStatus('ready'); } }).catch(() => alive && setStatus('error'));
+    return () => { alive = false; };
+  }, [attempt]);
   return (
     <Layout>
-      <main className="w-full space-y-16 px-4 pb-16 pt-8 sm:px-6 lg:px-10 lg:pt-12">
+      <main className="page-shell space-y-12 !pt-5 sm:space-y-16 sm:!pt-7">
         <HomeHero catalog={catalog} />
+        {status === 'loading' ? <div className="panel"><StatusMessage status="loading" loadingText="오늘의 시장을 불러오고 있어요" /></div> : status === 'error' || !home?.market?.length ? <section id="market" className="panel text-center"><StatusMessage status={status} emptyText="가격 전망을 준비하고 있어요. 작업대에서 시세를 먼저 살펴보세요." errorText="가격 전망을 불러오지 못했어요." /><div className="flex justify-center gap-3">{status === 'error' && <button className="button-secondary" onClick={() => setAttempt((n) => n + 1)}>다시 시도</button>}<Link className="button-primary" to="/analysis">시세 살펴보기<Icon className="size-4" /></Link></div></section> : <MarketStrip tiles={home.market} />}
         {home?.questions?.length > 0 && <AskPanel questions={home.questions} />}
         <DataMap catalog={catalog} />
-        <MarketStrip tiles={home?.market} />
         <EndBand />
       </main>
     </Layout>

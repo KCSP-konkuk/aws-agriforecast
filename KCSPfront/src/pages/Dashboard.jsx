@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import StatusMessage from '../components/StatusMessage';
-import AnalysisTabs from '../components/AnalysisTabs';
+import PageHeading from '../components/PageHeading';
+import ItemJourney from '../components/ItemJourney';
+import Icon from '../components/Icon';
 import { api } from '../api/api';
 import Headline from '../components/dashboard/Headline';
 import FactorBalance from '../components/dashboard/FactorBalance';
@@ -41,8 +43,8 @@ export default function Dashboard() {
   useEffect(() => {
     if (!selected) return undefined;
     let alive = true;
-    // 다시 불러오는 동안엔 이전 화면을 흐리게 남긴다(깜빡임 없이)
-    setInsight((prev) => ({ ...prev, status: 'loading' }));
+    // 품목을 바꾼 동안 이전 품목의 전망을 새 품목 아래에 표시하지 않는다.
+    setInsight({ status: 'loading', data: null });
     api
       .getDashboard(selected)
       .then((data) => alive && setInsight({ status: 'ready', data }))
@@ -56,83 +58,29 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <main className="space-y-6 px-4 pb-16 pt-8 sm:px-6 lg:px-10">
-        <div>
-          <h1 className="text-2xl font-bold leading-tight tracking-[-0.02em] text-text-main">오늘의 요약</h1>
-          <p className="mt-2 text-[15px] text-subtext-light">
-            KAMIS 서울 전통시장 소매가를 도매가·반입량·날씨·환율 같은 데이터와 함께 읽어요. 매일 낮 12시 40분에 갱신돼요.
-          </p>
-        </div>
-        <AnalysisTabs />
-
+      <main className="page-shell space-y-6">
+        <PageHeading title="소매 가격 전망" description="서울 전통시장 가격, 다음 순의 흐름을 읽어보세요.">
+          <span className="pill">서울 전통시장 · KAMIS</span>
+        </PageHeading>
         {items.status !== 'ready' || items.data.length === 0 ? (
-          <StatusMessage
-            status={items.status}
-            loadingText="품목을 불러오는 중이에요"
-            emptyText="아직 계산된 품목이 없어요. 매일 낮 12시 40분에 갱신돼요."
-            errorText="품목을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요."
-          />
+          <div className="panel"><StatusMessage status={items.status} loadingText="품목을 불러오고 있어요" emptyText="아직 계산된 품목이 없어요." errorText="품목을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요." /></div>
         ) : (
           <>
-            <div className="-mx-4 flex gap-6 overflow-x-auto border-b border-line px-4 sm:mx-0 sm:px-0" role="tablist" aria-label="품목">
-              {items.data.map((it) => (
-                <button
-                  key={it.item}
-                  type="button"
-                  role="tab"
-                  aria-selected={it.item === selected}
-                  onClick={() => setParams({ item: it.item })}
-                  className={`-mb-px shrink-0 border-b-2 py-2.5 text-[15px] transition-colors ${
-                    it.item === selected
-                      ? 'border-primary font-semibold text-text-main'
-                      : 'border-transparent font-medium text-subtext-light hover:text-text-main'
-                  }`}
-                >
-                  {it.item}
-                </button>
-              ))}
+            <div className="crop-tabs" role="group" aria-label="소매 전망 품목">
+              {items.data.map((it) => <button key={it.item} type="button" aria-pressed={it.item === selected} onClick={() => setParams({ item: it.item })} className={`crop-tab ${it.item === selected ? 'crop-tab-active' : ''}`}>{it.item}</button>)}
             </div>
-
-            {bridges.length > 0 && (
-              <p className="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm">
-                <span className="mr-1 text-subtext-light">작업대에서 직접 보기</span>
-                {bridges.map((t, i) => (
-                  <span key={t.key} className="flex items-center gap-1">
-                    {i > 0 && <span className="text-subtext-light">·</span>}
-                    <Link to={`/analysis?tpl=${t.key}&item=${encodeURIComponent(selected)}`} className="font-semibold text-primary hover:underline">
-                      {t.title}
-                    </Link>
-                  </span>
-                ))}
-              </p>
-            )}
-
             {!d ? (
-              <StatusMessage
-                status={insight.status === 'ready' ? 'ready' : insight.status}
-                loadingText="요약을 불러오는 중이에요"
-                emptyText="이 품목은 아직 계산 전이에요. 매일 낮 12시 40분에 갱신돼요."
-                errorText="요약을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요."
-              />
+              <div className="panel"><StatusMessage status={insight.status} loadingText="가격 전망을 불러오고 있어요" emptyText="이 품목은 아직 계산 전이에요. 매일 낮 12시 40분 이후 갱신돼요." errorText="전망을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요." /></div>
             ) : (
-              <div className={`space-y-10 transition-opacity ${insight.status === 'loading' ? 'opacity-60' : ''}`}>
-                <p className="text-xs text-subtext-light">
-                  {d.priceLabel} · {d.unit} · {d.targetLabel} 기준 · {updatedLabel(d.generatedAt)} 갱신
-                </p>
+              <div className="space-y-5">
                 <Headline data={d} />
-                <div className="grid gap-10 lg:grid-cols-2">
-                  <FactorBalance data={d} />
-                  <SituationBoard data={d} actions={open('situation', '상황 공간 3D')} />
-                </div>
-                <EventTimeline data={d} actions={open('transmission', '도매가와 겹쳐 보기')} />
-                <div className="grid gap-10 lg:grid-cols-2">
-                  <AnalogCards data={d} actions={open('situation', '비슷한 상황 찾기')} />
-                  <FlowPanel data={d} actions={[...open('lead', '시차 상관'), ...open('terrain', '가격 지형도')]} />
-                </div>
-                <p className="text-xs text-subtext-light">
-                  분석 기간 {sinceLabel(d.coverage?.since)}~ · 쓰인 지표: {(d.coverage?.indicators ?? []).join(', ')}.
-                  모델의 판단과 과거 데이터를 요약한 것이며, 원인을 단정하지는 않아요.
-                </p>
+                <div className="flex flex-wrap justify-between gap-2 px-1 data-note"><span>{d.priceLabel} · {d.unit} · {d.targetLabel} 기준</span><span>{updatedLabel(d.generatedAt)} 갱신</span></div>
+                <ItemJourney item={selected} current="retail" />
+                <div className="grid gap-5 lg:grid-cols-2"><FactorBalance data={d} /><SituationBoard data={d} actions={open('situation', '상황 비교')} /></div>
+                <div className="grid gap-5 lg:grid-cols-2"><FlowPanel data={d} actions={[...open('lead', '시차 분석'), ...open('terrain', '가격 지형도')]} /><AnalogCards data={d} actions={open('situation', '과거 상황 비교')} /></div>
+                <EventTimeline data={d} actions={open('transmission', '도매가와 비교')} />
+                {bridges.length > 0 && <details className="panel"><summary className="font-semibold">이 품목 직접 분석하기</summary><div className="mt-4 flex flex-wrap gap-2">{bridges.map((t) => <Link key={t.key} to={`/analysis?tpl=${t.key}&item=${encodeURIComponent(selected)}`} className="button-secondary !min-h-10">{t.title}<Icon className="size-4" /></Link>)}</div></details>}
+                <p className="data-note px-1">분석 기간 {sinceLabel(d.coverage?.since)}~ · {(d.coverage?.indicators ?? []).join(', ')}.<br />모델의 판단과 과거 데이터를 요약했으며, 원인을 단정하지 않아요.</p>
               </div>
             )}
           </>
