@@ -1,48 +1,37 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import HomeHero from '../components/home/HomeHero';
-import SummaryCards from '../components/home/SummaryCards';
-import TemplateCards from '../components/workbench/TemplateCards';
+import AskPanel from '../components/home/AskPanel';
+import DataMap from '../components/home/DataMap';
+import MarketStrip from '../components/home/MarketStrip';
+import EndBand from '../components/home/EndBand';
 import { api } from '../api/api';
 
-// 홈 — 정체성(흩어진 데이터를 한곳에서) · 작업대 바로가기 · 시작 템플릿 · 오늘의 요약
+// 홈 — 질문 하나 · 차트 하나 · 문장 하나. 무엇을 하는 곳인지(첫 화면) → 무엇을 알 수 있는지(질문) → 어떤 데이터인지(지도)
+// → 지금 시장(예측 칸) → 출구. 질문 · 시장 칸은 배치(home_highlights)가 매일 계산하고, 못 받으면 그 구역만 숨긴다
 export default function Home() {
-  const navigate = useNavigate();
   const [catalog, setCatalog] = useState([]);
+  const [home, setHome] = useState(null);
 
   useEffect(() => {
-    // 작업대 지표 목록 — 첫 화면 숫자·미리보기·템플릿에 쓴다. 못 받으면 그 부분만 숨긴다
     api
       .getSeriesCatalog()
       .then(setCatalog)
       .catch(() => setCatalog([]));
+    api
+      .getHome()
+      .then(setHome)
+      .catch(() => setHome(null));
   }, []);
-
-  const openTemplate = (t, item) => navigate(`/analysis?tpl=${t.key}${item ? `&item=${encodeURIComponent(item)}` : ''}`);
 
   return (
     <Layout>
-      <main className="px-4 py-6 sm:px-6 lg:p-10 space-y-10">
+      <main className="w-full space-y-16 px-4 pb-16 pt-8 sm:px-6 lg:px-10 lg:pt-12">
         <HomeHero catalog={catalog} />
-
-        {catalog.length > 0 && (
-          <section>
-            <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-              <div>
-                <h2 className="text-lg font-bold text-text-main">이런 분석을 바로 열 수 있어요</h2>
-                <p className="mt-0.5 text-xs text-subtext-light">템플릿에서 품목을 누르면 작업대가 그 설정으로 열려요</p>
-              </div>
-              <Link to="/analysis" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
-                작업대 열기
-                <span className="material-symbols-outlined text-base">arrow_forward</span>
-              </Link>
-            </div>
-            <TemplateCards catalog={catalog} onApply={openTemplate} />
-          </section>
-        )}
-
-        <SummaryCards />
+        {home?.questions?.length > 0 && <AskPanel questions={home.questions} />}
+        <DataMap catalog={catalog} />
+        <MarketStrip tiles={home?.market} />
+        <EndBand />
       </main>
     </Layout>
   );

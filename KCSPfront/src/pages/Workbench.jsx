@@ -363,9 +363,9 @@ export default function Workbench() {
       <div className={`space-y-4 transition-opacity ${load.busy ? 'opacity-60' : ''}`}>
         <div ref={chartRef}>{(views[state.chart] ?? views.line)()}</div>
         <div className="space-y-1 text-xs text-subtext-light">
-          {exportFailed && <p className="text-red-600">이미지를 만들지 못했어요. 다시 눌러 보세요.</p>}
+          {exportFailed && <p className="text-red-700">이미지를 만들지 못했어요. 다시 눌러 보세요.</p>}
           {load.error && (
-            <p className="text-red-600">
+            <p className="text-red-700">
               일부 지표를 불러오지 못했어요.{' '}
               <button type="button" onClick={() => setRetry((n) => n + 1)} className="font-semibold underline">
                 다시 시도
@@ -400,10 +400,10 @@ export default function Workbench() {
 
   return (
     <Layout>
-      <main className="px-4 py-6 sm:px-6 lg:p-10 space-y-5">
+      <main className="space-y-6 px-4 pb-16 pt-8 sm:px-6 lg:px-10">
         <div>
-          <h1 className="text-text-main text-3xl sm:text-4xl font-black leading-tight tracking-[-0.033em]">분석 작업대</h1>
-          <p className="text-subtext-light mt-2 text-sm">
+          <h1 className="text-2xl font-bold leading-tight tracking-[-0.02em] text-text-main">분석 작업대</h1>
+          <p className="mt-2 text-[15px] text-subtext-light">
             흩어진 시세·수급·날씨·거시 데이터를 한곳에 모았어요. 지표를 골라 겹쳐 보고, 관계를 확인하고, 표로 가져가세요.
           </p>
         </div>
@@ -429,7 +429,7 @@ export default function Workbench() {
                 <SeriesPicker catalog={catalog.data} selectedIds={series.map((s) => s.id)} onAdd={addSeries} />
               </div>
               <div className="min-w-0 space-y-5 lg:col-start-2 lg:row-start-1 lg:row-span-2">
-                <section className="space-y-4 rounded-xl bg-white border border-gray-200 p-4">
+                <section className="space-y-4 rounded-xl border border-border-light bg-white p-4 sm:p-5">
                   <Controls
                     chart={state.chart}
                     freq={freq}

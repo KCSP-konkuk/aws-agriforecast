@@ -1,71 +1,44 @@
-import { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 
-// 미리보기 차트(Recharts)는 따로 받는다 — 홈 첫 로드에 차트 라이브러리를 싣지 않게
-const WorkbenchPreview = lazy(() => import('./WorkbenchPreview'));
-
-// 홈 첫 화면 — 서비스 정체성 한 문장, 작업대 · 오늘의 요약 바로가기, 숫자 몇 개, 작업대 미리보기
-// 숫자는 지표 목록에서 센다(목록을 못 받으면 숨긴다)
+// 홈 첫 화면 — 무엇을 하는 곳인지 한 줄, 버튼 둘, 범위 한 줄. 숫자는 지표 목록에서 센다(못 받으면 숨긴다)
 export default function HomeHero({ catalog }) {
   const retail = catalog.filter((c) => c.id.startsWith('retail:'));
-  const retailSince = retail
-    .filter((c) => c.firstDate)
-    .map((c) => c.firstDate.slice(0, 4))
+  const since = retail
+    .map((c) => c.firstDate?.slice(0, 4))
+    .filter(Boolean)
     .sort()[0];
-  const items = new Set(retail.map((c) => c.item)).size;
-  const stats = [
-    catalog.length > 0 && ['모은 지표', `${catalog.length}개`],
-    items > 0 && ['품목', `${items}개`],
-    catalog.length > 0 && ['분류', '가격·수급·기상·거시·관심도'],
-    retailSince && ['KAMIS 일별 소매가', `${retailSince}년부터`],
+  const facts = [
+    retail.length > 0 && `품목 ${new Set(retail.map((c) => c.item)).size}개`,
+    catalog.length > 0 && `지표 ${catalog.length}개`,
+    since && `${since}년부터`,
+    catalog.length > 0 && '매일 갱신',
   ].filter(Boolean);
 
   return (
-    <section className="rounded-2xl border border-primary/15 bg-primary-light px-5 py-8 sm:px-8 lg:px-10 lg:py-10">
-      <div className="grid items-center gap-8 lg:grid-cols-[1.1fr_1fr]">
-        <div>
-          <p className="text-sm font-semibold text-primary">농산물 데이터 분석 작업대</p>
-          <h1 className="mt-2 text-3xl font-black leading-tight tracking-[-0.033em] text-text-main sm:text-4xl lg:text-5xl">
-            흩어진 농산물 데이터를
-            <br />
-            한곳에서
-          </h1>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-text-main/80">
-            KAMIS 시세에 가락시장 경매가·반입량, 산지 날씨, 환율·물가·검색량까지. 날짜를 맞춰 겹쳐 보고, 관계를 찾고, 표로 가져가세요.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              to="/analysis"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-            >
-              <span className="material-symbols-outlined text-lg">construction</span>
-              분석 작업대 열기
-            </Link>
-            <Link
-              to="/analysis/summary"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-white px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:border-primary"
-            >
-              <span className="material-symbols-outlined text-lg">summarize</span>
-              오늘의 요약 보기
-            </Link>
-          </div>
-          {stats.length > 0 && (
-            <dl className="mt-8 flex flex-wrap gap-x-8 gap-y-3">
-              {stats.map(([label, value]) => (
-                <div key={label}>
-                  <dt className="text-xs text-subtext-light">{label}</dt>
-                  <dd className="text-lg font-bold text-text-main">{value}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-        </div>
-        {catalog.length > 0 && (
-          <Suspense fallback={<div className="h-72 rounded-xl border border-gray-200 bg-white" aria-hidden="true" />}>
-            <WorkbenchPreview catalog={catalog} />
-          </Suspense>
-        )}
+    <section className="pt-4">
+      <h1 className="text-[32px] font-bold leading-[1.25] tracking-[-0.03em] text-text-main sm:text-[40px]">
+        농산물 가격이 움직이는 이유를
+        <br className="hidden sm:block" /> 겹쳐 보세요
+      </h1>
+      <p className="mt-3 text-[17px] leading-relaxed text-subtext-light">KAMIS 시세 · 가락시장 반입량 · 날씨 · 환율을 한 화면에서</p>
+      <div className="mt-6 flex flex-wrap gap-2">
+        <Link to="/analysis" className="inline-flex h-11 items-center rounded-lg bg-primary px-5 text-[15px] font-semibold text-white transition-colors hover:bg-primary-hover">
+          작업대 열기
+        </Link>
+        <a href="#market" className="inline-flex h-11 items-center rounded-lg bg-background-light px-5 text-[15px] font-semibold text-text-main transition-colors hover:bg-border-light">
+          오늘의 시장 보기
+        </a>
       </div>
+      {facts.length > 0 && (
+        <p className="mt-5 text-sm tabular-nums text-subtext-light">
+          {facts.map((f, i) => (
+            <span key={f}>
+              {i > 0 && <span className="mx-2 text-border-light">|</span>}
+              {f}
+            </span>
+          ))}
+        </p>
+      )}
     </section>
   );
 }

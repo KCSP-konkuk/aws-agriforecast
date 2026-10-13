@@ -8,7 +8,7 @@ function LineTip({ active, payload, lines, freq }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
   return (
-    <div className="rounded-lg bg-white border border-gray-200 shadow px-3 py-2 text-xs">
+    <div className="rounded-lg bg-white border border-border-light shadow px-3 py-2 text-xs">
       <p className="font-semibold text-text-main mb-1">{keyLabel(row.key, freq)}</p>
       {lines.map(
         (l) =>
@@ -49,8 +49,7 @@ export default function LineView({ rows, lines, freq, match, onIndexAll }) {
   return (
     <div className="space-y-5">
       {panels.length > 1 && (
-        <p className="flex flex-wrap items-center gap-x-1 gap-y-1 rounded-lg bg-background-light px-3 py-2 text-xs text-subtext-light" data-export="skip">
-          <span className="material-symbols-outlined text-base text-primary">info</span>
+        <p className="flex flex-wrap items-center gap-x-1 gap-y-1 rounded-lg bg-background-light px-3 py-2 text-[13px] text-subtext-light" data-export="skip">
           {relativeOnly ? (
             '기온·강수는 % 가 아니라 차이(℃·mm)로 비교해서 판을 나눴어요.'
           ) : (

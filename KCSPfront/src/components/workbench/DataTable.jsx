@@ -42,11 +42,11 @@ export default function DataTable({ rows: all, columns, freq, title, notes = [],
   };
 
   return (
-    <section className="rounded-xl bg-white border border-gray-200 p-4">
+    <section className="rounded-xl border border-border-light bg-white p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="font-bold text-text-main">표로 보기</h3>
-          <p className="text-xs text-subtext-light">
+          <h2 className="text-[17px] font-bold text-text-main">표로 보기</h2>
+          <p className="mt-0.5 text-[13px] text-subtext-light">
             차트와 같은 값이에요 · {match ? '조건에 맞는 ' : ''}
             {rows.length.toLocaleString('ko-KR')}행 · 최근부터
           </p>
@@ -56,28 +56,25 @@ export default function DataTable({ rows: all, columns, freq, title, notes = [],
             <button
               type="button"
               onClick={onShare}
-              className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold text-text-main hover:border-primary/50"
+              className="flex h-8 items-center rounded-lg bg-background-light px-3 text-[13px] font-semibold text-text-main hover:bg-border-light"
               title="이 화면을 붙여 커뮤니티 글을 써요"
             >
-              <span className="material-symbols-outlined text-lg">forum</span>
               커뮤니티에 공유
             </button>
           )}
           <button
             type="button"
             onClick={copyLink}
-            className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold text-text-main hover:border-primary/50"
+            className="flex h-8 items-center rounded-lg bg-background-light px-3 text-[13px] font-semibold text-text-main hover:bg-border-light"
           >
-            <span className="material-symbols-outlined text-lg">{copied === 'ok' ? 'check' : 'link'}</span>
             {copied === 'ok' ? '복사했어요' : copied === 'fail' ? '복사하지 못했어요' : '링크 복사'}
           </button>
           <button
             type="button"
             onClick={saveCsv}
             disabled={!rows.length}
-            className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
+            className="flex h-8 items-center rounded-lg bg-primary px-3 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-lg">download</span>
             CSV 받기
           </button>
         </div>
@@ -88,7 +85,7 @@ export default function DataTable({ rows: all, columns, freq, title, notes = [],
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-left align-bottom">
+              <tr className="border-b border-border-light text-left align-bottom">
                 <th className="whitespace-nowrap py-2 pr-3 text-xs font-semibold text-subtext-light">날짜</th>
                 {columns.map((c) => (
                   <th key={c.id} className="py-2 pr-3 text-right font-normal">
@@ -96,7 +93,7 @@ export default function DataTable({ rows: all, columns, freq, title, notes = [],
                       <span className="inline-block h-2 w-2 rounded-full" style={{ background: colorOf(c.color) }} />
                       {c.name}
                     </span>
-                    <span className="block whitespace-nowrap text-[11px] text-subtext-light">
+                    <span className="block whitespace-nowrap text-xs text-subtext-light">
                       {[c.unit, c.adjust, c.lag ? `시차 ${c.lagText}` : ''].filter(Boolean).join(' · ')}
                     </span>
                   </th>
@@ -105,7 +102,7 @@ export default function DataTable({ rows: all, columns, freq, title, notes = [],
             </thead>
             <tbody>
               {latestFirst.slice(0, limit).map((r) => (
-                <tr key={r.key} className="border-b border-gray-100">
+                <tr key={r.key} className="border-b border-line">
                   <td className="whitespace-nowrap py-1.5 pr-3 text-xs text-subtext-light">{keyLabel(r.key, freq)}</td>
                   {columns.map((c) => (
                     <td key={c.id} className="py-1.5 pr-3 text-right tabular-nums text-text-main">

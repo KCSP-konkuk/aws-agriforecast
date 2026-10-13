@@ -6,7 +6,7 @@ function BoardTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const a = payload[0].payload;
   return (
-    <div className="rounded-lg bg-white border border-gray-200 shadow px-3 py-2 text-xs">
+    <div className="rounded-lg bg-white border border-border-light shadow px-3 py-2 text-xs">
       <p className="font-semibold text-text-main">{a.label}</p>
       <p className="text-subtext-light">
         {a.basis} {a.valueText && <b className="text-text-main">{a.valueText}</b>} · {a.level}
@@ -23,7 +23,6 @@ export default function SituationBoard({ data, actions }) {
 
   return (
     <DashboardCard
-      icon="radar"
       actions={actions}
       title="지금 상황판"
       subtitle="지표마다 과거와 비교한 위치예요. 가운데가 낮음, 바깥이 높음, 중간이 보통이에요"
@@ -35,7 +34,7 @@ export default function SituationBoard({ data, actions }) {
           <ResponsiveContainer width="100%" height={280}>
             <RadarChart data={axes} outerRadius="70%">
               <PolarGrid stroke={COLOR.grid} />
-              <PolarAngleAxis dataKey="label" tick={{ fontSize: 11, fill: COLOR.main }} />
+              <PolarAngleAxis dataKey="label" tick={{ fontSize: 12, fill: COLOR.main }} />
               <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
               {hasSurge && (
                 <Radar dataKey="surge" stroke={COLOR.up} fill={COLOR.up} fillOpacity={0.04} strokeDasharray="4 3" />
@@ -56,7 +55,7 @@ export default function SituationBoard({ data, actions }) {
               </span>
             )}
           </div>
-          <p className="text-sm text-text-main mt-3">
+          <p className="mt-3 text-sm text-text-main">
             {similarity != null && (
               <>
                 지금 모습은 가격이 크게 오르기 직전과 <b>{Math.round(similarity * 100)}%</b> 닮았어요.{' '}
@@ -64,21 +63,21 @@ export default function SituationBoard({ data, actions }) {
             )}
             {note}
           </p>
-          <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <dl className="mt-4 grid grid-cols-1 gap-x-6 border-t border-line min-[420px]:grid-cols-2 sm:grid-cols-3">
             {axes.map((a) => (
-              <li key={a.key} className="rounded-lg bg-background-light px-3 py-2">
-                <p className="text-xs text-subtext-light">{a.label}</p>
-                <p className="text-sm font-semibold text-text-main">
+              <div key={a.key} className="flex items-baseline justify-between gap-2 border-b border-line py-2.5">
+                <dt className="truncate text-[13px] text-subtext-light">{a.label}</dt>
+                <dd className="shrink-0 text-sm font-semibold text-text-main">
                   {a.valueText || a.level}
                   {a.valueText && (
-                    <span className={`ml-1 text-[11px] font-medium ${a.level === '보통' ? 'text-subtext-light' : 'text-text-main'}`}>
+                    <span className={`ml-1 text-xs font-medium ${a.level === '보통' ? 'text-subtext-light' : 'text-text-main'}`}>
                       {a.level}
                     </span>
                   )}
-                </p>
-              </li>
+                </dd>
+              </div>
             ))}
-          </ul>
+          </dl>
         </>
       )}
     </DashboardCard>

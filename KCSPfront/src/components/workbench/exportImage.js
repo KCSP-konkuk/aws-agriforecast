@@ -4,7 +4,7 @@ import { loadPlotly } from './plotlyLoader';
 
 const SCALE = 2;
 const PAD = 24 * SCALE;
-const FAMILY = '"Noto Sans KR", "Work Sans", sans-serif';
+const FAMILY = '"Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif';
 const FONTS = { title: `700 ${18 * SCALE}px ${FAMILY}`, sub: `400 ${13 * SCALE}px ${FAMILY}`, foot: `400 ${12 * SCALE}px ${FAMILY}` };
 const LINE = { title: 26 * SCALE, sub: 19 * SCALE, foot: 17 * SCALE };
 
@@ -73,11 +73,11 @@ export async function saveChartImage(node, { title, subtitle, footer, fileName }
       y += height;
     }
   };
-  draw(head.title, FONTS.title, '#333333', LINE.title);
-  draw(head.sub, FONTS.sub, '#64748B', LINE.sub);
+  draw(head.title, FONTS.title, '#191F1C', LINE.title);
+  draw(head.sub, FONTS.sub, '#5D6560', LINE.sub);
   ctx.drawImage(chart, PAD, top);
   y = top + chart.height + 10 * SCALE;
-  draw(foot, FONTS.foot, '#64748B', LINE.foot);
+  draw(foot, FONTS.foot, '#5D6560', LINE.foot);
 
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
   const url = URL.createObjectURL(blob);

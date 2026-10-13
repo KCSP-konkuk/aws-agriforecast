@@ -56,10 +56,10 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <main className="px-4 py-6 sm:px-6 lg:p-10 space-y-6">
+      <main className="space-y-6 px-4 pb-16 pt-8 sm:px-6 lg:px-10">
         <div>
-          <h1 className="text-text-main text-3xl sm:text-4xl font-black leading-tight tracking-[-0.033em]">오늘의 요약</h1>
-          <p className="text-subtext-light mt-2 text-sm">
+          <h1 className="text-2xl font-bold leading-tight tracking-[-0.02em] text-text-main">오늘의 요약</h1>
+          <p className="mt-2 text-[15px] text-subtext-light">
             KAMIS 서울 전통시장 소매가를 도매가·반입량·날씨·환율 같은 데이터와 함께 읽어요. 매일 낮 12시 40분에 갱신돼요.
           </p>
         </div>
@@ -74,7 +74,7 @@ export default function Dashboard() {
           />
         ) : (
           <>
-            <div className="flex flex-wrap gap-2" role="tablist" aria-label="품목">
+            <div className="-mx-4 flex gap-6 overflow-x-auto border-b border-line px-4 sm:mx-0 sm:px-0" role="tablist" aria-label="품목">
               {items.data.map((it) => (
                 <button
                   key={it.item}
@@ -82,10 +82,10 @@ export default function Dashboard() {
                   role="tab"
                   aria-selected={it.item === selected}
                   onClick={() => setParams({ item: it.item })}
-                  className={`rounded-full px-4 py-1.5 text-sm font-semibold border transition ${
+                  className={`-mb-px shrink-0 border-b-2 py-2.5 text-[15px] transition-colors ${
                     it.item === selected
-                      ? 'bg-primary text-white border-primary'
-                      : 'bg-white text-text-main border-gray-200 hover:border-primary/50'
+                      ? 'border-primary font-semibold text-text-main'
+                      : 'border-transparent font-medium text-subtext-light hover:text-text-main'
                   }`}
                 >
                   {it.item}
@@ -94,19 +94,17 @@ export default function Dashboard() {
             </div>
 
             {bridges.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-subtext-light">작업대에서 직접 보기</span>
-                {bridges.map((t) => (
-                  <Link
-                    key={t.key}
-                    to={`/analysis?tpl=${t.key}&item=${encodeURIComponent(selected)}`}
-                    className="flex items-center gap-1 rounded-full border border-primary/30 px-3 py-1 font-semibold text-primary hover:bg-primary-light"
-                  >
-                    <span className="material-symbols-outlined text-base">insights</span>
-                    {t.title}
-                  </Link>
+              <p className="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm">
+                <span className="mr-1 text-subtext-light">작업대에서 직접 보기</span>
+                {bridges.map((t, i) => (
+                  <span key={t.key} className="flex items-center gap-1">
+                    {i > 0 && <span className="text-subtext-light">·</span>}
+                    <Link to={`/analysis?tpl=${t.key}&item=${encodeURIComponent(selected)}`} className="font-semibold text-primary hover:underline">
+                      {t.title}
+                    </Link>
+                  </span>
                 ))}
-              </div>
+              </p>
             )}
 
             {!d ? (
@@ -117,17 +115,17 @@ export default function Dashboard() {
                 errorText="요약을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요."
               />
             ) : (
-              <div className={`space-y-6 transition-opacity ${insight.status === 'loading' ? 'opacity-60' : ''}`}>
+              <div className={`space-y-10 transition-opacity ${insight.status === 'loading' ? 'opacity-60' : ''}`}>
                 <p className="text-xs text-subtext-light">
                   {d.priceLabel} · {d.unit} · {d.targetLabel} 기준 · {updatedLabel(d.generatedAt)} 갱신
                 </p>
                 <Headline data={d} />
-                <div className="grid gap-6 lg:grid-cols-2">
+                <div className="grid gap-10 lg:grid-cols-2">
                   <FactorBalance data={d} />
                   <SituationBoard data={d} actions={open('situation', '상황 공간 3D')} />
                 </div>
                 <EventTimeline data={d} actions={open('transmission', '도매가와 겹쳐 보기')} />
-                <div className="grid gap-6 lg:grid-cols-2">
+                <div className="grid gap-10 lg:grid-cols-2">
                   <AnalogCards data={d} actions={open('situation', '비슷한 상황 찾기')} />
                   <FlowPanel data={d} actions={[...open('lead', '시차 상관'), ...open('terrain', '가격 지형도')]} />
                 </div>

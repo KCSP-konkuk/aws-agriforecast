@@ -8,9 +8,9 @@ const YEAR_SCALE = [
   [1, 'rgb(30,74,16)'],
 ];
 const DIVERGING = [
-  [0, '#337AB7'],
-  [0.5, '#F1F5F9'],
-  [1, '#D9534F'],
+  [0, '#2E6BC6'],
+  [0.5, '#F4F6F4'],
+  [1, '#CC2F2F'],
 ];
 const SEQUENTIAL = [
   [0, '#F0F5F0'],
@@ -40,7 +40,7 @@ function Pick({ id, label, value, options, onChange }) {
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="max-w-[200px] rounded border border-gray-200 bg-white px-1.5 py-1 text-xs text-text-main"
+        className="max-w-[200px] h-8 rounded-md border border-border-light bg-white px-2 text-[13px] text-text-main"
       >
         {options.map(([v, text]) => (
           <option key={v} value={v}>
@@ -95,7 +95,7 @@ export default function Scatter3DView({ rows, lines, x, y, z, cz, freq, match, o
           colorscale: byYear ? YEAR_SCALE : diverging ? DIVERGING : SEQUENTIAL,
           ...(diverging ? { cmid: 0 } : {}),
           showscale: true,
-          colorbar: { title: { text: byYear ? '연도' : colorLine.unitLabel, font: { size: 11 } }, thickness: 12, len: 0.6 },
+          colorbar: { title: { text: byYear ? '연도' : colorLine.unitLabel, font: { size: 12 } }, thickness: 12, len: 0.6 },
         }),
       );
     }
@@ -106,7 +106,7 @@ export default function Scatter3DView({ rows, lines, x, y, z, cz, freq, match, o
           color: '#FFFFFF',
           size: 7,
           symbol: 'diamond',
-          line: { color: '#333333', width: 2 },
+          line: { color: '#191F1C', width: 2 },
         }),
       );
     }
@@ -115,7 +115,7 @@ export default function Scatter3DView({ rows, lines, x, y, z, cz, freq, match, o
       layout: {
         uirevision: ready ? `${xl.id}|${yl.id}|${zl.id}` : 'none',
         showlegend: true,
-        legend: { orientation: 'h', x: 0, y: 1.02, font: { size: 11 } },
+        legend: { orientation: 'h', x: 0, y: 1.02, font: { size: 12 } },
         scene: {
           xaxis: sceneAxis(ready ? `${xl.name} (${xl.unitLabel})` : ''),
           yaxis: sceneAxis(ready ? `${yl.name} (${yl.unitLabel})` : ''),

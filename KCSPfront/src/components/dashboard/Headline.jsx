@@ -7,8 +7,7 @@ function TrackRecord({ track }) {
     return <p className="text-xs text-subtext-light mt-2">예측 기록을 쌓는 중이에요({track.since}부터 {track.n}순). 3순이 넘으면 얼마나 맞았는지 보여 드려요.</p>;
   }
   return (
-    <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg bg-white/70 px-3 py-2 text-sm text-text-main">
-      <span className="material-symbols-outlined text-lg text-primary">fact_check</span>
+    <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border-light pt-3 text-sm text-text-main">
       지난 {track.n}순 예측 · 평균 오차 <b>{track.mape}%</b>
       {track.judged > 0 && (
         <>
@@ -25,16 +24,10 @@ export default function Headline({ data }) {
   const h = data.headline;
   const d = DIRECTION[h.direction] ?? DIRECTION.flat;
   return (
-    <section className="rounded-xl p-5 sm:p-6 bg-primary-light border border-primary/20">
-      <p className="text-xs font-semibold text-primary">{data.targetLabel} 한 줄 결론</p>
-      <div className="flex items-start gap-3 mt-2">
-        <span className={`material-symbols-outlined text-4xl ${d.text}`}>{d.icon}</span>
-        <div className="min-w-0">
-          <p className="text-xl sm:text-2xl font-bold text-text-main leading-snug">{h.text}</p>
-          {h.reason && <p className="text-sm text-text-main mt-1">{h.reason}</p>}
-        </div>
-      </div>
-      <div className="flex flex-wrap gap-x-6 gap-y-1 mt-4 text-sm text-subtext-light">
+    <section className="rounded-2xl bg-background-light p-5 sm:p-6">
+      <p className="text-[22px] font-bold leading-snug tracking-[-0.02em] text-text-main sm:text-2xl">{h.text}</p>
+      {h.reason && <p className="mt-1.5 text-[15px] text-subtext-light">{h.reason}</p>}
+      <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtext-light">
         <span>
           {data.previousLabel} 평균 <b className="text-text-main">{won(h.previous)}</b>
         </span>

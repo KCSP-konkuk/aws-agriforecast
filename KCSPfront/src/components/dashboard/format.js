@@ -1,13 +1,13 @@
 // 대시보드 공통 도우미.
 // 차트 라이브러리는 클래스가 아니라 색 값을 받아서, tailwind.config.js 토큰과 같은 값을 여기 한 곳에만 둔다
 export const COLOR = {
-  up: '#D9534F', // price-up (상승 빨강)
-  down: '#337AB7', // price-down (하락 파랑)
+  up: '#CC2F2F', // price-up (상승 빨강)
+  down: '#2E6BC6', // price-down (하락 파랑)
   primary: '#2C5E1A',
   accent: '#FFC700',
-  main: '#333333', // text-main
-  sub: '#64748B', // subtext-light
-  grid: '#E0E0E0', // border-light
+  main: '#191F1C', // text-main
+  sub: '#5D6560', // subtext-light
+  grid: '#EDF0ED', // line
 };
 
 // 토큰 색에 투명도만 입힌다 (1년 달력 칸)
@@ -27,9 +27,9 @@ export const signedPct = (v, digits = 0) => {
 };
 
 export const DIRECTION = {
-  up: { icon: 'trending_up', text: 'text-price-up' },
-  down: { icon: 'trending_down', text: 'text-price-down' },
-  flat: { icon: 'trending_flat', text: 'text-text-main' },
+  up: { text: 'text-price-up' },
+  down: { text: 'text-price-down' },
+  flat: { text: 'text-text-main' },
 };
 
 // "2026-10-03T12:41+09:00" → "10월 3일 12:41"
