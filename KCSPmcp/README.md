@@ -1,6 +1,6 @@
-# 도매 예측가 MCP 서버
+# 농산물 가격 MCP 서버
 
-AI 클라이언트(claude.ai · Claude Desktop · Claude Code)에서 배추 · 양파 · 홍고추 도매 예측가를 바로 묻게 해 주는 원격 MCP 서버(streamable-http).
+AI 클라이언트(claude.ai · Claude Desktop · Claude Code)에서 도매 · 소매 예측가와 품목별 실제 가격(순 평균)을 바로 묻게 해 주는 원격 MCP 서버(streamable-http).
 운영 백엔드의 공개 조회 API만 부른다 — DB·모델에는 직접 붙지 않는다. 설계는 [`docs/MCP_PLAN.md`](../docs/MCP_PLAN.md).
 
 ## 도구
@@ -8,6 +8,11 @@ AI 클라이언트(claude.ai · Claude Desktop · Claude Code)에서 배추 · �
 | 도구 | 입력 | 돌려주는 것 |
 |---|---|---|
 | `get_wholesale_forecast` | `item_name` (배추/양파/홍고추, 비우면 전체) | 진행 중인 순의 예측가(가락시장 경매가 순 평균), 단위, 평균 오차율(운영·백테스트) |
+| `get_retail_forecast` | `item_name` (양파/붉은고추/양배추/애호박/시금치/오이/파프리카, 비우면 전체) | 순 소매 예측가(서울 전통시장 경동·복조리 평균), 최근 조사가 · 직전 순 평균, 운영 평균 오차율 |
+| `get_actual_prices` | `item_name`(비우면 전 품목) · `price_type`(소매/도매/경매, 비우면 모두) · `start_date` · `end_date`(YYYY-MM-DD, 비우면 최근 90일) | 품목 · 구분별 실제 가격의 순별 평균, 조사일 수, 단위 · 출처. 진행 중인 순은 표시. 전 품목은 1년까지 |
+
+실제 가격은 통합 시계열(`/api/series`, 분석 작업대와 같은 데이터)의 `retail:` · `wholesale:` · `auction:` 지표를 순별로 평균한다.
+`홍고추` 로 물어도 `붉은고추`(KAMIS 이름)를 찾는다.
 
 ## 연결 (설치 없음)
 
@@ -16,7 +21,7 @@ AI 클라이언트(claude.ai · Claude Desktop · Claude Code)에서 배추 · �
 | claude.ai · Claude Desktop | 설정 → 커넥터 → 커스텀 커넥터 추가 → `https://agriforecast.duckdns.org/mcp` |
 | Claude Code | `claude mcp add --transport http agri-forecast https://agriforecast.duckdns.org/mcp` |
 
-그다음 "이번 순 배추 도매가 예측 알려줘" 처럼 묻는다.
+그다음 "이번 순 배추 도매가 예측 알려줘", "양파 소매가 다음 순 예측은?", "지난 석 달 순별 대파 실제 가격 보여줘" 처럼 묻는다.
 
 ## 로컬에서 고치고 확인하기
 

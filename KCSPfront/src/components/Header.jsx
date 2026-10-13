@@ -4,6 +4,8 @@ import Logo from './Logo';
 import Avatar from './Avatar';
 import Icon from './Icon';
 import { getUser } from '../auth';
+import { copyText } from '../lib/clipboard';
+import { MCP_URL } from '../lib/mcp';
 
 const NAV_ITEMS = [
   { to: '/', label: '시장 한눈에', end: true },
@@ -19,6 +21,13 @@ export default function Header() {
   const [user, setUser] = useState(getUser);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef(null);
+  const [copied, setCopied] = useState(null);
+  const copyMcpUrl = async () => {
+    try { setCopied((await copyText(MCP_URL)) ? 'ok' : 'fail'); } catch { setCopied('fail'); }
+    setTimeout(() => setCopied(null), 2500);
+  };
+  const mcpLabel = copied === 'ok' ? '복사했어요' : copied === 'fail' ? '복사하지 못했어요' : 'MCP 주소 복사';
+  const mcpButton = (className) => <button type="button" onClick={copyMcpUrl} title={`${MCP_URL} — Claude 등 MCP 클라이언트에 등록하세요`} aria-live="polite" className={className}><Icon name={copied === 'ok' ? 'check' : 'copy'} className="size-4" />{mcpLabel}</button>;
   useEffect(() => {
     const check = () => setUser(getUser());
     window.addEventListener('storage', check);
@@ -44,13 +53,14 @@ export default function Header() {
           {NAV_ITEMS.map((item) => <NavLink key={item.to} to={item.to} end={item.end} className={navClass}>{item.label}</NavLink>)}
         </nav>
         <div className="hidden items-center gap-3 xl:flex">
+          {mcpButton('inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-light px-4 text-sm font-medium text-subtext-light hover:text-primary')}
           {user ? <><Link to="/mypage/analyses" className="text-sm font-medium text-subtext-light hover:text-primary">내 분석</Link><button onClick={() => navigate('/mypage')} aria-label="내 계정" className="rounded-full"><Avatar name={user.name} /></button></> : <Link to="/login" className="button-primary !min-h-10 !px-4">로그인<Icon className="size-4" /></Link>}
         </div>
         <button ref={menuButton} className="flex size-11 items-center justify-center rounded-xl border border-border-light xl:hidden" onClick={() => setMenuOpen((v) => !v)} aria-label={menuOpen ? '메뉴 닫기' : '메뉴 열기'} aria-expanded={menuOpen} aria-controls="mobile-navigation"><Icon name={menuOpen ? 'close' : 'menu'} /></button>
       </div>
       {menuOpen && <nav id="mobile-navigation" className="border-t border-line bg-white px-4 py-4 xl:hidden" aria-label="모바일 주 메뉴">
         <div className="grid gap-1">{NAV_ITEMS.map((item) => <NavLink key={item.to} to={item.to} end={item.end} className={navClass}>{item.label}</NavLink>)}</div>
-        <div className="mt-4 flex gap-3 border-t border-line pt-4"><Link to="/mypage/analyses" className="button-secondary">내 분석</Link><Link to={user ? '/mypage' : '/login'} className="button-primary">{user ? '내 계정' : '로그인'}</Link></div>
+        <div className="mt-4 flex flex-wrap gap-3 border-t border-line pt-4">{mcpButton('button-secondary gap-2')}<Link to="/mypage/analyses" className="button-secondary">내 분석</Link><Link to={user ? '/mypage' : '/login'} className="button-primary">{user ? '내 계정' : '로그인'}</Link></div>
       </nav>}
     </header>
   );
