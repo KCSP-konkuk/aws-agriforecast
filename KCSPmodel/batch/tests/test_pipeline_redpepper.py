@@ -222,6 +222,42 @@ def test_순_첫날_받은_일별창은_다음날_다시_받는다(sandbox, monk
     assert [str(c[1]) for c in calls if c[0] == 'daily'] == ['2026-09-20']
 
 
+def test_창_끝날이_휴장이면_하루씩_당겨_받는다(sandbox, monkeypatch):
+    tmp, calls, conn = sandbox
+    monkeypatch.setattr(pl, 'kst_today', lambda: date(2026, 9, 23))
+    real = pl.fetch_daily
+
+    def daily(http, day):
+        if day == date(2026, 9, 20):              # 순 시작(9/21) 전날 거래가 없으면 garak.do 가 표를 주지 않는다
+            calls.append(('daily', day))
+            return pd.DataFrame()
+        return real(http, day)
+
+    monkeypatch.setattr(pl, 'fetch_daily', daily)
+    assert pl.main() == 0
+    asked = [c[1] for c in calls if c[0] == 'daily']
+    assert asked[-2:] == [date(2026, 9, 20), date(2026, 9, 19)]
+    ins = [a for q, a in conn.sql if q.startswith('INSERT')]
+    assert len(ins) == 1 and ins[0][0] == TARGET
+
+
+def test_빈_응답을_확정으로_쳤던_창도_다시_받는다(sandbox, monkeypatch):
+    """예전 코드는 빈 응답도 이틀이 지나면 확정(앵커)으로 쳐서, 그 순 내내 막판 가격이 비어 예측을 못 냈다"""
+    tmp, calls, conn = sandbox
+    monkeypatch.setattr(pl, 'kst_today', lambda: date(2026, 9, 23))
+    pd.DataFrame({'anchor': ['2026-09-20']}).to_csv(tmp / pl.CACHE_ANCHOR, index=False)
+    assert pl.main() == 0
+    assert date(2026, 9, 20) in [c[1] for c in calls if c[0] == 'daily']
+
+
+def test_끝내_못_받은_창은_확정으로_치지_않는다(sandbox, monkeypatch):
+    tmp, calls, conn = sandbox
+    monkeypatch.setattr(pl, 'kst_today', lambda: date(2026, 9, 23))
+    monkeypatch.setattr(pl, 'fetch_daily', lambda http, day: pd.DataFrame(columns=['date', '상']))
+    assert pl.main() == 1
+    assert pd.read_csv(tmp / pl.CACHE_ANCHOR)['anchor'].empty
+
+
 def test_필수_피쳐가_비면_쓰지_않고_실패한다(sandbox, monkeypatch):
     tmp, calls, conn = sandbox
     monkeypatch.setattr(pl, 'kst_today', lambda: date(2026, 9, 23))
