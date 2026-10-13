@@ -97,9 +97,9 @@ export default function CommunityViewMy() {
   if (loading) {
     return (
       <Layout>
-        <main className="flex-1 py-10">
-          <div className="mx-auto w-full max-w-[960px] px-4 sm:px-6">
-            <div className="text-center py-10 text-subtext-light">로딩 중...</div>
+        <main className="flex-1 pb-16 pt-8">
+          <div className="mx-auto w-full max-w-[880px] px-4 sm:px-6">
+            <p className="py-12 text-center text-sm text-subtext-light" role="status">불러오는 중이에요</p>
           </div>
         </main>
       </Layout>
@@ -109,10 +109,10 @@ export default function CommunityViewMy() {
   if (error || !post) {
     return (
       <Layout>
-        <main className="flex-1 py-10">
-          <div className="mx-auto w-full max-w-[960px] px-4 sm:px-6">
-            <div className="text-center py-10 text-red-600">{error || '게시글을 찾을 수 없습니다.'}</div>
-            <Link to="/community" className="text-primary hover:underline">목록으로 돌아가기</Link>
+        <main className="flex-1 pb-16 pt-8">
+          <div className="mx-auto w-full max-w-[880px] px-4 sm:px-6">
+            <p className="py-12 text-center text-sm text-red-700" role="alert">{error || '글을 찾을 수 없어요.'}</p>
+            <p className="text-center"><Link to="/community" className="text-sm font-semibold text-primary hover:underline">커뮤니티 목록으로</Link></p>
           </div>
         </main>
       </Layout>
@@ -121,54 +121,63 @@ export default function CommunityViewMy() {
 
   return (
     <Layout>
-      <main className="flex-1 py-10">
-        <div className="mx-auto w-full max-w-[960px] px-4 sm:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-text-main">내 글 보기</h1>
+      <main className="flex-1 pb-16 pt-8">
+        <div className="mx-auto w-full max-w-[880px] px-4 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Link
+              to={post.category ? `/community?room=${encodeURIComponent(post.category)}` : '/community'}
+              className="text-sm font-medium text-subtext-light hover:text-text-main"
+            >
+              커뮤니티{post.category ? ` · ${post.category}` : ''}
+            </Link>
             <div className="flex gap-2">
               <Link
                 to={`/community/${id}/edit`}
-                className="px-5 h-10 inline-flex items-center justify-center rounded-lg bg-primary text-white font-bold hover:bg-primary-hover"
+                className="inline-flex h-9 items-center rounded-lg bg-background-light px-4 text-sm font-semibold text-text-main hover:bg-border-light"
               >
-                글 수정
+                수정
               </Link>
               <button
+                type="button"
                 onClick={handleDelete}
-                className="px-5 h-10 rounded-lg bg-red-500 text-white font-bold hover:bg-red-600"
+                className="h-9 rounded-lg px-4 text-sm font-semibold text-red-700 hover:bg-red-50"
               >
-                글 삭제
+                삭제
               </button>
             </div>
           </div>
 
-          {actionError && <p className="mb-4 text-sm text-red-600">{actionError}</p>}
-          <div className="bg-white border border-border-light rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-text-main mb-3">{post.title}</h2>
-            <p className="text-sm text-subtext-light mb-4">
-              작성자: {post.authorName || '익명'} | 작성일: {formatDate(post.createdAt)} | 조회수: {post.viewCount || 0}
+          {actionError && <p className="mt-3 text-sm text-red-700" role="alert">{actionError}</p>}
+          <article className="mt-3 border-b border-line pb-8">
+            <h1 className="text-2xl font-bold leading-snug tracking-[-0.02em] text-text-main">{post.title}</h1>
+            <p className="mt-2 text-sm text-subtext-light">
+              {post.authorName || '익명'} · {formatDate(post.createdAt)} · 조회 {post.viewCount || 0}
             </p>
-            <div className="text-text-main leading-relaxed whitespace-pre-wrap">{post.content}</div>
+            <div className="mt-6 whitespace-pre-wrap text-[15px] leading-relaxed text-text-main">{post.content}</div>
             {post.analysisQuery && (
               <div className="mt-6">
                 <AnalysisPreview query={post.analysisQuery} />
               </div>
             )}
-          </div>
+          </article>
 
           <section className="mt-8">
-            <h3 className="text-lg font-bold text-text-main mb-3">댓글 {comments.length}</h3>
-            <div className="space-y-3">
-              {comments.map((commentItem) => (
-                <div key={commentItem.id} className="p-4 border border-border-light rounded-lg bg-white">
-                  <p className="text-sm text-text-main">
-                    <span className="font-semibold">{commentItem.authorName || '익명'}</span> · {formatDate(commentItem.createdAt)}
-                    <br />
-                    {commentItem.content}
-                  </p>
-                </div>
-              ))}
-            </div>
-            {commentError && <p className="mt-4 text-sm text-red-600">{commentError}</p>}
+            <h2 className="text-lg font-bold tracking-[-0.02em] text-text-main">댓글 {comments.length}</h2>
+            {comments.length === 0 ? (
+              <p className="mt-3 border-t border-line py-6 text-sm text-subtext-light">아직 댓글이 없어요.</p>
+            ) : (
+              <ul className="mt-3 divide-y divide-line border-t border-line">
+                {comments.map((commentItem) => (
+                  <li key={commentItem.id} className="py-4">
+                    <p className="text-[13px] text-subtext-light">
+                      <span className="font-semibold text-text-main">{commentItem.authorName || '익명'}</span> · {formatDate(commentItem.createdAt)}
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap text-[15px] text-text-main">{commentItem.content}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {commentError && <p className="mt-4 text-sm text-red-700" role="alert">{commentError}</p>}
             {!isLoggedIn() ? (
               <div className="mt-4">
                 <LoginRequired compact title="댓글을 쓰려면 로그인해 주세요." />
@@ -179,14 +188,14 @@ export default function CommunityViewMy() {
                 type="text"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                className="flex-1 px-4 py-2 rounded-lg border border-border-light bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+                className="h-11 min-w-0 flex-1 rounded-lg border border-border-light bg-white px-4 text-[15px] text-text-main focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="댓글을 입력하세요"
                 disabled={commentLoading}
               />
               <button
                 type="submit"
                 disabled={commentLoading}
-                className="px-4 h-10 rounded-lg bg-primary text-white font-bold hover:bg-primary-hover disabled:opacity-50"
+                className="h-11 shrink-0 rounded-lg bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
               >
                 {commentLoading ? '등록 중...' : '등록'}
               </button>

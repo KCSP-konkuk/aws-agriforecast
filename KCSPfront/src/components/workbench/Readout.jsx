@@ -17,21 +17,21 @@ export default function Readout({ lines, prepared, freq }) {
   const items = lines.filter((l) => prepared[l.id]?.length);
   if (!items.length) return null;
   return (
-    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+    <dl className="grid gap-x-6 gap-y-3 border-t border-line pt-4 sm:grid-cols-2 xl:grid-cols-4">
       {items.map((l) => {
         const series = prepared[l.id];
         const [value, note] = phrase(l, series);
         return (
-          <div key={l.id} className="rounded-lg bg-background-light px-3 py-2">
-            <p className="flex items-center gap-1 truncate text-[11px] text-subtext-light">
+          <div key={l.id} className="min-w-0">
+            <dt className="flex items-center gap-1.5 truncate text-xs text-subtext-light">
               <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: colorOf(l.color) }} />
               {l.name} · {keyLabel(series[series.length - 1][0], freq)}
-            </p>
-            <p className="text-base font-bold text-text-main">{value}</p>
-            {note && <p className="text-[11px] text-subtext-light">{note}</p>}
+            </dt>
+            <dd className="text-base font-bold text-text-main">{value}</dd>
+            {note && <dd className="text-xs text-subtext-light">{note}</dd>}
           </div>
         );
       })}
-    </div>
+    </dl>
   );
 }

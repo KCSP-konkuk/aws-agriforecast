@@ -26,7 +26,7 @@ export default function Home() {
 
   return (
     <Layout>
-      <main className="mx-auto w-full max-w-6xl space-y-12 px-4 py-8 sm:px-6 lg:py-12">
+      <main className="w-full space-y-16 px-4 pb-16 pt-8 sm:px-6 lg:px-10 lg:pt-12">
         <HomeHero catalog={catalog} />
         {home?.questions?.length > 0 && <AskPanel questions={home.questions} />}
         <DataMap catalog={catalog} />

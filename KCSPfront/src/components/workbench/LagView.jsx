@@ -36,7 +36,7 @@ export default function LagView({ lines, prepared, base, freq, conditioned, onBa
             id="lag-base"
             value={lines.indexOf(baseLine)}
             onChange={(e) => onBase(Number(e.target.value))}
-            className="max-w-[220px] rounded border border-gray-200 bg-white px-1.5 py-1 text-xs text-text-main"
+            className="max-w-[220px] h-8 rounded-md border border-border-light bg-white px-2 text-[13px] text-text-main"
           >
             {lines.map((l, i) => (
               <option key={l.id} value={i}>
@@ -49,7 +49,7 @@ export default function LagView({ lines, prepared, base, freq, conditioned, onBa
       </div>
 
       <div className="overflow-x-auto">
-        <div className="grid min-w-[560px] gap-[2px] text-[11px]" style={{ gridTemplateColumns: `minmax(110px,160px) repeat(${lags.length}, minmax(0,1fr))` }}>
+        <div className="grid min-w-[560px] gap-[2px] text-xs" style={{ gridTemplateColumns: `minmax(110px,160px) repeat(${lags.length}, minmax(0,1fr))` }}>
           <div className="px-1 py-1 text-subtext-light">늦춘 만큼 →</div>
           {lags.map((k) => (
             <div key={k} className="py-1 text-center text-subtext-light">

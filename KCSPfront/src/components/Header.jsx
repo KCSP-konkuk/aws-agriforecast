@@ -63,47 +63,58 @@ export default function Header() {
   const mcpLabel = copied === 'ok' ? '복사했어요' : copied === 'fail' ? '복사하지 못했어요' : 'MCP 주소 복사';
   const mcpIcon = copied === 'ok' ? 'check' : 'content_copy';
 
+  // 지금 화면 메뉴는 굵은 글자 + 아래 초록 막대, 나머지는 보조 글자색
   const navClass = ({ isActive }) =>
-    `text-sm font-medium transition-colors ${isActive ? 'text-primary font-bold' : 'text-text-main hover:text-primary'}`;
+    `relative flex h-full items-center text-[15px] transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full ${
+      isActive ? 'font-semibold text-text-main after:bg-primary' : 'font-medium text-subtext-light hover:text-text-main after:bg-transparent'
+    }`;
 
   const account = isLoggedIn ? (
-    <button onClick={handleProfileClick} title={user?.name || '마이페이지'} className="rounded-full hover:ring-2 hover:ring-primary/50 transition-all">
+    <button onClick={handleProfileClick} title={user?.name || '마이페이지'} className="rounded-full">
       <Avatar name={user?.name} />
     </button>
   ) : (
     <button
       onClick={handleProfileClick}
-      className="text-sm font-semibold text-white bg-primary hover:bg-primary-hover px-4 py-2 rounded-lg transition-colors"
+      className="h-9 rounded-lg bg-primary px-3.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
     >
       로그인
     </button>
   );
 
-  return (
-    <header className="border-b border-primary/20 bg-white">
-      <div className="mx-auto flex max-w-[1280px] items-center justify-between px-4 sm:px-6 lg:px-10 py-3">
-        <Logo />
+  const mcpButton = (extra = '') => (
+    <button
+      type="button"
+      onClick={copyMcpUrl}
+      title={`${MCP_URL} — Claude 등 MCP 클라이언트에 등록하세요`}
+      className={`flex items-center gap-1 rounded-lg text-sm font-medium text-subtext-light transition-colors hover:bg-background-light hover:text-text-main ${extra}`}
+    >
+      <span className="material-symbols-outlined text-[18px] leading-none">{mcpIcon}</span>
+      {mcpLabel}
+    </button>
+  );
 
-        <div className="hidden md:flex items-center gap-9">
-          <nav className="flex items-center gap-9">
+  return (
+    <header className="sticky top-0 z-30 border-b border-line bg-white">
+      <div className="mx-auto flex h-14 max-w-[1280px] items-center justify-between gap-6 px-4 sm:px-6 lg:px-10">
+        <div className="flex h-full items-center gap-10">
+          <Logo />
+          <nav className="hidden h-full items-center gap-7 md:flex" aria-label="주 메뉴">
             {NAV_ITEMS.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.end} className={navClass}>{item.label}</NavLink>
+              <NavLink key={item.to} to={item.to} end={item.end} className={navClass}>
+                {item.label}
+              </NavLink>
             ))}
           </nav>
+        </div>
+
+        <div className="hidden items-center gap-2 md:flex">
+          {mcpButton('h-9 px-2.5')}
           {account}
-          <button
-            type="button"
-            onClick={copyMcpUrl}
-            title={`${MCP_URL} — Claude 등 MCP 클라이언트에 등록하세요`}
-            className="-ml-6 flex items-center gap-1 text-sm font-semibold text-primary border border-primary/40 hover:bg-primary-light px-3 py-1.5 rounded-lg transition-colors"
-          >
-            <span className="material-symbols-outlined text-lg leading-none">{mcpIcon}</span>
-            {mcpLabel}
-          </button>
         </div>
 
         <button
-          className="md:hidden flex items-center p-2 -mr-2 text-text-main"
+          className="-mr-2 flex items-center p-2 text-text-main md:hidden"
           onClick={() => setMenuOpen((open) => !open)}
           aria-label={menuOpen ? '메뉴 닫기' : '메뉴 열기'}
           aria-expanded={menuOpen}
@@ -113,31 +124,25 @@ export default function Header() {
       </div>
 
       {menuOpen && (
-        <nav className="md:hidden mx-auto flex max-w-[1280px] flex-col gap-1 px-4 pb-4">
+        <nav className="mx-auto flex max-w-[1280px] flex-col border-t border-line px-4 pb-3 md:hidden" aria-label="주 메뉴">
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
-              className={({ isActive }) => `px-3 py-2.5 rounded-lg ${navClass({ isActive })} ${isActive ? 'bg-primary-light' : ''}`}
+              className={({ isActive }) =>
+                `border-b border-line px-1 py-3 text-[15px] ${isActive ? 'font-semibold text-primary' : 'font-medium text-text-main'}`
+              }
             >
               {item.label}
             </NavLink>
           ))}
-          <button
-            onClick={handleProfileClick}
-            className="mt-2 px-3 py-2.5 rounded-lg text-left text-sm font-semibold text-primary border border-primary/30"
-          >
-            {isLoggedIn ? `${user?.name || '내'} 계정` : '로그인'}
-          </button>
-          <button
-            type="button"
-            onClick={copyMcpUrl}
-            className="flex items-center gap-1 px-3 py-2.5 rounded-lg text-left text-sm font-semibold text-primary border border-primary/30"
-          >
-            <span className="material-symbols-outlined text-lg leading-none">{mcpIcon}</span>
-            {mcpLabel}
-          </button>
+          <div className="flex items-center justify-between gap-2 pt-3">
+            {mcpButton('h-10 px-1')}
+            <button onClick={handleProfileClick} className="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-white">
+              {isLoggedIn ? `${user?.name || '내'} 계정` : '로그인'}
+            </button>
+          </div>
         </nav>
       )}
     </header>

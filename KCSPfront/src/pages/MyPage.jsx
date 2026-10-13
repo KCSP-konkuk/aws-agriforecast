@@ -11,23 +11,23 @@ import { RULES, confirmProblem } from '../validation';
 function Result({ result }) {
   if (!result) return null;
   return (
-    <p className={`text-sm ${result.tone === 'success' ? 'text-primary' : 'text-red-600'}`} role="status">{result.text}</p>
+    <p className={`text-sm ${result.tone === 'success' ? 'font-medium text-primary' : 'text-red-700'}`} role="status">{result.text}</p>
   );
 }
 
 function Section({ title, description, children }) {
   return (
-    <section className="flex flex-col gap-5 border-t border-border-light pt-8 first:border-t-0 first:pt-0">
+    <section className="flex flex-col gap-5 border-t border-line pt-8">
       <div>
-        <h3 className="text-xl font-bold text-text-main">{title}</h3>
-        {description && <p className="text-sm text-subtext-light mt-1">{description}</p>}
+        <h2 className="text-lg font-bold tracking-[-0.02em] text-text-main">{title}</h2>
+        {description && <p className="mt-1 text-sm text-subtext-light">{description}</p>}
       </div>
       {children}
     </section>
   );
 }
 
-const buttonClass = 'h-11 px-5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+const buttonClass = 'h-11 rounded-lg bg-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50';
 
 export default function MyPage() {
   const navigate = useNavigate();
@@ -144,15 +144,15 @@ export default function MyPage() {
 
   return (
     <Layout>
-      <div className="flex flex-1 justify-center py-5 sm:py-10 px-4 sm:px-6 lg:px-10">
-        <div className="flex w-full max-w-6xl flex-1 flex-col lg:flex-row gap-8">
+      <div className="flex flex-1 justify-center px-4 pb-16 pt-8 sm:px-6 lg:px-10">
+        <div className="flex w-full max-w-6xl flex-1 flex-col gap-8 lg:flex-row lg:gap-16">
           <MyPageSidebar user={user} onLogout={handleLogout} />
 
           <main className="flex-1 min-w-0">
-            <div className="bg-white p-6 sm:p-8 rounded-lg border border-border-light flex flex-col gap-8">
-              <div className="pb-2">
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-text-main">계정 정보</h2>
-                <p className="text-base text-subtext-light mt-1">이름과 비밀번호를 바꾸거나 탈퇴할 수 있습니다.</p>
+            <div className="flex flex-col gap-8">
+              <div>
+                <h1 className="text-2xl font-bold tracking-[-0.02em] text-text-main">계정 정보</h1>
+                <p className="mt-2 text-[15px] text-subtext-light">이름과 비밀번호를 바꾸거나 탈퇴할 수 있어요.</p>
               </div>
 
               <Section title="프로필">
@@ -196,24 +196,24 @@ export default function MyPage() {
                 {!withdrawOpen ? (
                   <div>
                     <button type="button" onClick={() => setWithdrawOpen(true)}
-                      className="h-11 px-5 rounded-lg border border-red-300 text-red-600 text-sm font-bold hover:bg-red-50">
+                      className="h-11 rounded-lg border border-border-light px-5 text-sm font-semibold text-red-700 hover:bg-red-50">
                       탈퇴하기
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={withdraw} className="flex flex-col gap-4 rounded-lg border border-red-200 bg-red-50/50 p-4" noValidate>
-                    <p className="text-sm text-text-main font-semibold">정말 탈퇴할까요? 확인을 위해 비밀번호를 입력해 주세요.</p>
+                  <form onSubmit={withdraw} className="flex flex-col gap-4 rounded-xl bg-red-50 p-5" noValidate>
+                    <p className="text-sm font-semibold text-text-main">정말 탈퇴할까요? 확인을 위해 비밀번호를 입력해 주세요.</p>
                     <div className="max-w-sm">
                       <PasswordField label="비밀번호" id="withdraw-password" value={withdrawPw} autoComplete="current-password"
                         onChange={(e) => { setWithdrawPw(e.target.value); setWithdrawResult(null); }} />
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                       <button type="submit" disabled={withdrawing}
-                        className="h-11 px-5 rounded-lg bg-red-600 text-white text-sm font-bold hover:bg-red-700 disabled:opacity-50">
+                        className="h-11 rounded-lg bg-red-700 px-5 text-sm font-semibold text-white hover:bg-red-800 disabled:opacity-50">
                         {withdrawing ? '처리 중...' : '탈퇴'}
                       </button>
                       <button type="button" onClick={() => { setWithdrawOpen(false); setWithdrawPw(''); setWithdrawResult(null); }}
-                        className="h-11 px-5 rounded-lg bg-white border border-border-light text-sm font-semibold text-text-main hover:bg-background-light">
+                        className="h-11 rounded-lg border border-border-light bg-white px-5 text-sm font-semibold text-text-main hover:bg-background-light">
                         취소
                       </button>
                       <Result result={withdrawResult} />

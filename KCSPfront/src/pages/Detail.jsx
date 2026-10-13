@@ -9,6 +9,10 @@ import PredictionHistory from '../components/PredictionHistory';
 import { api } from '../api/api';
 import { toLocalDate } from '../date';
 
+// 실제 = 진한 회색 실선, AI 예측 = 브랜드 초록 점선 (PredictionHistory 와 같은 색)
+const COLOR_ACTUAL = '#191F1C';
+const COLOR_PRED = '#2C5E1A';
+
 // 예측 모델이 있는 품목만 보여준다 (백엔드 PredictionService.ITEM_TABLE 과 맞출 것)
 // agri_price 에는 당근·양배추 가격도 있지만 예측 모델을 채택하지 않았다
 const ITEM_ORDER = ['배추', '양파', '홍고추'];
@@ -110,15 +114,15 @@ function CustomTooltip({ active, payload, label, unit }) {
   const hasActual = point.price != null;
   const displayLabel = hasActual ? label : point.predictionLabel ?? label;
   return (
-    <div className="p-3 bg-surface-light border border-border-light rounded-lg shadow-lg text-sm">
-      <p className="font-semibold text-text-main mb-1">{displayLabel}</p>
+    <div className="rounded-lg border border-border-light bg-white px-3 py-2 text-[13px] shadow">
+      <p className="mb-1 font-semibold text-text-main">{displayLabel}</p>
       {priceEntry?.value != null && (
-        <p style={{ color: '#4A90E2' }}>
+        <p style={{ color: COLOR_ACTUAL }}>
           경매가: {priceEntry.value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
         </p>
       )}
       {!isActualBridge && predEntry?.value != null && (
-        <p style={{ color: '#F59E0B' }}>
+        <p className="font-semibold" style={{ color: COLOR_PRED }}>
           AI 예측가{hasActual && point.predictionLabel ? ` (${point.predictionLabel})` : ''}: {predEntry.value?.toLocaleString()}원{unit ? ` / ${unit}` : ''}
         </p>
       )}
@@ -126,21 +130,44 @@ function CustomTooltip({ active, payload, label, unit }) {
   );
 }
 
-function KpiCard({ label, value, sub, valueColor, loading }) {
+// 시세 머리 — 증권 앱처럼 최근 경매가와 전일 대비를 크게, 기간 최고·최저는 옆에
+function PriceSummary({ kpi, unit, loading }) {
+  const tone =
+    !kpi || kpi.change == null || kpi.change === 0 ? 'text-subtext-light' : kpi.change > 0 ? 'text-price-up' : 'text-price-down';
+  const value = (v, big) =>
+    loading ? (
+      <span className={`inline-block animate-pulse rounded bg-background-light align-middle ${big ? 'h-8 w-36' : 'h-6 w-24'}`} />
+    ) : kpi ? (
+      `${v.toLocaleString()}원`
+    ) : (
+      '-'
+    );
   return (
-    <div className="p-5 bg-surface-light rounded-xl border border-border-light shadow-sm">
-      <p className="text-sm font-medium text-subtext-light">{label}</p>
-      <div className="flex items-baseline gap-2 mt-1">
-        {loading ? (
-          <div className="h-8 bg-gray-200 rounded animate-pulse w-28" />
-        ) : (
-          <>
-            <p className={`text-3xl font-bold ${valueColor || 'text-text-main '}`}>{value}</p>
-            {sub && <span className={`text-sm font-semibold ${valueColor || 'text-subtext-light '}`}>{sub}</span>}
-          </>
+    <section className="flex flex-wrap items-end justify-between gap-x-10 gap-y-5 border-b border-line pb-6" aria-busy={loading}>
+      <div>
+        <p className="text-[13px] text-subtext-light">최근 경매가 · 상 등급</p>
+        <p className="mt-1.5 flex items-baseline gap-2">
+          <span className="text-[32px] font-bold leading-none tracking-[-0.02em] text-text-main">{value(kpi?.current, true)}</span>
+          <span className="text-sm text-subtext-light">/ {unit}</span>
+        </p>
+        {!loading && kpi && kpi.change !== null && (
+          <p className={`mt-2 text-[15px] font-semibold ${tone}`}>
+            전일 대비 {kpi.change > 0 ? '+' : kpi.change < 0 ? '−' : ''}
+            {Math.abs(kpi.change).toLocaleString()}원{kpi.pct !== null && ` (${kpi.pct > 0 ? '+' : ''}${kpi.pct}%)`}
+          </p>
         )}
       </div>
-    </div>
+      <dl className="flex gap-10">
+        <div>
+          <dt className="text-[13px] text-subtext-light">기간 최고</dt>
+          <dd className="mt-1 text-lg font-bold text-text-main">{value(kpi?.max)}</dd>
+        </div>
+        <div>
+          <dt className="text-[13px] text-subtext-light">기간 최저</dt>
+          <dd className="mt-1 text-lg font-bold text-text-main">{value(kpi?.min)}</dd>
+        </div>
+      </dl>
+    </section>
   );
 }
 
@@ -355,73 +382,61 @@ export default function Detail() {
   // 눈금을 8개 안팎으로. 주별·월별처럼 점이 적으면 모두 보여준다
   const xAxisInterval = useMemo(() => Math.max(0, Math.ceil(chartData.length / 8) - 1), [chartData.length]);
 
-  const periodBtn = (p, label, icon) => (
+  // 기간·단위 고르기 — 회색 바탕에 고른 칸만 흰색
+  const segment = (active, onClick, label) => (
     <button
-      className={`flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg transition ${
-        period === p
-          ? 'bg-primary/20 text-primary'
-          : 'bg-gray-100 hover:bg-gray-200 text-text-main '
+      type="button"
+      aria-pressed={active}
+      className={`h-8 rounded-md px-3 text-sm font-semibold transition-colors ${
+        active ? 'bg-white text-text-main ring-1 ring-border-light' : 'text-subtext-light hover:text-text-main'
       }`}
-      onClick={() => setPeriod(p)}
-    >
-      {icon && <span className="material-symbols-outlined text-lg">{icon}</span>}
-      {label}
-    </button>
-  );
-
-  const unitBtn = (u, label) => (
-    <button
-      className={`flex-1 text-center text-sm py-1 rounded-md transition ${
-        unit === u
-          ? 'bg-surface-light shadow-sm font-semibold text-text-main '
-          : 'text-subtext-light '
-      }`}
-      onClick={() => setUnit(u)}
+      onClick={onClick}
     >
       {label}
     </button>
   );
+  const periodBtn = (p, label) => segment(period === p, () => setPeriod(p), label);
+  const unitBtn = (u, label) => segment(unit === u, () => setUnit(u), label);
 
   return (
     <Layout>
-      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-full px-4 pb-16 pt-8 sm:px-6 lg:px-10">
         <div className="space-y-8">
           {/* 페이지 헤딩 */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-col gap-1">
-              <h2 className="text-3xl font-extrabold tracking-tight text-text-main">
-                도매가 예측{selectedItem ? `: ${selectedItem}` : ''}
-              </h2>
-              <p className="text-base font-normal text-subtext-light">
+              <h1 className="text-2xl font-bold leading-tight tracking-[-0.02em] text-text-main">
+                도매가 예측{selectedItem ? ` · ${selectedItem}` : ''}
+              </h1>
+              <p className="mt-1 text-[15px] text-subtext-light">
                 가락시장 경매가 추이와 다음 순 AI 예측, 그리고 지난 예측이 얼마나 맞았는지 봐요.
               </p>
-              <p className="text-sm text-subtext-light">
+              <p className="text-[13px] text-subtext-light">
                 가격 기준: 서울 가락시장 도매 경매가 · 상 등급 · 출처 농넷(서울시농수산식품공사). AI 예측도 같은 기준입니다.
               </p>
             </div>
             {forecastItem && (
               <Link
                 to={`/analysis?tpl=forecast&item=${encodeURIComponent(forecastItem)}`}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-white px-4 py-2 text-sm font-semibold text-primary hover:border-primary"
+                className="inline-flex h-9 items-center rounded-lg bg-background-light px-3.5 text-sm font-semibold text-text-main hover:bg-border-light"
               >
-                <span className="material-symbols-outlined text-lg">construction</span>
-                작업대에서 예측 ↔ 실제 겹쳐 보기
+                작업대에서 예측과 실제 겹쳐 보기
               </Link>
             )}
           </div>
 
           {/* 필터 & 컨트롤 패널 */}
-          <div className="p-4 bg-surface-light rounded-xl border border-border-light shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
 
               {/* 품종 선택 */}
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-text-main" htmlFor="item-select">
-                  품종 선택
+                <label className="text-[13px] font-medium text-subtext-light" htmlFor="item-select">
+                  품목
                 </label>
                 <select
                   id="item-select"
-                  className="w-full h-10 px-3 text-base bg-background-light border border-border-light rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition"
+                  className="h-10 min-w-[160px] rounded-lg border border-border-light bg-white px-3 text-[15px] text-text-main focus:border-primary"
                   value={selectedItemName ?? ''}
                   onChange={(e) => setSelectedItemName(e.target.value)}
                 >
@@ -433,19 +448,19 @@ export default function Detail() {
 
               {/* 기간 설정 */}
               <div className="flex flex-col gap-2">
-                <p className="text-sm font-semibold text-text-main">기간 설정</p>
-                <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-[13px] font-medium text-subtext-light">기간</p>
+                <div className="inline-flex flex-wrap rounded-lg bg-background-light p-1">
                   {periodBtn('1month', '최근 1개월')}
                   {periodBtn('1year', '1년')}
                   {periodBtn('all', '전체')}
-                  {periodBtn('custom', '지정', 'calendar_month')}
+                  {periodBtn('custom', '직접 지정')}
                 </div>
               </div>
 
               {/* 단위 */}
               <div className="flex flex-col gap-2">
-                <p className="text-sm font-semibold text-text-main">단위</p>
-                <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg">
+                <p className="text-[13px] font-medium text-subtext-light">단위</p>
+                <div className="inline-flex rounded-lg bg-background-light p-1">
                   {unitBtn('daily', '일별')}
                   {unitBtn('weekly', '주별')}
                   {unitBtn('monthly', '월별')}
@@ -458,125 +473,82 @@ export default function Detail() {
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <input
                   type="date"
-                  className="h-10 px-3 text-sm bg-background-light border border-border-light rounded-lg focus:ring-2 focus:ring-primary transition"
+                  className="h-10 rounded-lg border border-border-light bg-white px-3 text-sm text-text-main focus:border-primary"
                   value={customStart}
                   onChange={(e) => setCustomStart(e.target.value)}
                 />
                 <span className="text-subtext-light font-medium">~</span>
                 <input
                   type="date"
-                  className="h-10 px-3 text-sm bg-background-light border border-border-light rounded-lg focus:ring-2 focus:ring-primary transition"
+                  className="h-10 rounded-lg border border-border-light bg-white px-3 text-sm text-text-main focus:border-primary"
                   value={customEnd}
                   onChange={(e) => setCustomEnd(e.target.value)}
                 />
-                <p className={`text-sm ${customInvalid ? 'text-red-600' : 'text-subtext-light'}`}>
+                <p className={`text-sm ${customInvalid ? 'text-red-700' : 'text-subtext-light'}`}>
                   {customInvalid
-                    ? '시작일이 종료일보다 늦습니다.'
-                    : customStart && customEnd ? '' : '시작일과 종료일을 고르면 바로 조회합니다.'}
+                    ? '시작일이 종료일보다 늦어요.'
+                    : customStart && customEnd ? '' : '시작일과 종료일을 고르면 바로 조회해요.'}
                 </p>
               </div>
             )}
           </div>
 
-          {/* KPI 카드 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <KpiCard
-              label="최근 경매가 (상 등급)"
-              value={kpi ? `${kpi.current.toLocaleString()}원` : '-'}
-              sub={`/ ${currentUnit}`}
-              loading={loading}
-            />
-            <KpiCard
-              label="전일 대비"
-              value={
-                kpi && kpi.change !== null
-                  ? `${kpi.change > 0 ? '▲' : kpi.change < 0 ? '▼' : '―'} ${Math.abs(kpi.change).toLocaleString()}원`
-                  : '-'
-              }
-              sub={kpi && kpi.pct !== null ? `(${kpi.pct > 0 ? '+' : ''}${kpi.pct}%)` : ''}
-              valueColor={
-                kpi && kpi.change !== null
-                  ? kpi.change > 0
-                    ? 'text-price-up'
-                    : kpi.change < 0
-                    ? 'text-price-down'
-                    : 'text-subtext-light '
-                  : ''
-              }
-              loading={loading}
-            />
-            <KpiCard
-              label="기간 최고가"
-              value={kpi ? `${kpi.max.toLocaleString()}원` : '-'}
-              sub={`/ ${currentUnit}`}
-              loading={loading}
-            />
-            <KpiCard
-              label="기간 최저가"
-              value={kpi ? `${kpi.min.toLocaleString()}원` : '-'}
-              sub={`/ ${currentUnit}`}
-              loading={loading}
-            />
-          </div>
+          {/* 시세 머리 */}
+          <PriceSummary kpi={kpi} unit={currentUnit} loading={loading} />
 
           {/* 가격 추이 차트 */}
-          <div className="p-6 bg-surface-light rounded-xl border border-border-light shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <section>
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
               <div>
-                <h3 className="text-lg font-bold text-text-main">
-                  {selectedItem ?? '품목'} 가격 추이
-                </h3>
-                <p className="text-sm text-subtext-light">기간: {periodLabel} · 서울 가락시장 경매가(상 등급)</p>
+                <h2 className="text-lg font-bold tracking-[-0.02em] text-text-main">{selectedItem ?? '품목'} 가격 추이</h2>
+                <p className="mt-0.5 text-[13px] text-subtext-light">기간 {periodLabel} · 서울 가락시장 경매가(상 등급)</p>
               </div>
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#4A90E2' }}></div>
-                  <span className="text-subtext-light">경매가</span>
-                </div>
+              <div className="flex items-center gap-4 text-[13px] text-subtext-light">
+                <span className="flex items-center gap-2">
+                  <svg width="20" height="8" aria-hidden="true"><line x1="0" y1="4" x2="20" y2="4" stroke={COLOR_ACTUAL} strokeWidth="2" /></svg>
+                  경매가
+                </span>
                 {showPrediction && (
-                  <div className="flex items-center gap-2">
-                    <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="#F59E0B" strokeWidth="2" /></svg>
-                    <span className="text-subtext-light">AI 예측가</span>
-                  </div>
+                  <span className="flex items-center gap-2">
+                    <svg width="20" height="8" aria-hidden="true"><line x1="0" y1="4" x2="20" y2="4" stroke={COLOR_PRED} strokeWidth="2" strokeDasharray="4 3" /></svg>
+                    AI 예측가
+                  </span>
                 )}
               </div>
             </div>
 
             {loading ? (
-              <div className="flex items-center justify-center h-64 bg-background-light rounded-lg">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                  <p className="text-sm text-subtext-light">데이터 로딩중...</p>
-                </div>
+              <div className="flex h-[300px] items-center justify-center gap-2.5 text-sm text-subtext-light" role="status">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-border-light border-t-primary" aria-hidden="true" />
+                불러오는 중이에요
               </div>
             ) : chartData.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 bg-background-light rounded-lg border border-dashed border-border-light">
-                <span className="material-symbols-outlined text-5xl text-subtext-light mb-3">bar_chart</span>
-                <p className="text-lg font-semibold text-subtext-light">데이터가 없습니다</p>
-                <p className="text-sm text-subtext-light mt-1">다른 품목이나 기간을 선택해 보세요</p>
+              <div className="flex h-[300px] flex-col items-center justify-center rounded-xl bg-background-light text-center">
+                <p className="text-[15px] font-semibold text-text-main">이 기간에는 데이터가 없어요</p>
+                <p className="mt-1 text-sm text-subtext-light">다른 품목이나 기간을 골라 보세요.</p>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" />
+                  <CartesianGrid stroke="#EDF0ED" vertical={false} />
                   <XAxis
                     dataKey="date"
                     tickFormatter={(d, index) => (chartData[index]?.price == null && chartData[index]?.predictionLabel) || formatXTick(d, unit)}
-                    tick={{ fontSize: 11, fill: '#64748B' }}
+                    tick={{ fontSize: 12, fill: '#5D6560' }}
                     interval={xAxisInterval}
                   />
                   <YAxis
                     tickFormatter={(v) => `${v.toLocaleString()}`}
-                    tick={{ fontSize: 11, fill: '#64748B' }}
+                    tick={{ fontSize: 12, fill: '#5D6560' }}
                     width={75}
                   />
                   <Tooltip content={<CustomTooltip unit={currentUnit} />} />
                   <Line
                     type="monotone"
                     dataKey="price"
-                    stroke="#4A90E2"
+                    stroke={COLOR_ACTUAL}
                     strokeWidth={2}
-                    dot={chartData.length <= 60 ? { r: 3, fill: '#4A90E2' } : false}
+                    dot={chartData.length <= 60 ? { r: 3, fill: COLOR_ACTUAL } : false}
                     activeDot={{ r: 5 }}
                     connectNulls={false}
                   />
@@ -584,37 +556,39 @@ export default function Detail() {
                     <Line
                       type="monotone"
                       dataKey="predictedPrice"
-                      stroke="#F59E0B"
+                      stroke={COLOR_PRED}
                       strokeWidth={2}
+                      strokeDasharray="5 4"
                       dot={chartData.length <= 60
                         ? (p) => {
                             if (p.value == null || p.payload?.isActualBridge) return null;
-                            return <circle key={p.key} cx={p.cx} cy={p.cy} r={3} fill="#F59E0B" />;
+                            return <circle key={p.key} cx={p.cx} cy={p.cy} r={3} fill={COLOR_PRED} />;
                           }
                         : false}
                       activeDot={(p) => p.value == null || p.payload?.isActualBridge
                         ? null
-                        : <circle key={p.key} cx={p.cx} cy={p.cy} r={5} fill="#F59E0B" />}
+                        : <circle key={p.key} cx={p.cx} cy={p.cy} r={5} fill={COLOR_PRED} />}
                       connectNulls={false}
                     />
                   )}
                 </LineChart>
               </ResponsiveContainer>
             )}
-          </div>
+          </section>
 
           {/* 예측 적중 이력 */}
           {selectedItem && <PredictionHistory itemName={selectedItem} unit={currentUnit} />}
 
           {/* 상세 데이터 테이블 */}
-          <div className="p-6 bg-surface-light rounded-xl border border-border-light shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-              <h3 className="text-lg font-bold text-text-main">상세 데이터</h3>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-subtext-light">search</span>
+          <section className="border-t border-line pt-8">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-4">
+              <h2 className="text-lg font-bold tracking-[-0.02em] text-text-main">상세 데이터</h2>
+              <div className="relative w-full md:w-64">
+                <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xl text-subtext-light" aria-hidden="true">search</span>
                 <input
-                  className="w-full md:w-64 h-10 pl-10 pr-4 text-sm bg-background-light border border-border-light rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition"
-                  placeholder="날짜 검색 (예: 2024-01)..."
+                  aria-label="날짜 검색"
+                  className="h-10 w-full rounded-lg border border-border-light bg-white pl-10 pr-4 text-sm text-text-main focus:border-primary"
+                  placeholder="날짜 검색 (예: 2024-01)"
                   type="text"
                   value={tableSearch}
                   onChange={(e) => setTableSearch(e.target.value)}
@@ -623,19 +597,19 @@ export default function Detail() {
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="text-xs text-subtext-light uppercase bg-background-light">
+                <thead className="border-b border-border-light text-[13px] text-subtext-light">
                   <tr>
-                    <th className="px-6 py-3 rounded-l-lg" scope="col">날짜</th>
-                    <th className="px-6 py-3" scope="col">가락시장 경매가 (원 / {currentUnit})</th>
-                    <th className="px-6 py-3" scope="col">등급</th>
-                    <th className="px-6 py-3 rounded-r-lg" scope="col">등락률</th>
+                    <th className="py-2.5 pr-4 font-medium" scope="col">날짜</th>
+                    <th className="py-2.5 pr-4 text-right font-medium" scope="col">경매가 (원 / {currentUnit})</th>
+                    <th className="py-2.5 pr-4 font-medium" scope="col">등급</th>
+                    <th className="py-2.5 text-right font-medium" scope="col">전일 대비</th>
                   </tr>
                 </thead>
                 <tbody>
                   {tableData.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-6 py-8 text-center text-subtext-light">
-                        {loading ? '데이터 로딩중...' : '데이터가 없습니다'}
+                      <td colSpan={4} className="py-10 text-center text-subtext-light">
+                        {loading ? '불러오는 중이에요' : '데이터가 없어요'}
                       </td>
                     </tr>
                   ) : (
@@ -645,15 +619,12 @@ export default function Detail() {
                       const pct = prevRow ? ((change / prevRow.price) * 100).toFixed(1) : null;
                       const isLast = i === Math.min(tableData.length, 20) - 1;
                       return (
-                        <tr
-                          key={row.date}
-                          className={`bg-surface-light ${!isLast ? 'border-b ' : ''}`}
-                        >
-                          <td className="px-6 py-4 font-medium whitespace-nowrap">{row.date}</td>
-                          <td className="px-6 py-4">{row.price?.toLocaleString()}</td>
-                          <td className="px-6 py-4 text-subtext-light">{row.grade ?? '-'}</td>
+                        <tr key={row.date} className={!isLast ? 'border-b border-line' : ''}>
+                          <td className="whitespace-nowrap py-3 pr-4 text-text-main">{row.date}</td>
+                          <td className="py-3 pr-4 text-right font-semibold tabular-nums text-text-main">{row.price?.toLocaleString()}</td>
+                          <td className="py-3 pr-4 text-subtext-light">{row.grade ?? '-'}</td>
                           <td
-                            className={`px-6 py-4 ${
+                            className={`py-3 text-right tabular-nums ${
                               pct === null
                                 ? 'text-subtext-light '
                                 : parseFloat(pct) > 0
@@ -663,7 +634,7 @@ export default function Detail() {
                                 : 'text-subtext-light '
                             }`}
                           >
-                            {pct === null ? '-' : `${parseFloat(pct) > 0 ? '+' : ''}${pct}%`}
+                            {pct === null ? '-' : `${parseFloat(pct) > 0 ? '+' : parseFloat(pct) < 0 ? '−' : ''}${Math.abs(parseFloat(pct)).toFixed(1)}%`}
                           </td>
                         </tr>
                       );
@@ -672,12 +643,12 @@ export default function Detail() {
                 </tbody>
               </table>
               {tableData.length > 20 && (
-                <p className="text-xs text-subtext-light text-center mt-3">
-                  상위 20건 표시 중 (전체 {tableData.length}건)
+                <p className="mt-3 text-center text-xs text-subtext-light">
+                  최근 20건 (전체 {tableData.length}건)
                 </p>
               )}
             </div>
-          </div>
+          </section>
         </div>
       </main>
     </Layout>

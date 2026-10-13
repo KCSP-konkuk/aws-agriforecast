@@ -17,20 +17,15 @@ export default function FlowPanel({ data, actions }) {
   const strong = f.linked && f.lagDays != null;   // 도매·소매가 뚜렷하게 같이 움직일 때만 시차를 크게 보여 준다
 
   return (
-    <DashboardCard icon="timeline" actions={actions} title="앞으로의 흐름" subtitle={`${data.wholesaleLabel}와 소매가의 관계, 1년 중 가격이 오르내리는 시기예요`}>
-      <div className="rounded-lg bg-background-light p-4">
+    <DashboardCard actions={actions} title="앞으로의 흐름" subtitle={`${data.wholesaleLabel}와 소매가의 관계, 1년 중 가격이 오르내리는 시기예요`}>
+      <div className="rounded-xl bg-background-light p-4">
         {strong && (
-          <p className="text-xs text-subtext-light">
-            {data.wholesaleName} → 소매가 반영까지 <span className="block text-2xl font-bold text-primary">약 {f.lagDays}일</span>
+          <p className="text-[13px] text-subtext-light">
+            {data.wholesaleName} → 소매가 반영까지 <span className="mt-0.5 block text-2xl font-bold text-text-main">약 {f.lagDays}일</span>
           </p>
         )}
         {!strong && f.text && <p className="text-sm text-text-main">{f.text}</p>}
-        {f.signal && (
-          <p className="text-sm text-text-main mt-2 flex gap-2">
-            <span className="material-symbols-outlined text-primary text-lg">notifications</span>
-            <span>{f.signal}</span>
-          </p>
-        )}
+        {f.signal && <p className={`text-sm font-medium text-text-main ${strong || f.text ? 'mt-2' : ''}`}>{f.signal}</p>}
       </div>
 
       <div className="mt-5">
@@ -47,7 +42,7 @@ export default function FlowPanel({ data, actions }) {
             />
           ))}
         </div>
-        <div className="grid grid-cols-12 text-[11px] text-subtext-light mt-1">
+        <div className="grid grid-cols-12 text-xs text-subtext-light mt-1">
           {MONTHS.map((m) => (
             <span key={m}>{m}</span>
           ))}

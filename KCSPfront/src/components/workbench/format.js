@@ -6,7 +6,7 @@ export const SERIES_COLORS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87b
 export const colorOf = (slot) => SERIES_COLORS[((slot % 8) + 8) % 8];
 
 // 축 글자 · 격자 · 기준선(지수 100, 대비 0, 추세) · 가장 최근 점 테두리
-export const AXIS = { tick: { fontSize: 11, fill: '#64748B' }, grid: '#E0E0E0', base: '#94A3B8', now: '#333333' };
+export const AXIS = { tick: { fontSize: 12, fill: '#5D6560' }, grid: '#EDF0ED', base: '#A9B0AB', now: '#191F1C' };
 
 // 산점도 연도 색: 옅은 초록(예전) → 진한 초록(최근)
 const YEAR_FROM = [191, 216, 176];
@@ -18,25 +18,25 @@ export function yearColor(year, first, last) {
 
 // Plotly 3D 축 공통 모양
 export const sceneAxis = (title, extra = {}) => ({
-  title: { text: title, font: { size: 11, color: '#64748B' } },
-  gridcolor: '#E0E0E0',
-  zerolinecolor: '#94A3B8',
+  title: { text: title, font: { size: 12, color: '#5D6560' } },
+  gridcolor: '#EDF0ED',
+  zerolinecolor: '#A9B0AB',
   backgroundcolor: 'rgba(0,0,0,0)',
-  tickfont: { size: 10, color: '#64748B' },
+  tickfont: { size: 12, color: '#5D6560' },
   ...extra,
 });
 
 // 3D 산점도 계절 색 (범주 색에서)
 export const SEASON_COLORS = { 봄: '#1baf7a', 여름: '#e34948', 가을: '#eda100', 겨울: '#2a78d6' };
-export const MUTED = '#CBD5E1'; // 조건에 맞지 않는 점·선
+export const MUTED = '#CDD3CE'; // 조건에 맞지 않는 점·선
 
 // 칸 색 (지형도·시차 상관): 대비·상관처럼 0 이 기준이면 파랑(−)·빨강(+), 값이면 옅은 초록 → 진한 초록
-const UP = [217, 83, 79];
-const DOWN = [51, 122, 183];
-const GREEN_LO = [240, 245, 240];
+const UP = [204, 47, 47]; // price-up
+const DOWN = [46, 107, 198]; // price-down
+const GREEN_LO = [238, 244, 234]; // primary-light
 const GREEN_HI = [44, 94, 26];
 export function heatColor(v, { min, max, diverging }) {
-  if (v == null || !Number.isFinite(v)) return 'rgba(224,224,224,0.5)';
+  if (v == null || !Number.isFinite(v)) return 'rgba(227,231,227,0.5)';
   if (diverging) {
     const m = Math.max(Math.abs(min), Math.abs(max)) || 1;
     const a = Math.min(Math.abs(v) / m, 1);

@@ -4,9 +4,9 @@ import { CHARTS, PERIODS } from './format';
 function Segmented({ label, options, value, onChange, disabled = () => false, disabledTitle }) {
   return (
     <div className="flex items-center gap-1.5" role="group" aria-label={label}>
-      <span className="shrink-0 whitespace-nowrap text-xs text-subtext-light">{label}</span>
-      <div className="flex flex-wrap rounded-lg border border-gray-200 bg-white p-0.5">
-        {options.map(([key, text, icon]) => {
+      <span className="shrink-0 whitespace-nowrap text-[13px] text-subtext-light">{label}</span>
+      <div className="flex flex-wrap rounded-lg bg-background-light p-0.5">
+        {options.map(([key, text]) => {
           const off = disabled(key);
           return (
             <button
@@ -16,11 +16,14 @@ function Segmented({ label, options, value, onChange, disabled = () => false, di
               disabled={off}
               title={off ? disabledTitle : undefined}
               onClick={() => onChange(key)}
-              className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition ${
-                value === key ? 'bg-primary text-white' : off ? 'text-gray-300 cursor-not-allowed' : 'text-text-main hover:bg-background-light'
+              className={`flex h-7 items-center rounded-md px-2.5 text-[13px] transition-colors ${
+                value === key
+                  ? 'bg-white font-semibold text-text-main ring-1 ring-border-light'
+                  : off
+                    ? 'cursor-not-allowed text-subtext-light/40'
+                    : 'font-medium text-subtext-light hover:text-text-main'
               }`}
             >
-              {icon && <span className="material-symbols-outlined text-base">{icon}</span>}
               {text}
             </button>
           );
@@ -41,10 +44,9 @@ export default function Controls({ chart, freq, allowed, period, from, to, bound
           <button
             type="button"
             onClick={onSave}
-            className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-text-main hover:border-primary/50"
+            className="flex h-8 items-center rounded-lg bg-background-light px-3 text-[13px] font-semibold text-text-main hover:bg-border-light"
             title="지금 화면을 이름·메모와 함께 내 분석에 저장해요(로그인)"
           >
-            <span className="material-symbols-outlined text-base">bookmark_add</span>
             분석 저장
           </button>
         )}
@@ -53,10 +55,9 @@ export default function Controls({ chart, freq, allowed, period, from, to, bound
             type="button"
             onClick={onExport}
             disabled={exporting}
-            className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-text-main hover:border-primary/50 disabled:opacity-60"
+            className="flex h-8 items-center rounded-lg bg-background-light px-3 text-[13px] font-semibold text-text-main hover:bg-border-light disabled:opacity-60"
             title="지금 차트를 제목·출처와 함께 PNG 로 저장해요"
           >
-            <span className="material-symbols-outlined text-base">image</span>
             {exporting ? '저장 중…' : '이미지 저장'}
           </button>
         )}
@@ -89,7 +90,7 @@ export default function Controls({ chart, freq, allowed, period, from, to, bound
             min={bounds.min ?? undefined}
             max={to ?? bounds.max ?? undefined}
             onChange={(e) => onChange({ from: e.target.value || null })}
-            className="rounded border border-gray-200 px-2 py-1 text-xs text-text-main"
+            className="h-8 rounded-md border border-border-light bg-white px-2 text-[13px] text-text-main"
             aria-label="시작일"
           />
           ~
@@ -100,7 +101,7 @@ export default function Controls({ chart, freq, allowed, period, from, to, bound
             min={from ?? bounds.min ?? undefined}
             max={bounds.max ?? undefined}
             onChange={(e) => onChange({ to: e.target.value || null })}
-            className="rounded border border-gray-200 px-2 py-1 text-xs text-text-main"
+            className="h-8 rounded-md border border-border-light bg-white px-2 text-[13px] text-text-main"
             aria-label="종료일"
           />
         </div>

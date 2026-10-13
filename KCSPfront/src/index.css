@@ -1,8 +1,10 @@
+@import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Material Symbols Outlined 아이콘 설정 */
+/* Material Symbols Outlined 아이콘 — 선 굵기를 글자와 맞춘다 */
 .material-symbols-outlined {
   font-variation-settings:
     "FILL" 0,
@@ -11,27 +13,57 @@
     "opsz" 24;
 }
 
-body {
-  font-family: "Work Sans", "Noto Sans KR", sans-serif;
-  background-color: theme("colors.background-light");
-  color: theme("colors.text-main");
+@layer base {
+  body {
+    font-family: theme("fontFamily.sans");
+    background-color: theme("colors.surface-light");
+    color: theme("colors.text-main");
+    word-break: keep-all;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* 브라우저가 그리는 것들도 같은 색으로 */
+  ::selection {
+    background: #d6e8cc;
+    color: theme("colors.text-main");
+  }
+
+  :focus-visible {
+    outline: 2px solid theme("colors.primary.DEFAULT");
+    outline-offset: 2px;
+  }
+
+  a {
+    text-underline-offset: 3px;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #646c67;
+  }
+
+  html {
+    scrollbar-color: #c9cfca transparent;
+  }
 }
 
-/* 스크롤바 */
+/* 스크롤바 (WebKit) */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #bbb;
-  border-radius: 4px;
+  background: #c9cfca;
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #888;
+  background-color: #a9b0ab;
 }

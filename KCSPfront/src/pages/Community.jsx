@@ -47,17 +47,21 @@ export default function Community() {
 
   return (
     <Layout>
-      <main className="flex flex-1 justify-center px-4 sm:px-6 lg:px-10 py-8">
-        <div className="flex flex-col max-w-[880px] flex-1 min-w-0">
-          <h1 className="text-text-main text-3xl sm:text-4xl font-bold tracking-[-0.02em] mb-6">커뮤니티</h1>
+      <main className="flex flex-1 justify-center px-4 pb-16 pt-8 sm:px-6 lg:px-10">
+        <div className="flex min-w-0 max-w-[880px] flex-1 flex-col">
+          <h1 className="mb-5 text-2xl font-bold tracking-[-0.02em] text-text-main">커뮤니티</h1>
 
-          <div className="flex gap-2 mb-6 overflow-x-auto">
+          <div className="-mx-4 mb-6 flex gap-6 overflow-x-auto border-b border-line px-4 sm:mx-0 sm:px-0" role="tablist" aria-label="이야기방">
             {ROOMS.map((r) => (
               <button
                 key={r}
                 type="button"
+                role="tab"
+                aria-selected={r === room}
                 onClick={() => setParams({ room: r })}
-                className={`h-9 shrink-0 rounded-lg px-4 text-sm ${r === room ? 'bg-primary text-white font-semibold' : 'bg-primary-light text-text-main font-medium hover:bg-primary/15'}`}
+                className={`-mb-px shrink-0 border-b-2 py-2.5 text-[15px] transition-colors ${
+                  r === room ? 'border-primary font-semibold text-text-main' : 'border-transparent font-medium text-subtext-light hover:text-text-main'
+                }`}
               >
                 {r}
               </button>
@@ -67,20 +71,20 @@ export default function Community() {
           {/* key: 방을 바꾸면 카드를 새로 만들어 이전 방의 늦은 투표 응답이 섞이지 않게 */}
           {VOTE_ROOMS.includes(room) && <VoteCard key={room} itemName={room} />}
 
-          <div className="flex items-center justify-between mt-8 mb-3">
-            <h2 className="text-lg font-semibold text-text-main">{room === '자유' ? '자유 이야기' : `${room} 이야기`}</h2>
-            <Link to={`/community/write?category=${encodeURIComponent(room)}`} className="h-9 inline-flex items-center rounded-lg bg-primary px-4 text-sm font-medium text-white hover:bg-primary-hover">
+          <div className="mb-2 mt-10 flex items-center justify-between">
+            <h2 className="text-lg font-bold tracking-[-0.02em] text-text-main">{room === '자유' ? '자유 이야기' : `${room} 이야기`}</h2>
+            <Link to={`/community/write?category=${encodeURIComponent(room)}`} className="inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover">
               글쓰기
             </Link>
           </div>
 
-          <div className="rounded-xl border border-border-light bg-white overflow-hidden">
+          <div className="border-y border-line">
             {status === 'loading' ? (
-              <div className="h-40 animate-pulse" />
+              <div className="h-40 animate-pulse bg-background-light" />
             ) : status === 'error' ? (
-              <p className="px-5 py-10 text-center text-text-main/80">글을 불러오지 못했습니다.</p>
+              <p className="py-12 text-center text-sm text-red-700" role="alert">글을 불러오지 못했어요.</p>
             ) : ordered.length === 0 ? (
-              <p className="px-5 py-10 text-center text-text-main/80">아직 글이 없어요. 첫 이야기를 남겨 보세요.</p>
+              <p className="py-12 text-center text-sm text-subtext-light">아직 글이 없어요. 첫 이야기를 남겨 보세요.</p>
             ) : (
               ordered.map((post, i) => {
                 const pinned = i === 0 && post.kind === 'BRIEF' && page === 0;
@@ -88,13 +92,14 @@ export default function Community() {
                   <Link
                     key={post.id}
                     to={`/community/${post.id}`}
-                    className={`flex items-center justify-between gap-4 px-5 py-4 text-[15px] ${i > 0 ? 'border-t border-border-light' : ''} ${pinned ? 'bg-primary-light' : 'hover:bg-background-light'}`}
+                    className={`flex items-center justify-between gap-4 px-1 py-4 text-[15px] transition-colors hover:bg-background-light ${i > 0 ? 'border-t border-line' : ''}`}
                   >
                     <span className="min-w-0 truncate">
-                      <span className={pinned ? 'font-medium text-primary' : 'text-text-main'}>{post.title}</span>
+                      {pinned && <span className="mr-2 text-[13px] font-semibold text-primary">브리핑</span>}
+                      <span className={pinned ? 'font-semibold text-text-main' : 'text-text-main'}>{post.title}</span>
                       {post.commentCount > 0 && <span className="ml-2 font-medium text-primary">{post.commentCount}</span>}
                     </span>
-                    <span className="shrink-0 text-sm text-text-main/60">{when(post.createdAt)}</span>
+                    <span className="shrink-0 text-sm text-subtext-light">{when(post.createdAt)}</span>
                   </Link>
                 );
               })
@@ -108,7 +113,8 @@ export default function Community() {
                   key={i}
                   type="button"
                   onClick={() => setPage(i)}
-                  className={`h-8 w-8 rounded-lg text-sm ${page === i ? 'bg-primary text-white font-semibold' : 'text-text-main hover:bg-primary-light'}`}
+                  aria-current={page === i ? 'page' : undefined}
+                  className={`h-8 w-8 rounded-lg text-sm ${page === i ? 'bg-text-main font-semibold text-white' : 'text-subtext-light hover:bg-background-light hover:text-text-main'}`}
                 >
                   {i + 1}
                 </button>

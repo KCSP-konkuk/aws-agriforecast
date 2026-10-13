@@ -18,19 +18,23 @@ export default function TemplateCards({ catalog, onApply }) {
   );
   if (!list.length) return null;
   return (
-    <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 xl:grid-cols-4">
+    <ul className="grid gap-x-10 sm:grid-cols-2">
       {list.map((t) => (
-        <div key={t.key} className="flex w-64 shrink-0 snap-start flex-col rounded-lg border border-gray-100 bg-white p-3 sm:w-auto">
-          <p className="text-sm font-semibold text-text-main">{t.title}</p>
-          <p className="text-[11px] font-semibold text-primary">{t.who}</p>
-          <p className="mt-1 flex-1 text-xs text-subtext-light">{t.desc}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-1">
+        <li key={t.key} className="flex flex-col gap-2 border-b border-line py-3.5">
+          <div>
+            <p className="flex flex-wrap items-baseline gap-x-2">
+              <span className="text-[15px] font-semibold text-text-main">{t.title}</span>
+              <span className="text-xs text-subtext-light">{t.who}</span>
+            </p>
+            <p className="mt-0.5 text-[13px] leading-relaxed text-subtext-light">{t.desc}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
             {t.chips.map((item) => (
               <button
                 key={item ?? 'all'}
                 type="button"
                 onClick={() => onApply(t, item)}
-                className="rounded-full border border-gray-200 px-2.5 py-0.5 text-xs text-text-main hover:border-primary hover:text-primary"
+                className="h-8 rounded-md bg-background-light px-2.5 text-[13px] font-medium text-text-main transition-colors hover:bg-primary-light hover:text-primary"
               >
                 {item ?? '열기'}
               </button>
@@ -40,7 +44,7 @@ export default function TemplateCards({ catalog, onApply }) {
                 aria-label={`${t.title} 다른 품목`}
                 value=""
                 onChange={(e) => e.target.value && onApply(t, e.target.value)}
-                className="rounded-full border border-gray-200 bg-white px-2 py-0.5 text-xs text-subtext-light hover:border-primary"
+                className="h-8 rounded-md border border-border-light bg-white px-2 text-[13px] text-subtext-light hover:border-subtext-light/50"
               >
                 <option value="">+{t.rest.length}개 품목</option>
                 {t.rest.map((item) => (
@@ -51,8 +55,8 @@ export default function TemplateCards({ catalog, onApply }) {
               </select>
             )}
           </div>
-        </div>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
